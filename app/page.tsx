@@ -8,7 +8,7 @@ export default function Home() {
   const [data, setData] = useState<Data | null>(null);
 
   useEffect(() => {
-    const liveRef = ref(db, "live");
+    const liveRef = ref(db, "ecotrack/data");
 
     const unsubscribe = onValue(liveRef, (snapshot) => {
       setData(snapshot.val());
