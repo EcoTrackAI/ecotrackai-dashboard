@@ -23,15 +23,15 @@ export default function Footer({ lastUpdated, isConnected }: FooterProps) {
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       transition={{ delay: 0.6 }}
-      className="px-10 border-t-2 border-gray-200 pt-6 pb-8 bg-white backdrop-blur-sm rounded-t-2xl"
+      className="px-3 sm:px-6 md:px-10 border-t-2 border-gray-200 pt-4 sm:pt-6 pb-4 sm:pb-8 bg-white backdrop-blur-sm rounded-t-xl sm:rounded-t-2xl"
     >
-      <div className="flex flex-col sm:flex-row items-center justify-between space-y-4 sm:space-y-0 text-sm">
+      <div className="flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0 text-xs sm:text-sm">
         <motion.div
-          className="flex items-center space-x-3 bg-blue-50 px-4 py-2 rounded-full"
+          className="flex items-center space-x-2 sm:space-x-3 bg-blue-50 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full"
           whileHover={{ scale: 1.05 }}
         >
           <svg
-            className="w-5 h-5 text-blue-700"
+            className="w-4 h-4 sm:w-5 sm:h-5 text-blue-700"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -57,7 +57,7 @@ export default function Footer({ lastUpdated, isConnected }: FooterProps) {
         </motion.div>
 
         <motion.div
-          className={`flex items-center space-x-3 px-4 py-2 rounded-full ${
+          className={`flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full ${
             isConnected ? "bg-green-50" : "bg-orange-50"
           }`}
           whileHover={{ scale: 1.05 }}
@@ -65,7 +65,7 @@ export default function Footer({ lastUpdated, isConnected }: FooterProps) {
           <motion.div
             animate={{ scale: [1, 1.3, 1] }}
             transition={{ duration: 1.5, repeat: Infinity }}
-            className={`w-2.5 h-2.5 rounded-full shadow-lg ${
+            className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full shadow-lg ${
               isConnected
                 ? "bg-green-900 shadow-green-900/50"
                 : "bg-orange-600 shadow-orange-600/50"
@@ -83,7 +83,9 @@ export default function Footer({ lastUpdated, isConnected }: FooterProps) {
           </span>
         </motion.div>
 
-        <div className="text-gray-500 font-semibold">© 2025 EcoTrack AI</div>
+        <div className="text-gray-500 font-semibold text-[10px] sm:text-xs md:text-sm">
+          © 2025 EcoTrack AI
+        </div>
       </div>
     </motion.footer>
   );

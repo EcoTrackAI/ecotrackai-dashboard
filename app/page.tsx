@@ -129,8 +129,8 @@ export default function Home() {
     <>
       <Header isOnline={isOnline} />
 
-      <main className="min-h-screen bg-gray-100 pt-20 pb-8">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+      <main className="min-h-screen bg-gray-100 pt-16 sm:pt-20 pb-4 sm:pb-8">
+        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
           {!data ? (
             <motion.div
               initial={{ opacity: 0 }}
@@ -165,11 +165,11 @@ export default function Home() {
                 <motion.h2
                   initial={{ opacity: 0, x: -20 }}
                   animate={{ opacity: 1, x: 0 }}
-                  className="text-3xl font-bold text-green-900 mb-6"
+                  className="text-xl sm:text-2xl md:text-3xl font-bold text-green-900 mb-4 sm:mb-6"
                 >
                   Live Sensor Status
                 </motion.h2>
-                <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+                <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
                   <SensorStatusCard
                     title="Temperature"
                     value={data.temperature}
@@ -268,14 +268,14 @@ export default function Home() {
               </section>
 
               {/* Charts & Control Panel */}
-              <section className="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                <div className="lg:col-span-2">
+              <section className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
+                <div className="xl:col-span-2">
                   <Charts
                     temperatureData={historicalTemp}
                     humidityData={historicalHumidity}
                   />
                 </div>
-                <div className="lg:col-span-1">
+                <div className="xl:col-span-1">
                   <ControlPanel />
                 </div>
               </section>

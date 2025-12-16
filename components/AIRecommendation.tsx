@@ -65,9 +65,9 @@ export default function AIRecommendation({ data }: AIRecommendationProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.3 }}
-      className="bg-white rounded-2xl p-6 border-l-4 border-green-900 shadow-xl"
+      className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border-l-4 border-green-900 shadow-xl"
     >
-      <div className="flex items-start space-x-4">
+      <div className="flex items-start space-x-3 sm:space-x-4">
         <motion.div
           animate={{
             rotate: [0, 5, -5, 0],
@@ -76,9 +76,9 @@ export default function AIRecommendation({ data }: AIRecommendationProps) {
           transition={{ duration: 4, repeat: Infinity }}
           className="shrink-0"
         >
-          <div className="w-14 h-14 bg-linear-to-br from-green-900 to-blue-700 rounded-2xl flex items-center justify-center shadow-xl">
+          <div className="w-12 h-12 sm:w-14 sm:h-14 bg-linear-to-br from-green-900 to-blue-700 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-xl">
             <svg
-              className="w-8 h-8 text-white"
+              className="w-6 h-6 sm:w-8 sm:h-8 text-white"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -92,29 +92,29 @@ export default function AIRecommendation({ data }: AIRecommendationProps) {
             </svg>
           </div>
         </motion.div>
-        <div className="flex-1">
-          <h3 className="text-lg font-bold text-green-900 mb-3 uppercase tracking-wide">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-sm sm:text-base md:text-lg font-bold text-green-900 mb-2 sm:mb-3 uppercase tracking-wide">
             🤖 AI Insight
           </h3>
           <motion.p
             key={recommendation.action}
             initial={{ opacity: 0, x: -10 }}
             animate={{ opacity: 1, x: 0 }}
-            className="text-2xl font-bold text-gray-800 mb-4"
+            className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-3 sm:mb-4 wrap-break-word"
           >
             {recommendation.action}
           </motion.p>
-          <div className="space-y-3">
+          <div className="space-y-2 sm:space-y-3">
             {recommendation.reasoning.map((reason, index) => (
               <motion.div
                 key={index}
                 initial={{ opacity: 0, x: -20 }}
                 animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: 0.1 * index }}
-                className="flex items-start space-x-3 bg-gray-50 p-3 rounded-lg"
+                className="flex items-start space-x-2 sm:space-x-3 bg-gray-50 p-2.5 sm:p-3 rounded-lg"
               >
                 <svg
-                  className="w-5 h-5 text-blue-700 shrink-0 mt-0.5"
+                  className="w-4 h-4 sm:w-5 sm:h-5 text-blue-700 shrink-0 mt-0.5"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -124,7 +124,9 @@ export default function AIRecommendation({ data }: AIRecommendationProps) {
                     clipRule="evenodd"
                   />
                 </svg>
-                <p className="text-sm text-gray-700 font-medium">{reason}</p>
+                <p className="text-xs sm:text-sm text-gray-700 font-medium wrap-break-word">
+                  {reason}
+                </p>
               </motion.div>
             ))}
           </div>

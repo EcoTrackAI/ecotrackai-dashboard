@@ -40,16 +40,16 @@ export default function EnvironmentSummary({ data }: EnvironmentSummaryProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.2 }}
-      className="bg-white rounded-2xl p-6 border-2 border-gray-200 shadow-lg"
+      className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border-2 border-gray-200 shadow-lg"
     >
-      <div className="flex items-start space-x-4">
+      <div className="flex items-start space-x-3 sm:space-x-4">
         <motion.div
           animate={{ rotate: [0, 10, -10, 0] }}
           transition={{ duration: 3, repeat: Infinity }}
-          className="shrink-0 mt-1 p-2 bg-blue-50 rounded-lg shadow-md"
+          className="shrink-0 mt-1 p-1.5 sm:p-2 bg-blue-50 rounded-lg shadow-md"
         >
           <svg
-            className="w-6 h-6 text-blue-700"
+            className="w-5 h-5 sm:w-6 sm:h-6 text-blue-700"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -62,11 +62,11 @@ export default function EnvironmentSummary({ data }: EnvironmentSummaryProps) {
             />
           </svg>
         </motion.div>
-        <div className="flex-1">
-          <h3 className="text-sm font-bold text-gray-800 mb-2 uppercase tracking-wide">
+        <div className="flex-1 min-w-0">
+          <h3 className="text-xs sm:text-sm font-bold text-gray-800 mb-1.5 sm:mb-2 uppercase tracking-wide">
             Environment Summary
           </h3>
-          <p className="text-gray-700 leading-relaxed font-medium text-base">
+          <p className="text-gray-700 leading-relaxed font-medium text-sm sm:text-base">
             {summary}
           </p>
         </div>

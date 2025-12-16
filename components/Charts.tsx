@@ -158,18 +158,20 @@ export default function Charts({ temperatureData, humidityData }: ChartsProps) {
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ delay: 0.4 }}
-      className="mt-8"
+      className="mt-4 sm:mt-6 md:mt-8"
     >
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-3xl font-bold text-green-900">Historical Data</h2>
-        <div className="flex space-x-2">
+      <div className="flex flex-col xs:flex-row items-start xs:items-center justify-between mb-4 sm:mb-6 gap-3 xs:gap-4">
+        <h2 className="text-xl sm:text-2xl md:text-3xl font-bold text-green-900">
+          Historical Data
+        </h2>
+        <div className="flex space-x-1.5 sm:space-x-2">
           {(["1h", "6h", "24h"] as const).map((filter) => (
             <motion.button
               key={filter}
               whileHover={{ scale: 1.05 }}
               whileTap={{ scale: 0.95 }}
               onClick={() => setTimeFilter(filter)}
-              className={`px-4 py-2 rounded-lg font-medium transition-all ${
+              className={`px-3 sm:px-4 py-1.5 sm:py-2 rounded-lg text-sm sm:text-base font-medium transition-all ${
                 timeFilter === filter
                   ? "bg-blue-700 text-white shadow-lg"
                   : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
@@ -181,19 +183,19 @@ export default function Charts({ temperatureData, humidityData }: ChartsProps) {
         </div>
       </div>
 
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-4 sm:gap-6">
         {/* Temperature Chart */}
         <motion.div
           whileHover={{ scale: 1.01 }}
-          className="bg-white backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-gray-200"
+          className="bg-white backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 shadow-xl border border-gray-200"
         >
-          <div className="flex items-center space-x-2 mb-4">
+          <div className="flex items-center space-x-2 mb-3 sm:mb-4">
             <motion.div
               animate={{ rotate: [0, 10, -10, 0] }}
               transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
             >
               <svg
-                className="w-6 h-6 text-blue-700"
+                className="w-5 h-5 sm:w-6 sm:h-6 text-blue-700"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -206,11 +208,11 @@ export default function Charts({ temperatureData, humidityData }: ChartsProps) {
                 />
               </svg>
             </motion.div>
-            <h3 className="text-xl font-bold text-blue-700">
+            <h3 className="text-base sm:text-lg md:text-xl font-bold text-blue-700">
               Temperature Trend
             </h3>
           </div>
-          <div className="h-64">
+          <div className="h-48 sm:h-56 md:h-64">
             <Line data={temperatureChartData} options={chartOptions} />
           </div>
         </motion.div>
@@ -218,15 +220,15 @@ export default function Charts({ temperatureData, humidityData }: ChartsProps) {
         {/* Humidity Chart */}
         <motion.div
           whileHover={{ scale: 1.01 }}
-          className="bg-white backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-gray-200"
+          className="bg-white backdrop-blur-sm rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 shadow-xl border border-gray-200"
         >
-          <div className="flex items-center space-x-2 mb-4">
+          <div className="flex items-center space-x-2 mb-3 sm:mb-4">
             <motion.div
               animate={{ scale: [1, 1.1, 1] }}
               transition={{ duration: 2, repeat: Infinity, repeatDelay: 2 }}
             >
               <svg
-                className="w-6 h-6 text-green-900"
+                className="w-5 h-5 sm:w-6 sm:h-6 text-green-900"
                 fill="none"
                 stroke="currentColor"
                 viewBox="0 0 24 24"
@@ -239,9 +241,11 @@ export default function Charts({ temperatureData, humidityData }: ChartsProps) {
                 />
               </svg>
             </motion.div>
-            <h3 className="text-xl font-bold text-green-900">Humidity Trend</h3>
+            <h3 className="text-base sm:text-lg md:text-xl font-bold text-green-900">
+              Humidity Trend
+            </h3>
           </div>
-          <div className="h-64">
+          <div className="h-48 sm:h-56 md:h-64">
             <Line data={humidityChartData} options={chartOptions} />
           </div>
         </motion.div>
