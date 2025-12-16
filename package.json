@@ -9,9 +9,12 @@
     "lint": "eslint"
   },
   "dependencies": {
+    "chart.js": "^4.5.1",
     "firebase": "^12.6.0",
+    "framer-motion": "^12.23.26",
     "next": "16.0.10",
     "react": "19.2.1",
+    "react-chartjs-2": "^5.3.1",
     "react-dom": "19.2.1"
   },
   "devDependencies": {

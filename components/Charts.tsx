@@ -1,212 +1,251 @@
 "use client";
 
+import { motion } from "framer-motion";
 import { useState } from "react";
+import {
+  Chart as ChartJS,
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler,
+} from "chart.js";
+import { Line } from "react-chartjs-2";
+
+// Register Chart.js components
+ChartJS.register(
+  CategoryScale,
+  LinearScale,
+  PointElement,
+  LineElement,
+  Title,
+  Tooltip,
+  Legend,
+  Filler
+);
 
 interface ChartsProps {
   temperatureData: HistoricalDataPoint[];
   humidityData: HistoricalDataPoint[];
 }
 
-type TimeFilter = "1h" | "6h" | "24h";
-
 export default function Charts({ temperatureData, humidityData }: ChartsProps) {
-  const [timeFilter, setTimeFilter] = useState<TimeFilter>("1h");
+  const [timeFilter, setTimeFilter] = useState<"1h" | "6h" | "24h">("1h");
 
-  const filterData = (data: HistoricalDataPoint[], filter: TimeFilter) => {
+  const filterData = (data: HistoricalDataPoint[]) => {
     const now = Date.now();
-    const timeRanges = {
-      "1h": 60 * 60 * 1000,
-      "6h": 6 * 60 * 60 * 1000,
-      "24h": 24 * 60 * 60 * 1000,
-    };
-    const cutoff = now - timeRanges[filter];
-    return data.filter((point) => point.timestamp >= cutoff);
+    const filterTime =
+      timeFilter === "1h" ? 3600000 : timeFilter === "6h" ? 21600000 : 86400000;
+    return data.filter((d) => now - d.timestamp < filterTime);
   };
 
-  const filteredTemp = filterData(temperatureData, timeFilter);
-  const filteredHumidity = filterData(humidityData, timeFilter);
+  const filteredTempData = filterData(temperatureData);
+  const filteredHumData = filterData(humidityData);
 
-  const renderMiniChart = (
-    data: HistoricalDataPoint[],
-    color: string,
-    label: string
-  ) => {
-    if (data.length === 0) {
-      return (
-        <div className="flex items-center justify-center h-48 text-gray-400">
-          No data available
-        </div>
-      );
-    }
+  // Prepare data for Chart.js
+  const tempLabels = filteredTempData.map((d) => {
+    const date = new Date(d.timestamp);
+    return date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  });
 
-    const maxValue = Math.max(...data.map((d) => d.value));
-    const minValue = Math.min(...data.map((d) => d.value));
-    const range = maxValue - minValue || 1;
+  const humLabels = filteredHumData.map((d) => {
+    const date = new Date(d.timestamp);
+    return date.toLocaleTimeString("en-US", {
+      hour: "2-digit",
+      minute: "2-digit",
+    });
+  });
 
-    return (
-      <div className="relative h-48">
-        <svg
-          className="w-full h-full"
-          viewBox="0 0 400 150"
-          preserveAspectRatio="none"
-        >
-          <defs>
-            <linearGradient
-              id={`gradient-${label}`}
-              x1="0%"
-              y1="0%"
-              x2="0%"
-              y2="100%"
-            >
-              <stop offset="0%" stopColor={color} stopOpacity="0.3" />
-              <stop offset="100%" stopColor={color} stopOpacity="0.05" />
-            </linearGradient>
-          </defs>
+  const temperatureChartData = {
+    labels: tempLabels,
+    datasets: [
+      {
+        label: "Temperature (°C)",
+        data: filteredTempData.map((d) => d.value),
+        borderColor: "rgb(25, 118, 210)", // blue-700
+        backgroundColor: "rgba(25, 118, 210, 0.1)",
+        fill: true,
+        tension: 0.4,
+        pointRadius: 3,
+        pointHoverRadius: 6,
+        pointBackgroundColor: "rgb(25, 118, 210)",
+        pointBorderColor: "rgb(27, 94, 32)", // green-900
+        pointBorderWidth: 2,
+      },
+    ],
+  };
 
-          {/* Grid lines */}
-          <line
-            x1="0"
-            y1="37.5"
-            x2="400"
-            y2="37.5"
-            stroke="#e5e7eb"
-            strokeWidth="0.5"
-          />
-          <line
-            x1="0"
-            y1="75"
-            x2="400"
-            y2="75"
-            stroke="#e5e7eb"
-            strokeWidth="0.5"
-          />
-          <line
-            x1="0"
-            y1="112.5"
-            x2="400"
-            y2="112.5"
-            stroke="#e5e7eb"
-            strokeWidth="0.5"
-          />
+  const humidityChartData = {
+    labels: humLabels,
+    datasets: [
+      {
+        label: "Humidity (%)",
+        data: filteredHumData.map((d) => d.value),
+        borderColor: "rgb(27, 94, 32)", // green-900
+        backgroundColor: "rgba(27, 94, 32, 0.1)",
+        fill: true,
+        tension: 0.4,
+        pointRadius: 3,
+        pointHoverRadius: 6,
+        pointBackgroundColor: "rgb(27, 94, 32)",
+        pointBorderColor: "rgb(245, 124, 0)", // orange-600
+        pointBorderWidth: 2,
+      },
+    ],
+  };
 
-          {/* Area under curve */}
-          <path
-            d={`M 0 150 ${data
-              .map((point, i) => {
-                const x = (i / (data.length - 1)) * 400;
-                const y = 150 - ((point.value - minValue) / range) * 140 - 5;
-                return `L ${x} ${y}`;
-              })
-              .join(" ")} L 400 150 Z`}
-            fill={`url(#gradient-${label})`}
-          />
-
-          {/* Line */}
-          <path
-            d={data
-              .map((point, i) => {
-                const x = (i / (data.length - 1)) * 400;
-                const y = 150 - ((point.value - minValue) / range) * 140 - 5;
-                return `${i === 0 ? "M" : "L"} ${x} ${y}`;
-              })
-              .join(" ")}
-            fill="none"
-            stroke={color}
-            strokeWidth="2"
-            strokeLinecap="round"
-            strokeLinejoin="round"
-          />
-
-          {/* Data points */}
-          {data.map((point, i) => {
-            const x = (i / (data.length - 1)) * 400;
-            const y = 150 - ((point.value - minValue) / range) * 140 - 5;
-            return (
-              <circle
-                key={i}
-                cx={x}
-                cy={y}
-                r="3"
-                fill={color}
-                stroke="white"
-                strokeWidth="1.5"
-              />
-            );
-          })}
-        </svg>
-
-        {/* Y-axis labels */}
-        <div className="absolute left-0 top-0 bottom-0 flex flex-col justify-between text-xs text-gray-500 -ml-12">
-          <span>{maxValue.toFixed(1)}</span>
-          <span>{((maxValue + minValue) / 2).toFixed(1)}</span>
-          <span>{minValue.toFixed(1)}</span>
-        </div>
-      </div>
-    );
+  const chartOptions = {
+    responsive: true,
+    maintainAspectRatio: false,
+    plugins: {
+      legend: {
+        display: false,
+      },
+      tooltip: {
+        backgroundColor: "rgba(255, 255, 255, 0.95)", // white
+        titleColor: "rgb(38, 50, 56)", // gray-800
+        bodyColor: "rgb(96, 125, 139)", // gray-500
+        borderColor: "rgb(229, 231, 235)", // gray-200
+        borderWidth: 1,
+        padding: 12,
+        displayColors: false,
+        callbacks: {
+          label: function (context: any) {
+            return `${context.parsed.y.toFixed(1)}${
+              context.dataset.label.includes("Temperature") ? "°C" : "%"
+            }`;
+          },
+        },
+      },
+    },
+    scales: {
+      x: {
+        grid: {
+          color: "rgba(229, 231, 235, 0.5)", // gray-200
+          drawBorder: false,
+        },
+        ticks: {
+          color: "rgb(107, 114, 128)", // gray-500
+          maxTicksLimit: 8,
+          font: {
+            size: 11,
+          },
+        },
+      },
+      y: {
+        grid: {
+          color: "rgba(229, 231, 235, 0.5)",
+          drawBorder: false,
+        },
+        ticks: {
+          color: "rgb(107, 114, 128)",
+          font: {
+            size: 11,
+          },
+        },
+      },
+    },
   };
 
   return (
-    <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
+    <motion.section
+      initial={{ opacity: 0, y: 20 }}
+      animate={{ opacity: 1, y: 0 }}
+      transition={{ delay: 0.4 }}
+      className="mt-8"
+    >
       <div className="flex items-center justify-between mb-6">
-        <h3 className="text-lg font-bold text-gray-900">Historical Trends</h3>
+        <h2 className="text-3xl font-bold text-green-900">Historical Data</h2>
         <div className="flex space-x-2">
-          {(["1h", "6h", "24h"] as TimeFilter[]).map((filter) => (
-            <button
+          {(["1h", "6h", "24h"] as const).map((filter) => (
+            <motion.button
               key={filter}
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
               onClick={() => setTimeFilter(filter)}
-              className={`px-3 py-1.5 rounded-lg text-sm font-medium transition-colors ${
+              className={`px-4 py-2 rounded-lg font-medium transition-all ${
                 timeFilter === filter
-                  ? "bg-blue-600 text-white"
-                  : "bg-gray-100 text-gray-600 hover:bg-gray-200"
+                  ? "bg-blue-700 text-white shadow-lg"
+                  : "bg-white text-gray-600 hover:bg-gray-50 border border-gray-200"
               }`}
             >
               {filter}
-            </button>
+            </motion.button>
           ))}
         </div>
       </div>
 
-      <div className="space-y-8">
-        <div>
-          <div className="flex items-center space-x-2 mb-3">
-            <svg
-              className="w-5 h-5 text-red-500"
-              fill="currentColor"
-              viewBox="0 0 20 20"
+      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+        {/* Temperature Chart */}
+        <motion.div
+          whileHover={{ scale: 1.01 }}
+          className="bg-white backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-gray-200"
+        >
+          <div className="flex items-center space-x-2 mb-4">
+            <motion.div
+              animate={{ rotate: [0, 10, -10, 0] }}
+              transition={{ duration: 2, repeat: Infinity, repeatDelay: 3 }}
             >
-              <path
-                fillRule="evenodd"
-                d="M10 18a8 8 0 100-16 8 8 0 000 16zm1-12a1 1 0 10-2 0v4a1 1 0 00.293.707l2.828 2.829a1 1 0 101.415-1.415L11 9.586V6z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <h4 className="text-sm font-semibold text-gray-700">
-              Temperature (°C)
-            </h4>
+              <svg
+                className="w-6 h-6 text-blue-700"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                />
+              </svg>
+            </motion.div>
+            <h3 className="text-xl font-bold text-blue-700">
+              Temperature Trend
+            </h3>
           </div>
-          {renderMiniChart(filteredTemp, "#ef4444", "temp")}
-        </div>
+          <div className="h-64">
+            <Line data={temperatureChartData} options={chartOptions} />
+          </div>
+        </motion.div>
 
-        <div>
-          <div className="flex items-center space-x-2 mb-3">
-            <svg
-              className="w-5 h-5 text-blue-500"
-              fill="currentColor"
-              viewBox="0 0 20 20"
+        {/* Humidity Chart */}
+        <motion.div
+          whileHover={{ scale: 1.01 }}
+          className="bg-white backdrop-blur-sm rounded-2xl p-6 shadow-xl border border-gray-200"
+        >
+          <div className="flex items-center space-x-2 mb-4">
+            <motion.div
+              animate={{ scale: [1, 1.1, 1] }}
+              transition={{ duration: 2, repeat: Infinity, repeatDelay: 2 }}
             >
-              <path
-                fillRule="evenodd"
-                d="M5.05 4.05a7 7 0 119.9 9.9L10 18.9l-4.95-4.95a7 7 0 010-9.9zM10 11a2 2 0 100-4 2 2 0 000 4z"
-                clipRule="evenodd"
-              />
-            </svg>
-            <h4 className="text-sm font-semibold text-gray-700">
-              Humidity (%)
-            </h4>
+              <svg
+                className="w-6 h-6 text-green-900"
+                fill="none"
+                stroke="currentColor"
+                viewBox="0 0 24 24"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"
+                />
+              </svg>
+            </motion.div>
+            <h3 className="text-xl font-bold text-green-900">Humidity Trend</h3>
           </div>
-          {renderMiniChart(filteredHumidity, "#3b82f6", "humidity")}
-        </div>
+          <div className="h-64">
+            <Line data={humidityChartData} options={chartOptions} />
+          </div>
+        </motion.div>
       </div>
-    </div>
+    </motion.section>
   );
 }

@@ -1,6 +1,7 @@
 "use client";
 
 import { useState } from "react";
+import { motion } from "framer-motion";
 
 export default function ControlPanel() {
   const [controls, setControls] = useState<ControlSettings>({
@@ -10,22 +11,29 @@ export default function ControlPanel() {
   });
 
   return (
-    <div className="bg-white rounded-xl p-6 border border-gray-200 shadow-sm">
-      <div className="flex items-center space-x-2 mb-6">
-        <svg
-          className="w-6 h-6 text-gray-700"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
-          />
-        </svg>
-        <h3 className="text-lg font-bold text-gray-900">
+    <motion.div
+      initial={{ opacity: 0, scale: 0.95 }}
+      animate={{ opacity: 1, scale: 1 }}
+      transition={{ delay: 0.4 }}
+      className="bg-white backdrop-blur-sm rounded-2xl p-6 border-2 border-gray-200 shadow-xl"
+    >
+      <div className="flex items-center space-x-3 mb-6">
+        <div className="p-2 bg-green-50 rounded-lg">
+          <svg
+            className="w-6 h-6 text-green-900"
+            fill="none"
+            stroke="currentColor"
+            viewBox="0 0 24 24"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M12 6V4m0 2a2 2 0 100 4m0-4a2 2 0 110 4m-6 8a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4m6 6v10m6-2a2 2 0 100-4m0 4a2 2 0 110-4m0 4v2m0-6V4"
+            />
+          </svg>
+        </div>
+        <h3 className="text-lg font-bold text-green-900">
           Manual Control Panel
         </h3>
       </div>
@@ -33,28 +41,34 @@ export default function ControlPanel() {
       <div className="space-y-6">
         {/* System Mode */}
         <div>
-          <label className="block text-sm font-medium text-gray-700 mb-3">
+          <label className="block text-sm font-bold text-slate-300 mb-3 uppercase tracking-wide">
             System Mode
           </label>
           <div className="flex space-x-3">
             {(["AUTO", "MANUAL"] as const).map((mode) => (
-              <button
+              <motion.button
                 key={mode}
                 onClick={() => setControls({ ...controls, systemMode: mode })}
-                className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${
+                whileHover={{ scale: 1.03 }}
+                whileTap={{ scale: 0.97 }}
+                className={`flex-1 py-3 px-4 rounded-xl font-bold text-sm transition-all ${
                   controls.systemMode === mode
-                    ? "bg-indigo-600 text-white shadow-md"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "bg-green-900 text-white shadow-lg"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-200"
                 }`}
               >
                 {mode}
-              </button>
+              </motion.button>
             ))}
           </div>
           {controls.systemMode === "AUTO" && (
-            <p className="mt-2 text-xs text-gray-500">
-              AI will control devices based on sensor data
-            </p>
+            <motion.p
+              initial={{ opacity: 0, y: -10 }}
+              animate={{ opacity: 1, y: 0 }}
+              className="mt-3 text-xs text-green-900 font-medium bg-green-50 p-2 rounded-lg"
+            >
+              🤖 AI will control devices based on sensor data
+            </motion.p>
           )}
         </div>
 
@@ -62,26 +76,28 @@ export default function ControlPanel() {
         <div
           className={
             controls.systemMode === "AUTO"
-              ? "opacity-50 pointer-events-none"
+              ? "opacity-40 pointer-events-none"
               : ""
           }
         >
-          <label className="block text-sm font-medium text-gray-700 mb-3">
+          <label className="block text-sm font-bold text-gray-800 mb-3 uppercase tracking-wide">
             Fan Control
           </label>
           <div className="grid grid-cols-3 gap-3">
             {(["ON", "OFF", "AUTO"] as const).map((mode) => (
-              <button
+              <motion.button
                 key={mode}
                 onClick={() => setControls({ ...controls, fanMode: mode })}
-                className={`py-2.5 px-4 rounded-lg font-medium text-sm transition-all ${
+                whileHover={{ scale: 1.05 }}
+                whileTap={{ scale: 0.95 }}
+                className={`py-3 px-4 rounded-xl font-bold text-sm transition-all ${
                   controls.fanMode === mode
-                    ? "bg-green-600 text-white shadow-md"
-                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
+                    ? "bg-blue-700 text-white shadow-lg"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200 border-2 border-gray-200"
                 }`}
               >
                 {mode}
-              </button>
+              </motion.button>
             ))}
           </div>
         </div>
@@ -90,17 +106,22 @@ export default function ControlPanel() {
         <div
           className={
             controls.systemMode === "AUTO"
-              ? "opacity-50 pointer-events-none"
+              ? "opacity-40 pointer-events-none"
               : ""
           }
         >
           <div className="flex items-center justify-between mb-3">
-            <label className="block text-sm font-medium text-gray-700">
+            <label className="block text-sm font-bold text-gray-800 uppercase tracking-wide">
               AC Temperature
             </label>
-            <span className="text-2xl font-bold text-blue-600">
+            <motion.span
+              key={controls.acTemperature}
+              initial={{ scale: 1.2 }}
+              animate={{ scale: 1 }}
+              className="text-3xl font-bold text-blue-700"
+            >
               {controls.acTemperature}°C
-            </span>
+            </motion.span>
           </div>
           <input
             type="range"
@@ -113,29 +134,40 @@ export default function ControlPanel() {
                 acTemperature: parseInt(e.target.value),
               })
             }
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer accent-blue-600"
+            className="w-full h-3 bg-gray-200 rounded-full appearance-none cursor-pointer accent-blue-700"
+            style={{
+              background: `linear-gradient(to right, rgb(37, 99, 235) 0%, rgb(37, 99, 235) ${
+                ((controls.acTemperature - 16) / 14) * 100
+              }%, rgb(226, 232, 240) ${
+                ((controls.acTemperature - 16) / 14) * 100
+              }%, rgb(226, 232, 240) 100%)`,
+            }}
           />
-          <div className="flex justify-between text-xs text-gray-500 mt-2">
-            <span>16°C</span>
-            <span>30°C</span>
+          <div className="flex justify-between text-xs text-gray-500 font-semibold mt-2">
+            <span>❄️ 16°C</span>
+            <span>🔥 30°C</span>
           </div>
         </div>
 
         {/* Status Indicator */}
-        <div className="pt-4 border-t border-gray-200">
-          <div className="flex items-center justify-between text-sm">
-            <span className="text-gray-600">Current Status:</span>
+        <div className="pt-4 border-t-2 border-gray-200">
+          <div className="flex items-center justify-between text-sm bg-gray-50 p-3 rounded-lg">
+            <span className="text-gray-700 font-semibold">Current Status:</span>
             <div className="flex items-center space-x-2">
-              <div className="w-2 h-2 rounded-full bg-green-500" />
-              <span className="font-medium text-gray-900">
+              <motion.div
+                animate={{ scale: [1, 1.2, 1] }}
+                transition={{ duration: 2, repeat: Infinity }}
+                className="w-2.5 h-2.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50"
+              />
+              <span className="font-bold text-gray-900">
                 {controls.systemMode === "AUTO"
-                  ? "Auto Mode Active"
-                  : "Manual Override Active"}
+                  ? "🤖 Auto Mode"
+                  : "👤 Manual Override"}
               </span>
             </div>
           </div>
         </div>
       </div>
-    </div>
+    </motion.div>
   );
 }

@@ -1,8 +1,9 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { useEffect, useState, useRef } from "react";
 import { ref, onValue } from "firebase/database";
 import { db } from "@/lib/firebase";
+import { motion } from "framer-motion";
 import Header from "@/components/Header";
 import SensorStatusCard from "@/components/SensorStatusCard";
 import EnvironmentSummary from "@/components/EnvironmentSummary";
@@ -13,7 +14,7 @@ import Footer from "@/components/Footer";
 
 export default function Home() {
   const [data, setData] = useState<SensorData | null>(null);
-  const [isOnline, setIsOnline] = useState(true);
+  const [isOnline, setIsOnline] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const [historicalTemp, setHistoricalTemp] = useState<HistoricalDataPoint[]>(
     []
@@ -21,6 +22,9 @@ export default function Home() {
   const [historicalHumidity, setHistoricalHumidity] = useState<
     HistoricalDataPoint[]
   >([]);
+  const lastDataHash = useRef<string>("");
+  const connectionTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
+  const lastUpdateTimeRef = useRef<number>(0);
 
   useEffect(() => {
     const liveRef = ref(db, "ecotrack/data");
@@ -37,25 +41,52 @@ export default function Home() {
             motion: val.motion || false,
             timestamp: Date.now(),
           };
-          setData(newData);
-          setIsOnline(true);
-          setLastUpdated(Date.now());
 
-          // Add to historical data (keep last 100 points)
-          setHistoricalTemp((prev) => {
-            const updated = [
-              ...prev,
-              { timestamp: Date.now(), value: newData.temperature },
-            ];
-            return updated.slice(-100);
+          // Round values to avoid floating point comparison issues
+          const dataHash = JSON.stringify({
+            temp: Math.round(newData.temperature * 10) / 10,
+            hum: Math.round(newData.humidity * 10) / 10,
+            light: Math.round(newData.light),
+            motion: newData.motion,
           });
-          setHistoricalHumidity((prev) => {
-            const updated = [
-              ...prev,
-              { timestamp: Date.now(), value: newData.humidity },
-            ];
-            return updated.slice(-100);
-          });
+
+          // Only update if data changed AND at least 2 seconds have passed (debounce)
+          const now = Date.now();
+          if (
+            dataHash !== lastDataHash.current &&
+            now - lastUpdateTimeRef.current > 2000
+          ) {
+            lastDataHash.current = dataHash;
+            lastUpdateTimeRef.current = now;
+            setIsOnline(true);
+            setLastUpdated(now);
+
+            // Add to historical data only when data changes
+            setHistoricalTemp((prev) => {
+              const updated = [
+                ...prev,
+                { timestamp: now, value: newData.temperature },
+              ];
+              return updated.slice(-100);
+            });
+            setHistoricalHumidity((prev) => {
+              const updated = [
+                ...prev,
+                { timestamp: now, value: newData.humidity },
+              ];
+              return updated.slice(-100);
+            });
+
+            // Reset connection timeout - mark offline after 10 seconds of no changes
+            if (connectionTimeoutRef.current) {
+              clearTimeout(connectionTimeoutRef.current);
+            }
+            connectionTimeoutRef.current = setTimeout(() => {
+              setIsOnline(false);
+            }, 10000);
+          }
+
+          setData(newData);
         }
       },
       (error) => {
@@ -64,18 +95,13 @@ export default function Home() {
       }
     );
 
-    // Check for stale data every 30 seconds
-    const statusInterval = setInterval(() => {
-      if (lastUpdated && Date.now() - lastUpdated > 60000) {
-        setIsOnline(false);
-      }
-    }, 30000);
-
     return () => {
       unsubscribe();
-      clearInterval(statusInterval);
+      if (connectionTimeoutRef.current) {
+        clearTimeout(connectionTimeoutRef.current);
+      }
     };
-  }, [lastUpdated]);
+  }, []);
 
   const getTemperatureStatus = (
     temp: number
@@ -94,31 +120,55 @@ export default function Home() {
   };
 
   const getLightStatus = (light: number): "normal" | "warning" | "critical" => {
-    if (light < 10) return "critical";
-    if (light < 20) return "warning";
-    return "normal";
+    if (light > 90) return "critical"; // Very dark
+    if (light > 80) return "warning"; // Dark
+    return "normal"; // Well lit
   };
 
   return (
     <>
       <Header isOnline={isOnline} />
 
-      <main className="min-h-screen bg-linear-to-br from-gray-50 to-gray-100 pt-20 pb-8">
+      <main className="min-h-screen bg-gray-100 pt-20 pb-8">
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {!data ? (
-            <div className="flex items-center justify-center h-[60vh]">
+            <motion.div
+              initial={{ opacity: 0 }}
+              animate={{ opacity: 1 }}
+              className="flex items-center justify-center h-[60vh]"
+            >
               <div className="text-center">
-                <div className="inline-block animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600 mb-4"></div>
-                <p className="text-gray-600 text-lg">Loading sensor data...</p>
+                <motion.div
+                  animate={{ rotate: 360 }}
+                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
+                  className="inline-block rounded-full h-16 w-16 border-4 border-gray-200 border-t-blue-700 mb-4"
+                ></motion.div>
+                <motion.p
+                  initial={{ opacity: 0, y: 10 }}
+                  animate={{ opacity: 1, y: 0 }}
+                  transition={{ delay: 0.2 }}
+                  className="text-gray-800 text-lg font-medium"
+                >
+                  Connecting to sensors...
+                </motion.p>
               </div>
-            </div>
+            </motion.div>
           ) : (
-            <div className="space-y-8">
+            <motion.div
+              initial={{ opacity: 0, y: 20 }}
+              animate={{ opacity: 1, y: 0 }}
+              transition={{ duration: 0.5 }}
+              className="space-y-8"
+            >
               {/* Live Sensor Status Cards */}
               <section>
-                <h2 className="text-2xl font-bold text-gray-900 mb-4">
+                <motion.h2
+                  initial={{ opacity: 0, x: -20 }}
+                  animate={{ opacity: 1, x: 0 }}
+                  className="text-3xl font-bold text-green-900 mb-6"
+                >
                   Live Sensor Status
-                </h2>
+                </motion.h2>
                 <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
                   <SensorStatusCard
                     title="Temperature"
@@ -229,13 +279,13 @@ export default function Home() {
                   <ControlPanel />
                 </div>
               </section>
-
-              {/* Footer */}
-              <Footer lastUpdated={lastUpdated} isConnected={isOnline} />
-            </div>
+            </motion.div>
           )}
         </div>
       </main>
+
+      {/* Footer */}
+      <Footer lastUpdated={lastUpdated} isConnected={isOnline} />
     </>
   );
 }
