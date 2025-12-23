@@ -1,7 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
-
 interface AIRecommendationProps {
   data: SensorData | null;
 }
@@ -61,24 +59,12 @@ export default function AIRecommendation({ data }: AIRecommendationProps) {
   const recommendation = getRecommendation();
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.3 }}
-      className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border-l-4 border-green-900 shadow-xl"
-    >
-      <div className="flex items-start space-x-3 sm:space-x-4">
-        <motion.div
-          animate={{
-            rotate: [0, 5, -5, 0],
-            scale: [1, 1.05, 1],
-          }}
-          transition={{ duration: 4, repeat: Infinity }}
-          className="shrink-0"
-        >
-          <div className="w-12 h-12 sm:w-14 sm:h-14 bg-linear-to-br from-green-900 to-blue-700 rounded-xl sm:rounded-2xl flex items-center justify-center shadow-xl">
+    <div className="bg-white rounded-lg border-l-4 border-gray-800 border-t border-r border-b border-gray-200 p-3 xs:p-4 sm:p-5 md:p-6">
+      <div className="flex items-start space-x-2 xs:space-x-3 sm:space-x-4">
+        <div className="shrink-0">
+          <div className="w-10 h-10 xs:w-12 xs:h-12 sm:w-14 sm:h-14 md:w-16 md:h-16 bg-gray-800 rounded-lg flex items-center justify-center">
             <svg
-              className="w-6 h-6 sm:w-8 sm:h-8 text-white"
+              className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 md:w-9 md:h-9 text-white"
               fill="none"
               stroke="currentColor"
               viewBox="0 0 24 24"
@@ -91,30 +77,27 @@ export default function AIRecommendation({ data }: AIRecommendationProps) {
               />
             </svg>
           </div>
-        </motion.div>
+        </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-sm sm:text-base md:text-lg font-bold text-green-900 mb-2 sm:mb-3 uppercase tracking-wide">
-            🤖 AI Insight
-          </h3>
-          <motion.p
-            key={recommendation.action}
-            initial={{ opacity: 0, x: -10 }}
-            animate={{ opacity: 1, x: 0 }}
-            className="text-lg sm:text-xl md:text-2xl font-bold text-gray-800 mb-3 sm:mb-4 wrap-break-word"
-          >
+          <div className="flex items-center gap-1.5 xs:gap-2 mb-1.5 xs:mb-2 sm:mb-3">
+            <h3 className="text-xs xs:text-sm sm:text-base md:text-lg font-semibold text-gray-900 uppercase tracking-wide">
+              AI Recommendation
+            </h3>
+            <span className="px-1.5 xs:px-2 py-0.5 xs:py-1 bg-gray-100 text-gray-600 text-[9px] xs:text-xs font-medium rounded-md">
+              LIVE
+            </span>
+          </div>
+          <p className="text-sm xs:text-base sm:text-lg md:text-xl lg:text-2xl font-semibold text-gray-900 mb-2 xs:mb-3 sm:mb-4 wrap-break-word">
             {recommendation.action}
-          </motion.p>
-          <div className="space-y-2 sm:space-y-3">
+          </p>
+          <div className="space-y-1.5 xs:space-y-2 sm:space-y-3">
             {recommendation.reasoning.map((reason, index) => (
-              <motion.div
+              <div
                 key={index}
-                initial={{ opacity: 0, x: -20 }}
-                animate={{ opacity: 1, x: 0 }}
-                transition={{ delay: 0.1 * index }}
-                className="flex items-start space-x-2 sm:space-x-3 bg-gray-50 p-2.5 sm:p-3 rounded-lg"
+                className="flex items-start space-x-1.5 xs:space-x-2 sm:space-x-3 bg-gray-50 p-2 xs:p-2.5 sm:p-3 rounded-md"
               >
                 <svg
-                  className="w-4 h-4 sm:w-5 sm:h-5 text-blue-700 shrink-0 mt-0.5"
+                  className="w-3 h-3 xs:w-4 xs:h-4 sm:w-5 sm:h-5 text-gray-600 shrink-0 mt-0.5"
                   fill="currentColor"
                   viewBox="0 0 20 20"
                 >
@@ -124,14 +107,14 @@ export default function AIRecommendation({ data }: AIRecommendationProps) {
                     clipRule="evenodd"
                   />
                 </svg>
-                <p className="text-xs sm:text-sm text-gray-700 font-medium wrap-break-word">
+                <p className="text-xs sm:text-sm text-gray-600 font-medium wrap-break-word">
                   {reason}
                 </p>
-              </motion.div>
+              </div>
             ))}
           </div>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

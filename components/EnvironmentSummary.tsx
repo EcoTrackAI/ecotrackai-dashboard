@@ -1,7 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
-
 interface EnvironmentSummaryProps {
   data: SensorData | null;
 }
@@ -36,20 +34,11 @@ export default function EnvironmentSummary({ data }: EnvironmentSummaryProps) {
   const summary = `The room is ${tempStatus} and ${occupancyStatus} with ${lightStatus} lighting. The humidity level is ${humidityStatus}.`;
 
   return (
-    <motion.div
-      initial={{ opacity: 0, y: 20 }}
-      animate={{ opacity: 1, y: 0 }}
-      transition={{ delay: 0.2 }}
-      className="bg-white rounded-xl sm:rounded-2xl p-4 sm:p-5 md:p-6 border-2 border-gray-200 shadow-lg"
-    >
-      <div className="flex items-start space-x-3 sm:space-x-4">
-        <motion.div
-          animate={{ rotate: [0, 10, -10, 0] }}
-          transition={{ duration: 3, repeat: Infinity }}
-          className="shrink-0 mt-1 p-1.5 sm:p-2 bg-blue-50 rounded-lg shadow-md"
-        >
+    <div className="bg-white rounded-lg border border-gray-200 p-3 xs:p-4 sm:p-5 md:p-6">
+      <div className="flex items-start space-x-2 xs:space-x-3 sm:space-x-4">
+        <div className="shrink-0 mt-0.5 xs:mt-1 p-1.5 xs:p-2 sm:p-2.5 bg-gray-100 rounded-md">
           <svg
-            className="w-5 h-5 sm:w-6 sm:h-6 text-blue-700"
+            className="w-5 h-5 xs:w-6 xs:h-6 sm:w-7 sm:h-7 text-gray-700"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -61,16 +50,21 @@ export default function EnvironmentSummary({ data }: EnvironmentSummaryProps) {
               d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-        </motion.div>
+        </div>
         <div className="flex-1 min-w-0">
-          <h3 className="text-xs sm:text-sm font-bold text-gray-800 mb-1.5 sm:mb-2 uppercase tracking-wide">
-            Environment Summary
-          </h3>
-          <p className="text-gray-700 leading-relaxed font-medium text-sm sm:text-base">
+          <div className="flex items-center gap-1.5 xs:gap-2 mb-1.5 xs:mb-2 sm:mb-2.5">
+            <h3 className="text-[10px] xs:text-xs sm:text-sm font-semibold text-gray-900 uppercase tracking-wide">
+              Environment Status
+            </h3>
+            <span className="px-1.5 xs:px-2 py-0.5 xs:py-1 bg-gray-100 text-gray-600 text-[9px] xs:text-xs font-medium rounded-md">
+              AUTO
+            </span>
+          </div>
+          <p className="text-xs xs:text-sm sm:text-base text-gray-600 leading-relaxed">
             {summary}
           </p>
         </div>
       </div>
-    </motion.div>
+    </div>
   );
 }

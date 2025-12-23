@@ -3,7 +3,6 @@
 import { useEffect, useState, useRef } from "react";
 import { ref, onValue } from "firebase/database";
 import { db } from "@/lib/firebase";
-import { motion } from "framer-motion";
 import Header from "@/components/Header";
 import SensorStatusCard from "@/components/SensorStatusCard";
 import EnvironmentSummary from "@/components/EnvironmentSummary";
@@ -22,6 +21,9 @@ export default function Home() {
   const [historicalHumidity, setHistoricalHumidity] = useState<
     HistoricalDataPoint[]
   >([]);
+  const [historicalLight, setHistoricalLight] = useState<HistoricalDataPoint[]>(
+    []
+  );
   const lastDataHash = useRef<string>("");
   const connectionTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
   const lastUpdateTimeRef = useRef<number>(0);
@@ -73,6 +75,13 @@ export default function Home() {
               const updated = [
                 ...prev,
                 { timestamp: now, value: newData.humidity },
+              ];
+              return updated.slice(-100);
+            });
+            setHistoricalLight((prev) => {
+              const updated = [
+                ...prev,
+                { timestamp: now, value: newData.light },
               ];
               return updated.slice(-100);
             });
@@ -129,47 +138,34 @@ export default function Home() {
     <>
       <Header isOnline={isOnline} />
 
-      <main className="min-h-screen bg-gray-100 pt-16 sm:pt-20 pb-4 sm:pb-8">
-        <div className="max-w-7xl mx-auto px-3 sm:px-4 md:px-6 lg:px-8">
+      <main className="min-h-screen bg-gray-50 pt-14 sm:pt-16 md:pt-18 lg:pt-20 pb-4 sm:pb-6 md:pb-8">
+        <div className="max-w-480 mx-auto px-2 xs:px-3 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-16">
           {!data ? (
-            <motion.div
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="flex items-center justify-center h-[60vh]"
-            >
+            <div className="flex items-center justify-center h-[60vh]">
               <div className="text-center">
-                <motion.div
-                  animate={{ rotate: 360 }}
-                  transition={{ duration: 1, repeat: Infinity, ease: "linear" }}
-                  className="inline-block rounded-full h-16 w-16 border-4 border-gray-200 border-t-blue-700 mb-4"
-                ></motion.div>
-                <motion.p
-                  initial={{ opacity: 0, y: 10 }}
-                  animate={{ opacity: 1, y: 0 }}
-                  transition={{ delay: 0.2 }}
-                  className="text-gray-800 text-lg font-medium"
-                >
+                <div className="inline-block rounded-full h-16 w-16 border-4 border-gray-200 border-t-gray-800 mb-4 animate-spin"></div>
+                <p className="text-gray-700 text-lg font-medium">
                   Connecting to sensors...
-                </motion.p>
+                </p>
               </div>
-            </motion.div>
+            </div>
           ) : (
-            <motion.div
-              initial={{ opacity: 0, y: 20 }}
-              animate={{ opacity: 1, y: 0 }}
-              transition={{ duration: 0.5 }}
-              className="space-y-8"
-            >
-              {/* Live Sensor Status Cards */}
-              <section>
-                <motion.h2
-                  initial={{ opacity: 0, x: -20 }}
-                  animate={{ opacity: 1, x: 0 }}
-                  className="text-xl sm:text-2xl md:text-3xl font-bold text-green-900 mb-4 sm:mb-6"
-                >
-                  Live Sensor Status
-                </motion.h2>
-                <div className="grid grid-cols-1 min-[480px]:grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
+            <div className="space-y-6">
+              {/* Live Sensor Status Cards - Compact Top Section */}
+              <section className="animate-fadeIn">
+                <div className="flex items-center justify-between mb-4">
+                  <h2 className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold text-gray-900 flex items-center gap-1.5 sm:gap-2">
+                    <span className="w-0.5 sm:w-1 h-6 sm:h-8 bg-gray-800 rounded-full"></span>
+                    <span className="truncate">Live Sensor Data</span>
+                  </h2>
+                  <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600">
+                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full"></div>
+                    <span className="hidden xs:inline whitespace-nowrap">
+                      Real-time
+                    </span>
+                  </div>
+                </div>
+                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 xs:gap-3 sm:gap-4 md:gap-5">
                   <SensorStatusCard
                     title="Temperature"
                     value={data.temperature}
@@ -257,29 +253,38 @@ export default function Home() {
                 </div>
               </section>
 
-              {/* Environment Summary */}
-              <section>
-                <EnvironmentSummary data={data} />
+              {/* Insights Section - 2 Column Grid */}
+              <section className="grid grid-cols-1 md:grid-cols-2 gap-3 xs:gap-4 sm:gap-5 md:gap-6">
+                {/* AI Recommendation */}
+                <div className="lg:order-1">
+                  <AIRecommendation data={data} />
+                </div>
+
+                {/* Environment Summary */}
+                <div className="lg:order-2">
+                  <EnvironmentSummary data={data} />
+                </div>
               </section>
 
-              {/* AI Recommendation Section */}
-              <section>
-                <AIRecommendation data={data} />
-              </section>
-
-              {/* Charts & Control Panel */}
-              <section className="grid grid-cols-1 xl:grid-cols-3 gap-4 sm:gap-6">
-                <div className="xl:col-span-2">
+              {/* Main Dashboard Grid - Charts and Control Panel */}
+              <section className="grid grid-cols-1 xl:grid-cols-3 2xl:grid-cols-4 gap-3 xs:gap-4 sm:gap-5 md:gap-6">
+                {/* Charts Section - Takes 3 columns on 2xl screens */}
+                <div className="xl:col-span-2 2xl:col-span-3">
                   <Charts
                     temperatureData={historicalTemp}
                     humidityData={historicalHumidity}
+                    lightData={historicalLight}
                   />
                 </div>
-                <div className="xl:col-span-1">
-                  <ControlPanel />
+
+                {/* Control Panel - Takes 1 column on 2xl screens */}
+                <div className="xl:col-span-1 2xl:col-span-1">
+                  <div className="xl:sticky xl:top-24">
+                    <ControlPanel />
+                  </div>
                 </div>
               </section>
-            </motion.div>
+            </div>
           )}
         </div>
       </main>
