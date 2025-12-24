@@ -1,2 +1,2 @@
-export { AutomationActivityItem } from './AutomationActivityItem';
-export type { AutomationActivityItemProps, ActivityStatus } from './AutomationActivityItem';
+export { AutomationActivityItem } from "./AutomationActivityItem";
+export type { AutomationActivityItemProps } from "./AutomationActivityItem";
