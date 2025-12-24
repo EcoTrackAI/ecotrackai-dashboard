@@ -10,11 +10,11 @@ export default function ControlPanel() {
   });
 
   return (
-    <div className="bg-white rounded-lg border border-gray-200 p-3 xs:p-4 sm:p-5 md:p-6">
-      <div className="flex items-center space-x-1.5 xs:space-x-2 sm:space-x-3 mb-3 xs:mb-4 sm:mb-6">
-        <div className="p-1.5 xs:p-2 bg-gray-100 rounded-md">
+    <div className="bg-white rounded-lg border border-gray-200 p-5 sm:p-6 transition-all duration-200 hover:shadow-md animate-fadeIn">
+      <div className="flex items-center space-x-2 mb-5">
+        <div className="text-gray-600">
           <svg
-            className="w-4 h-4 xs:w-5 xs:h-5 sm:w-6 sm:h-6 text-gray-700"
+            className="w-6 h-6"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -28,33 +28,30 @@ export default function ControlPanel() {
           </svg>
         </div>
         <div className="min-w-0 flex-1">
-          <h3 className="text-sm xs:text-base sm:text-lg font-semibold text-gray-900 truncate">
+          <h3 className="text-base font-semibold text-gray-900 truncate">
             Manual Controls
           </h3>
-          <p className="text-[10px] xs:text-xs text-gray-500 truncate">
+          <p className="text-xs text-gray-500 truncate">
             Override automatic settings
           </p>
         </div>
       </div>
 
-      <div className="space-y-3 xs:space-y-4 sm:space-y-6">
+      <div className="space-y-5">
         {/* System Mode */}
         <div>
-          <label className="flex items-center gap-1.5 xs:gap-2 text-[10px] xs:text-xs sm:text-sm font-semibold text-gray-700 mb-1.5 xs:mb-2 sm:mb-3 uppercase tracking-wide">
+          <label className="flex items-center gap-2 text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
             System Mode
-            <span className="text-[9px] xs:text-xs normal-case text-gray-500 font-normal hidden xs:inline">
-              (Auto/Manual)
-            </span>
           </label>
-          <div className="flex space-x-1.5 xs:space-x-2 sm:space-x-3">
+          <div className="flex space-x-2">
             {(["AUTO", "MANUAL"] as const).map((mode) => (
               <button
                 key={mode}
                 onClick={() => setControls({ ...controls, systemMode: mode })}
-                className={`flex-1 py-2 sm:py-3 px-3 sm:px-4 rounded-md font-medium text-xs sm:text-sm transition-colors border ${
+                className={`flex-1 py-2.5 px-4 rounded-lg font-medium text-sm transition-all duration-200 ${
                   controls.systemMode === mode
-                    ? "bg-gray-800 text-white border-gray-800"
-                    : "bg-white text-gray-700 hover:bg-gray-50 border-gray-300"
+                    ? "bg-slate-900 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
                 {mode}
@@ -62,7 +59,7 @@ export default function ControlPanel() {
             ))}
           </div>
           {controls.systemMode === "AUTO" && (
-            <p className="mt-2 sm:mt-3 text-[10px] sm:text-xs text-gray-700 font-medium bg-gray-50 p-2 rounded-md">
+            <p className="mt-2 text-xs text-gray-600 bg-blue-50 p-2.5 rounded-lg border border-blue-100">
               🤖 AI controlling devices based on sensor data
             </p>
           )}
@@ -76,18 +73,18 @@ export default function ControlPanel() {
               : ""
           }
         >
-          <label className="block text-[10px] xs:text-xs sm:text-sm font-semibold text-gray-800 mb-1.5 xs:mb-2 sm:mb-3 uppercase tracking-wide">
+          <label className="block text-xs font-semibold text-gray-700 mb-2 uppercase tracking-wide">
             Fan Control
           </label>
-          <div className="grid grid-cols-3 gap-1.5 xs:gap-2 sm:gap-3">
+          <div className="grid grid-cols-3 gap-2">
             {(["ON", "OFF", "AUTO"] as const).map((mode) => (
               <button
                 key={mode}
                 onClick={() => setControls({ ...controls, fanMode: mode })}
-                className={`py-1.5 xs:py-2 sm:py-3 px-1.5 xs:px-2 sm:px-4 rounded-md font-medium text-[10px] xs:text-xs sm:text-sm transition-colors border ${
+                className={`py-2.5 px-3 rounded-lg font-medium text-sm transition-all duration-200 ${
                   controls.fanMode === mode
-                    ? "bg-gray-800 text-white border-gray-800"
-                    : "bg-white text-gray-700 hover:bg-gray-50 border-gray-300"
+                    ? "bg-slate-900 text-white"
+                    : "bg-gray-100 text-gray-700 hover:bg-gray-200"
                 }`}
               >
                 {mode}
@@ -104,11 +101,11 @@ export default function ControlPanel() {
               : ""
           }
         >
-          <div className="flex items-center justify-between mb-1.5 xs:mb-2 sm:mb-3">
-            <label className="block text-[10px] xs:text-xs sm:text-sm font-semibold text-gray-900 uppercase tracking-wide">
+          <div className="flex items-center justify-between mb-2">
+            <label className="block text-xs font-semibold text-gray-700 uppercase tracking-wide">
               AC Temperature
             </label>
-            <span className="text-xl xs:text-2xl sm:text-3xl font-semibold text-gray-900">
+            <span className="text-2xl font-semibold text-gray-900">
               {controls.acTemperature}°C
             </span>
           </div>
@@ -123,30 +120,30 @@ export default function ControlPanel() {
                 acTemperature: parseInt(e.target.value),
               })
             }
-            className="w-full h-2.5 sm:h-3 bg-gray-200 rounded-full appearance-none cursor-pointer accent-gray-800"
+            className="w-full h-2 bg-gray-200 rounded-full appearance-none cursor-pointer"
             style={{
-              background: `linear-gradient(to right, rgb(31, 41, 55) 0%, rgb(31, 41, 55) ${
+              background: `linear-gradient(to right, rgb(15, 23, 42) 0%, rgb(15, 23, 42) ${
                 ((controls.acTemperature - 16) / 14) * 100
-              }%, rgb(226, 232, 240) ${
+              }%, rgb(229, 231, 235) ${
                 ((controls.acTemperature - 16) / 14) * 100
-              }%, rgb(226, 232, 240) 100%)`,
+              }%, rgb(229, 231, 235) 100%)`,
             }}
           />
-          <div className="flex justify-between text-[10px] sm:text-xs text-gray-500 font-medium mt-1.5 sm:mt-2">
+          <div className="flex justify-between text-xs text-gray-500 mt-2">
             <span>❄️ 16°C</span>
             <span>🔥 30°C</span>
           </div>
         </div>
 
         {/* Status Indicator */}
-        <div className="pt-2 xs:pt-3 sm:pt-4 border-t-2 border-gray-200">
-          <div className="flex items-center justify-between text-[10px] xs:text-xs sm:text-sm bg-gray-50 p-2 xs:p-2.5 sm:p-3 rounded-lg">
-            <span className="text-gray-700 font-semibold truncate">
+        <div className="pt-4 border-t border-gray-200">
+          <div className="flex items-center justify-between text-xs bg-gray-50 p-3 rounded-lg">
+            <span className="text-gray-600 font-medium truncate">
               Current Status:
             </span>
-            <div className="flex items-center space-x-1 xs:space-x-1.5 sm:space-x-2 shrink-0">
-              <div className="w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full bg-emerald-500 shadow-lg shadow-emerald-500/50 animate-pulse" />
-              <span className="font-bold text-gray-900 text-[9px] xs:text-[10px] sm:text-xs truncate">
+            <div className="flex items-center space-x-1.5 shrink-0">
+              <div className="w-2 h-2 rounded-full bg-emerald-500 animate-pulse-subtle" />
+              <span className="font-semibold text-gray-900 text-xs truncate">
                 {controls.systemMode === "AUTO"
                   ? "🤖 Auto Mode"
                   : "👤 Manual Override"}

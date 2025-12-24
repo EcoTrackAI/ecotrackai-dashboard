@@ -138,34 +138,37 @@ export default function Home() {
     <>
       <Header isOnline={isOnline} />
 
-      <main className="min-h-screen bg-gray-50 pt-14 sm:pt-16 md:pt-18 lg:pt-20 pb-4 sm:pb-6 md:pb-8">
-        <div className="max-w-480 mx-auto px-2 xs:px-3 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-16">
+      <main className="min-h-screen bg-gray-50 pt-16 pb-6">
+        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
           {!data ? (
-            <div className="flex items-center justify-center h-[60vh]">
+            <div className="flex items-center justify-center h-[60vh] animate-fadeIn">
               <div className="text-center">
-                <div className="inline-block rounded-full h-16 w-16 border-4 border-gray-200 border-t-gray-800 mb-4 animate-spin"></div>
-                <p className="text-gray-700 text-lg font-medium">
+                <div className="inline-block rounded-full h-12 w-12 border-3 border-gray-200 border-t-blue-600 mb-4 animate-spin"></div>
+                <p className="text-gray-700 text-base font-medium">
                   Connecting to sensors...
+                </p>
+                <p className="text-gray-500 text-sm mt-1">
+                  Please wait
                 </p>
               </div>
             </div>
           ) : (
             <div className="space-y-6">
-              {/* Live Sensor Status Cards - Compact Top Section */}
+              {/* Live Sensor Status Cards */}
               <section className="animate-fadeIn">
                 <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-base xs:text-lg sm:text-xl md:text-2xl lg:text-3xl font-semibold text-gray-900 flex items-center gap-1.5 sm:gap-2">
-                    <span className="w-0.5 sm:w-1 h-6 sm:h-8 bg-gray-800 rounded-full"></span>
+                  <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 flex items-center gap-2">
+                    <span className="w-1 h-7 bg-blue-600 rounded-full"></span>
                     <span className="truncate">Live Sensor Data</span>
                   </h2>
-                  <div className="flex items-center gap-1.5 sm:gap-2 text-xs sm:text-sm text-gray-600">
-                    <div className="w-1.5 h-1.5 sm:w-2 sm:h-2 bg-gray-400 rounded-full"></div>
-                    <span className="hidden xs:inline whitespace-nowrap">
+                  <div className="flex items-center gap-2 text-xs text-gray-600">
+                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse-subtle"></div>
+                    <span className="hidden xs:inline whitespace-nowrap font-medium">
                       Real-time
                     </span>
                   </div>
                 </div>
-                <div className="grid grid-cols-2 sm:grid-cols-2 lg:grid-cols-4 gap-2 xs:gap-3 sm:gap-4 md:gap-5">
+                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
                   <SensorStatusCard
                     title="Temperature"
                     value={data.temperature}
@@ -173,7 +176,7 @@ export default function Home() {
                     status={getTemperatureStatus(data.temperature)}
                     icon={
                       <svg
-                        className="w-6 h-6"
+                        className="w-5 h-5"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -194,7 +197,7 @@ export default function Home() {
                     status={getHumidityStatus(data.humidity)}
                     icon={
                       <svg
-                        className="w-6 h-6"
+                        className="w-5 h-5"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -215,7 +218,7 @@ export default function Home() {
                     status={getLightStatus(data.light)}
                     icon={
                       <svg
-                        className="w-6 h-6"
+                        className="w-5 h-5"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -236,7 +239,7 @@ export default function Home() {
                     status={data.motion ? "normal" : "warning"}
                     icon={
                       <svg
-                        className="w-6 h-6"
+                        className="w-5 h-5"
                         fill="none"
                         stroke="currentColor"
                         viewBox="0 0 24 24"
@@ -253,32 +256,22 @@ export default function Home() {
                 </div>
               </section>
 
-              {/* Insights Section - 2 Column Grid */}
-              <section className="grid grid-cols-1 md:grid-cols-2 gap-3 xs:gap-4 sm:gap-5 md:gap-6">
-                {/* AI Recommendation */}
-                <div className="lg:order-1">
-                  <AIRecommendation data={data} />
-                </div>
-
-                {/* Environment Summary */}
-                <div className="lg:order-2">
-                  <EnvironmentSummary data={data} />
-                </div>
+              {/* Insights Section */}
+              <section className="grid grid-cols-1 md:grid-cols-2 gap-5 animate-fadeIn">
+                <AIRecommendation data={data} />
+                <EnvironmentSummary data={data} />
               </section>
 
-              {/* Main Dashboard Grid - Charts and Control Panel */}
-              <section className="grid grid-cols-1 xl:grid-cols-3 2xl:grid-cols-4 gap-3 xs:gap-4 sm:gap-5 md:gap-6">
-                {/* Charts Section - Takes 3 columns on 2xl screens */}
-                <div className="xl:col-span-2 2xl:col-span-3">
+              {/* Main Dashboard Grid */}
+              <section className="grid grid-cols-1 xl:grid-cols-3 gap-5 animate-fadeIn">
+                <div className="xl:col-span-2">
                   <Charts
                     temperatureData={historicalTemp}
                     humidityData={historicalHumidity}
                     lightData={historicalLight}
                   />
                 </div>
-
-                {/* Control Panel - Takes 1 column on 2xl screens */}
-                <div className="xl:col-span-1 2xl:col-span-1">
+                <div className="xl:col-span-1">
                   <div className="xl:sticky xl:top-24">
                     <ControlPanel />
                   </div>

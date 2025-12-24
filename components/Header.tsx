@@ -8,42 +8,42 @@ interface HeaderProps {
 
 export default function Header({ isOnline }: HeaderProps) {
   return (
-    <header className="fixed top-0 left-0 right-0 z-50 bg-white border-b border-gray-200 shadow-sm">
-      <div className="max-w-480 mx-auto px-3 sm:px-4 md:px-6 lg:px-8 xl:px-10 2xl:px-12">
-        <div className="flex items-center justify-between h-14 sm:h-16 md:h-18 lg:h-20">
-          <div className="flex items-center space-x-2 sm:space-x-3 md:space-x-4">
-            <div className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 md:w-14 md:h-14 bg-gray-800 flex items-center justify-center rounded-lg">
+    <header className="fixed top-0 left-0 right-0 z-50 bg-white/80 backdrop-blur-sm border-b border-gray-200 animate-fadeIn">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
+        <div className="flex items-center justify-between h-16">
+          <div className="flex items-center space-x-3 animate-slideInRight">
+            <div className="w-10 h-10 sm:w-11 sm:h-11 bg-slate-900 flex items-center justify-center rounded-lg">
               <Image
                 src="/logo.png"
                 alt="EcoTrack AI Logo"
-                width={56}
-                height={56}
-                className="w-9 h-9 xs:w-10 xs:h-10 sm:w-12 sm:h-12 md:w-14 md:h-14"
+                width={44}
+                height={44}
+                className="w-10 h-10 sm:w-11 sm:h-11"
               />
             </div>
             <div className="min-w-0">
-              <h1 className="text-sm xs:text-base sm:text-lg md:text-xl lg:text-2xl font-semibold text-gray-900 truncate">
+              <h1 className="text-base sm:text-lg font-semibold text-gray-900 truncate">
                 EcoTrack AI
               </h1>
-              <p className="text-[9px] xs:text-[10px] sm:text-xs md:text-sm text-gray-500 hidden xs:block truncate">
-                Environment Monitoring System
+              <p className="text-xs text-gray-500 hidden sm:block truncate">
+                Environment Monitoring
               </p>
             </div>
           </div>
 
           <div className="flex items-center space-x-2 shrink-0">
             <div
-              className={`flex items-center space-x-1 xs:space-x-1.5 sm:space-x-2 px-2 xs:px-2.5 sm:px-3 md:px-4 py-1 xs:py-1.5 sm:py-2 rounded-md text-[10px] xs:text-xs sm:text-sm md:text-base font-medium border ${
+              className={`flex items-center space-x-1.5 px-3 py-1.5 rounded-full text-xs font-medium ${
                 isOnline
-                  ? "bg-gray-50 text-gray-900 border-gray-300"
-                  : "bg-gray-50 text-gray-600 border-gray-300"
+                  ? "bg-emerald-50 text-emerald-700"
+                  : "bg-gray-100 text-gray-600"
               }`}
             >
               <div
-                className={`w-1.5 h-1.5 xs:w-2 xs:h-2 sm:w-2.5 sm:h-2.5 rounded-full ${
+                className={`w-2 h-2 rounded-full ${
                   isOnline
-                    ? "bg-gray-400"
-                    : "bg-gray-600"
+                    ? "bg-emerald-500 animate-pulse-subtle"
+                    : "bg-gray-400"
                 }`}
               />
               <span className="hidden xs:inline whitespace-nowrap">
