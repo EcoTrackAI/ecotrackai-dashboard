@@ -2,6 +2,32 @@ This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-
 
 ## Getting Started
 
+### 1. Environment Setup
+
+Copy the example environment file and configure your variables:
+
+```bash
+cp .env.example .env.local
+```
+
+Edit `.env.local` with your configuration:
+
+- `NEXT_PUBLIC_APP_NAME`: Your application name
+- `NEXT_PUBLIC_APP_DESCRIPTION`: Your application description
+- Add Firebase and API credentials as needed
+
+### 2. Install Dependencies
+
+```bash
+npm install
+# or
+yarn install
+# or
+pnpm install
+```
+
+### 3. Run the Development Server
+
 First, run the development server:
 
 ```bash
