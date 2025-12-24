@@ -59,7 +59,7 @@ export default function AIRecommendation({ data }: AIRecommendationProps) {
   const recommendation = getRecommendation();
 
   return (
-    <div className="bg-white rounded-lg border-l-4 border-indigo-500 border-t border-r border-b border-gray-200 p-5 sm:p-6 transition-all duration-200 hover:shadow-md animate-scaleIn">
+    <div className="bg-white rounded-lg border-l-4 border-t border-r border-b border-gray-200 p-5 sm:p-6 transition-all duration-200 hover:shadow-md animate-scaleIn">
       <div className="flex items-start space-x-3">
         <div className="shrink-0">
           <div className="w-12 h-12 bg-indigo-600 rounded-lg flex items-center justify-center">
