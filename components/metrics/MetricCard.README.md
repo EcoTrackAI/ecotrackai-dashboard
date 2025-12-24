@@ -37,7 +37,7 @@ A reusable, accessible metric card component for the EcoTrack AI energy dashboar
 ### Basic Example
 
 ```tsx
-import { MetricCard } from "@/components/MetricCard";
+import { MetricCard } from "@/components/metrics";
 
 <MetricCard
   title="Current Power Usage"

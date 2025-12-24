@@ -1,6 +1,7 @@
-import { MetricCard } from "@/components/MetricCard";
-import { RoomStatusCard } from "@/components/RoomStatusCard";
-import { AutomationActivityItem } from "@/components/AutomationActivityItem";
+import { MetricCard } from "@/components/metrics";
+import { RoomStatusCard } from "@/components/rooms";
+import { AutomationActivityItem } from "@/components/automation";
+import { LiveSensorCard, SensorStatus } from "@/components/sensors";
 
 export default function Home() {
   // In production, this would come from Firebase/API
@@ -15,6 +16,88 @@ export default function Home() {
       monthlySavings: 248,
       savingsTrend: { direction: "up" as const, value: 15.7, isPositive: true },
     },
+    sensors: [
+      {
+        sensorName: "Living Room Temperature",
+        currentValue: 22.5,
+        unit: "°C",
+        status: "normal" as SensorStatus,
+        description: "Main living area",
+        lastUpdate: new Date(Date.now() - 45000), // 45 seconds ago
+      },
+      {
+        sensorName: "Bedroom Humidity",
+        currentValue: 68,
+        unit: "%",
+        status: "normal" as SensorStatus,
+        description: "Master bedroom",
+        lastUpdate: new Date(Date.now() - 30000), // 30 seconds ago
+      },
+      {
+        sensorName: "Total Power Consumption",
+        currentValue: 4.2,
+        unit: "kW",
+        status: "warning" as SensorStatus,
+        description: "Whole house",
+        lastUpdate: new Date(Date.now() - 15000), // 15 seconds ago
+      },
+      {
+        sensorName: "Kitchen Temperature",
+        currentValue: 23.8,
+        unit: "°C",
+        status: "normal" as SensorStatus,
+        description: "Kitchen area",
+        lastUpdate: new Date(Date.now() - 60000), // 1 minute ago
+      },
+      {
+        sensorName: "HVAC Power Draw",
+        currentValue: 2.8,
+        unit: "kW",
+        status: "normal" as SensorStatus,
+        description: "Air conditioning system",
+        lastUpdate: new Date(Date.now() - 20000), // 20 seconds ago
+      },
+      {
+        sensorName: "Solar Panel Output",
+        currentValue: 3.15,
+        unit: "kW",
+        status: "normal" as SensorStatus,
+        description: "Rooftop array",
+        lastUpdate: new Date(Date.now() - 10000), // 10 seconds ago
+      },
+      {
+        sensorName: "Battery Level",
+        currentValue: 87,
+        unit: "%",
+        status: "normal" as SensorStatus,
+        description: "Home battery backup",
+        lastUpdate: new Date(Date.now() - 90000), // 1.5 minutes ago
+      },
+      {
+        sensorName: "Water Heater Temp",
+        currentValue: 54.5,
+        unit: "°C",
+        status: "normal" as SensorStatus,
+        description: "Hot water system",
+        lastUpdate: new Date(Date.now() - 120000), // 2 minutes ago
+      },
+      {
+        sensorName: "Office Air Quality",
+        currentValue: 45,
+        unit: "AQI",
+        status: "normal" as SensorStatus,
+        description: "Indoor air quality",
+        lastUpdate: new Date(Date.now() - 40000), // 40 seconds ago
+      },
+      {
+        sensorName: "Garage Motion Sensor",
+        currentValue: "--",
+        unit: "",
+        status: "offline" as SensorStatus,
+        description: "Motion detector",
+        lastUpdate: new Date(Date.now() - 3600000), // 1 hour ago
+      },
+    ],
     rooms: [
       {
         name: "Living Room",
@@ -204,6 +287,34 @@ export default function Home() {
               }
               trend={mockData.metrics.savingsTrend}
             />
+          </div>
+        </section>
+
+        {/* Live Sensors Section */}
+        <section aria-labelledby="sensors-heading" className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2
+              id="sensors-heading"
+              className="text-xl font-semibold text-[#111827]"
+            >
+              Live Sensor Monitoring
+            </h2>
+            <span className="text-sm text-gray-500">
+              {mockData.sensors.filter((s) => s.status !== "offline").length} active
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            {mockData.sensors.map((sensor, index) => (
+              <LiveSensorCard
+                key={index}
+                sensorName={sensor.sensorName}
+                currentValue={sensor.currentValue}
+                unit={sensor.unit}
+                status={sensor.status}
+                description={sensor.description}
+                lastUpdate={sensor.lastUpdate}
+              />
+            ))}
           </div>
         </section>
 
