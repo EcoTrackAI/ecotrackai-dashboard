@@ -300,7 +300,8 @@ export default function Home() {
               Live Sensor Monitoring
             </h2>
             <span className="text-sm text-gray-500">
-              {mockData.sensors.filter((s) => s.status !== "offline").length} active
+              {mockData.sensors.filter((s) => s.status !== "offline").length}{" "}
+              active
             </span>
           </div>
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
