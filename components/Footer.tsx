@@ -1,7 +1,5 @@
 "use client";
 
-import { motion } from "framer-motion";
-
 interface FooterProps {
   lastUpdated: number | null;
   isConnected: boolean;
@@ -19,19 +17,11 @@ export default function Footer({ lastUpdated, isConnected }: FooterProps) {
   };
 
   return (
-    <motion.footer
-      initial={{ opacity: 0 }}
-      animate={{ opacity: 1 }}
-      transition={{ delay: 0.6 }}
-      className="px-3 sm:px-6 md:px-10 border-t-2 border-gray-200 pt-4 sm:pt-6 pb-4 sm:pb-8 bg-white backdrop-blur-sm rounded-t-xl sm:rounded-t-2xl"
-    >
-      <div className="flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0 text-xs sm:text-sm">
-        <motion.div
-          className="flex items-center space-x-2 sm:space-x-3 bg-blue-50 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full"
-          whileHover={{ scale: 1.05 }}
-        >
+    <footer className="px-4 sm:px-6 lg:px-8 border-t border-gray-200 pt-4 pb-6 bg-white/80 backdrop-blur-sm animate-fadeIn">
+      <div className="max-w-7xl mx-auto flex flex-col sm:flex-row items-center justify-between space-y-3 sm:space-y-0 text-xs sm:text-sm">
+        <div className="flex items-center space-x-2 bg-gray-50 px-3 py-2 rounded-lg">
           <svg
-            className="w-4 h-4 sm:w-5 sm:h-5 text-blue-700"
+            className="w-4 h-4 text-gray-500"
             fill="none"
             stroke="currentColor"
             viewBox="0 0 24 24"
@@ -43,50 +33,44 @@ export default function Footer({ lastUpdated, isConnected }: FooterProps) {
               d="M12 8v4l3 3m6-3a9 9 0 11-18 0 9 9 0 0118 0z"
             />
           </svg>
-          <span className="text-gray-700 font-medium">
+          <span className="text-gray-600 font-medium text-xs">
             Last updated:{" "}
-            <motion.span
-              key={lastUpdated}
-              initial={{ opacity: 0 }}
-              animate={{ opacity: 1 }}
-              className="font-bold text-blue-700"
-            >
+            <span className="font-semibold text-gray-900">
               {formatTimestamp(lastUpdated)}
-            </motion.span>
+            </span>
           </span>
-        </motion.div>
+        </div>
 
-        <motion.div
-          className={`flex items-center space-x-2 sm:space-x-3 px-3 sm:px-4 py-1.5 sm:py-2 rounded-full ${
-            isConnected ? "bg-green-50" : "bg-orange-50"
+        <div
+          className={`flex items-center space-x-2 px-3 py-2 rounded-lg ${
+            isConnected
+              ? "bg-emerald-50"
+              : "bg-rose-50"
           }`}
-          whileHover={{ scale: 1.05 }}
         >
-          <motion.div
-            animate={{ scale: [1, 1.3, 1] }}
-            transition={{ duration: 1.5, repeat: Infinity }}
-            className={`w-2 h-2 sm:w-2.5 sm:h-2.5 rounded-full shadow-lg ${
+          <div
+            className={`w-2 h-2 rounded-full ${
               isConnected
-                ? "bg-green-900 shadow-green-900/50"
-                : "bg-orange-600 shadow-orange-600/50"
+                ? "bg-emerald-500 animate-pulse-subtle"
+                : "bg-rose-500"
             }`}
           />
-          <span className="text-gray-700 font-medium">
-            Device Status:{" "}
-            <span
-              className={`font-bold ${
-                isConnected ? "text-green-900" : "text-orange-600"
-              }`}
-            >
+          <span
+            className={`text-xs font-medium ${
+              isConnected ? "text-emerald-700" : "text-rose-700"
+            }`}
+          >
+            Status:{" "}
+            <span className="font-semibold">
               {isConnected ? "Connected" : "Disconnected"}
             </span>
           </span>
-        </motion.div>
+        </div>
 
-        <div className="text-gray-500 font-semibold text-[10px] sm:text-xs md:text-sm">
+        <div className="text-gray-500 font-medium text-xs">
           © 2025 EcoTrack AI
         </div>
       </div>
-    </motion.footer>
+    </footer>
   );
 }
