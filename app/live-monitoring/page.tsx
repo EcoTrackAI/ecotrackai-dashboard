@@ -2,6 +2,11 @@
 
 import { useState, useEffect } from "react";
 import { LiveSensorCard, SensorStatus } from "@/components/sensors";
+import {
+  subscribeSensorData,
+  FirebaseSensorData,
+} from "@/lib/firebase-sensors";
+import { initializeFirebase } from "@/lib/firebase";
 
 interface SensorData {
   id: string;
@@ -10,349 +15,159 @@ interface SensorData {
   unit: string;
   status: SensorStatus;
   description: string;
-  category: "temperature" | "humidity" | "power" | "environmental" | "system";
+  category:
+    | "temperature"
+    | "humidity"
+    | "occupancy"
+    | "lighting"
+    | "power"
+    | "system";
+  lastUpdate?: string;
 }
 
 export default function LiveMonitoringPage() {
-  const [sensors, setSensors] = useState<SensorData[]>([
-    {
-      id: "temp-living",
-      sensorName: "Living Room Temperature",
-      currentValue: 22.5,
-      unit: "°C",
-      status: "normal",
-      description: "Main living area",
-      category: "temperature",
-    },
-    {
-      id: "temp-bedroom",
-      sensorName: "Master Bedroom Temperature",
-      currentValue: 21.0,
-      unit: "°C",
-      status: "normal",
-      description: "Sleeping area",
-      category: "temperature",
-    },
-    {
-      id: "temp-kitchen",
-      sensorName: "Kitchen Temperature",
-      currentValue: 23.8,
-      unit: "°C",
-      status: "normal",
-      description: "Cooking and dining area",
-      category: "temperature",
-    },
-    {
-      id: "temp-office",
-      sensorName: "Office Temperature",
-      currentValue: 24.2,
-      unit: "°C",
-      status: "warning",
-      description: "Home office workspace",
-      category: "temperature",
-    },
-    {
-      id: "temp-outdoor",
-      sensorName: "Outdoor Temperature",
-      currentValue: 28.5,
-      unit: "°C",
-      status: "normal",
-      description: "Weather station",
-      category: "temperature",
-    },
-    {
-      id: "hum-living",
-      sensorName: "Living Room Humidity",
-      currentValue: 65,
-      unit: "%",
-      status: "normal",
-      description: "Main living area",
-      category: "humidity",
-    },
-    {
-      id: "hum-bedroom",
-      sensorName: "Bedroom Humidity",
-      currentValue: 68,
-      unit: "%",
-      status: "normal",
-      description: "Master bedroom",
-      category: "humidity",
-    },
-    {
-      id: "hum-bathroom",
-      sensorName: "Bathroom Humidity",
-      currentValue: 78,
-      unit: "%",
-      status: "warning",
-      description: "Main bathroom",
-      category: "humidity",
-    },
-    {
-      id: "hum-garage",
-      sensorName: "Garage Humidity",
-      currentValue: 72,
-      unit: "%",
-      status: "warning",
-      description: "Storage area",
-      category: "humidity",
-    },
-    {
-      id: "power-total",
-      sensorName: "Total Power Consumption",
-      currentValue: 4.2,
-      unit: "kW",
-      status: "warning",
-      description: "Whole house",
-      category: "power",
-    },
-    {
-      id: "power-hvac",
-      sensorName: "HVAC Power Draw",
-      currentValue: 2.8,
-      unit: "kW",
-      status: "normal",
-      description: "Air conditioning system",
-      category: "power",
-    },
-    {
-      id: "power-kitchen",
-      sensorName: "Kitchen Appliances",
-      currentValue: 0.65,
-      unit: "kW",
-      status: "normal",
-      description: "Kitchen circuit",
-      category: "power",
-    },
-    {
-      id: "power-living",
-      sensorName: "Living Room Devices",
-      currentValue: 0.85,
-      unit: "kW",
-      status: "normal",
-      description: "Entertainment system",
-      category: "power",
-    },
-    {
-      id: "power-solar",
-      sensorName: "Solar Panel Output",
-      currentValue: 3.15,
-      unit: "kW",
-      status: "normal",
-      description: "Rooftop solar array",
-      category: "power",
-    },
-    {
-      id: "power-water-heater",
-      sensorName: "Water Heater Power",
-      currentValue: 1.2,
-      unit: "kW",
-      status: "normal",
-      description: "Hot water system",
-      category: "power",
-    },
-    {
-      id: "env-aqi-office",
-      sensorName: "Office Air Quality",
-      currentValue: 45,
-      unit: "AQI",
-      status: "normal",
-      description: "Indoor air quality",
-      category: "environmental",
-    },
-    {
-      id: "env-aqi-living",
-      sensorName: "Living Room Air Quality",
-      currentValue: 38,
-      unit: "AQI",
-      status: "normal",
-      description: "Main living area",
-      category: "environmental",
-    },
-    {
-      id: "env-co2",
-      sensorName: "CO2 Level",
-      currentValue: 680,
-      unit: "ppm",
-      status: "warning",
-      description: "Living room air",
-      category: "environmental",
-    },
-    {
-      id: "env-light",
-      sensorName: "Natural Light Level",
-      currentValue: 450,
-      unit: "lux",
-      status: "normal",
-      description: "Window sensor",
-      category: "environmental",
-    },
-    {
-      id: "sys-battery",
-      sensorName: "Battery Level",
-      currentValue: 87,
-      unit: "%",
-      status: "normal",
-      description: "Home battery backup",
-      category: "system",
-    },
-    {
-      id: "sys-water-temp",
-      sensorName: "Water Heater Temperature",
-      currentValue: 54.5,
-      unit: "°C",
-      status: "normal",
-      description: "Hot water tank",
-      category: "system",
-    },
-    {
-      id: "sys-water-flow",
-      sensorName: "Water Flow Rate",
-      currentValue: 0,
-      unit: "L/min",
-      status: "normal",
-      description: "Main water line",
-      category: "system",
-    },
-    {
-      id: "sys-motion-garage",
-      sensorName: "Garage Motion Sensor",
-      currentValue: "--",
-      unit: "",
-      status: "offline",
-      description: "Motion detector",
-      category: "system",
-    },
-    {
-      id: "sys-door-front",
-      sensorName: "Front Door Sensor",
-      currentValue: "Closed",
-      unit: "",
-      status: "normal",
-      description: "Entry monitoring",
-      category: "system",
-    },
-  ]);
+  const [sensors, setSensors] = useState<SensorData[]>([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
+  const [connectionStatus, setConnectionStatus] = useState<
+    "connecting" | "connected" | "stale" | "error"
+  >("connecting");
 
-  const [lastUpdate, setLastUpdate] = useState(new Date());
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  // Check if individual sensor data is stale
+  const isSensorStale = (lastUpdate: string | undefined): boolean => {
+    if (!lastUpdate) return true;
+    const now = new Date().getTime();
+    const sensorTime = new Date(lastUpdate).getTime();
+    const STALE_THRESHOLD = 30000; // 30 seconds
+    return now - sensorTime >= STALE_THRESHOLD;
+  };
 
-  // Simulate real-time updates
+  // Check if data is recent (within last 30 seconds)
+  const checkDataFreshness = (sensors: SensorData[]) => {
+    if (sensors.length === 0) return false;
+
+    const now = new Date().getTime();
+    const STALE_THRESHOLD = 30000; // 30 seconds
+
+    // Check if any sensor has a recent update
+    const hasRecentData = sensors.some((sensor) => {
+      if (!sensor.lastUpdate) return false;
+      const sensorTime = new Date(sensor.lastUpdate).getTime();
+      return now - sensorTime < STALE_THRESHOLD;
+    });
+
+    return hasRecentData;
+  };
+
   useEffect(() => {
+    // Initialize Firebase
+    try {
+      initializeFirebase();
+      setConnectionStatus("connected");
+    } catch (err) {
+      console.error("Failed to initialize Firebase:", err);
+      setError("Failed to connect to Firebase");
+      setConnectionStatus("error");
+      setLoading(false);
+      return;
+    }
+
+    // Subscribe to real-time sensor data
+    const unsubscribe = subscribeSensorData(
+      (firebaseSensors: FirebaseSensorData[]) => {
+        try {
+          // Transform Firebase data to match component interface
+          const now = new Date().getTime();
+          const STALE_THRESHOLD = 30000; // 30 seconds
+
+          const transformedSensors: SensorData[] = firebaseSensors.map(
+            (sensor) => {
+              // Check if sensor data is stale
+              const isStale =
+                !sensor.lastUpdate ||
+                now - new Date(sensor.lastUpdate).getTime() >= STALE_THRESHOLD;
+
+              return {
+                id: sensor.id,
+                sensorName: sensor.sensorName,
+                currentValue: sensor.currentValue,
+                unit: sensor.unit,
+                status: isStale ? "offline" : sensor.status, // Set to offline if stale
+                description: sensor.description || "",
+                category: (sensor.category as any) || "system",
+                lastUpdate: sensor.lastUpdate,
+              };
+            }
+          );
+
+          setSensors(transformedSensors);
+          setLoading(false);
+          setError(null);
+
+          // Check if data is fresh
+          const isFresh = checkDataFreshness(transformedSensors);
+          setConnectionStatus(isFresh ? "connected" : "stale");
+        } catch (err) {
+          console.error("Error processing sensor data:", err);
+          setError("Error processing sensor data");
+          setLoading(false);
+        }
+      }
+    );
+
+    // Cleanup subscription on unmount
+    return () => {
+      unsubscribe();
+    };
+  }, []);
+
+  // Check data freshness periodically and update sensor statuses
+  useEffect(() => {
+    if (sensors.length === 0) return;
+
     const interval = setInterval(() => {
+      const now = new Date().getTime();
+      const STALE_THRESHOLD = 30000; // 30 seconds
+
+      // Update sensor statuses based on staleness
       setSensors((prevSensors) =>
         prevSensors.map((sensor) => {
-          // Don't update offline sensors
-          if (sensor.status === "offline") return sensor;
+          const isStale =
+            !sensor.lastUpdate ||
+            now - new Date(sensor.lastUpdate).getTime() >= STALE_THRESHOLD;
 
-          let newValue = sensor.currentValue;
-          let newStatus = sensor.status;
-
-          // Simulate value changes based on category
-          if (typeof sensor.currentValue === "number") {
-            switch (sensor.category) {
-              case "temperature":
-                newValue = Number(
-                  (
-                    (sensor.currentValue as number) +
-                    (Math.random() - 0.5) * 0.3
-                  ).toFixed(1)
-                );
-                if (newValue > 26) newStatus = "warning";
-                else if (newValue > 28) newStatus = "critical";
-                else newStatus = "normal";
-                break;
-
-              case "humidity":
-                newValue = Math.max(
-                  30,
-                  Math.min(
-                    85,
-                    Math.round(
-                      (sensor.currentValue as number) +
-                        (Math.random() - 0.5) * 2
-                    )
-                  )
-                );
-                if (newValue > 75 || newValue < 35) newStatus = "warning";
-                else newStatus = "normal";
-                break;
-
-              case "power":
-                newValue = Math.max(
-                  0,
-                  Number(
-                    (
-                      (sensor.currentValue as number) +
-                      (Math.random() - 0.5) * 0.2
-                    ).toFixed(2)
-                  )
-                );
-                if (sensor.id === "power-total") {
-                  if (newValue > 5) newStatus = "critical";
-                  else if (newValue > 4) newStatus = "warning";
-                  else newStatus = "normal";
-                } else {
-                  newStatus = "normal";
-                }
-                break;
-
-              case "environmental":
-                if (sensor.id === "env-co2") {
-                  newValue = Math.max(
-                    400,
-                    Math.min(
-                      1200,
-                      Math.round(
-                        (sensor.currentValue as number) +
-                          (Math.random() - 0.5) * 20
-                      )
-                    )
-                  );
-                  if (newValue > 800) newStatus = "warning";
-                  else if (newValue > 1000) newStatus = "critical";
-                  else newStatus = "normal";
-                } else {
-                  newValue = Math.max(
-                    0,
-                    Math.round(
-                      (sensor.currentValue as number) +
-                        (Math.random() - 0.5) * 10
-                    )
-                  );
-                }
-                break;
-
-              case "system":
-                if (sensor.id === "sys-battery") {
-                  newValue = Math.max(
-                    0,
-                    Math.min(
-                      100,
-                      Math.round(
-                        (sensor.currentValue as number) +
-                          (Math.random() - 0.5) * 1
-                      )
-                    )
-                  );
-                  if (newValue < 20) newStatus = "critical";
-                  else if (newValue < 40) newStatus = "warning";
-                  else newStatus = "normal";
-                }
-                break;
-            }
-
-            return { ...sensor, currentValue: newValue, status: newStatus };
+          // Only update status if it changed
+          if (isStale && sensor.status !== "offline") {
+            return { ...sensor, status: "offline" as SensorStatus };
           }
-
           return sensor;
         })
       );
 
-      setLastUpdate(new Date());
-    }, 3000);
+      // Check overall connection status
+      const isFresh = checkDataFreshness(sensors);
+      setConnectionStatus(isFresh ? "connected" : "stale");
+    }, 5000); // Check every 5 seconds
 
     return () => clearInterval(interval);
+  }, [sensors]);
+
+  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
+  const [mounted, setMounted] = useState(false);
+
+  // Set mounted flag and initial timestamp on client side only
+  useEffect(() => {
+    setMounted(true);
+    setLastUpdate(new Date());
   }, []);
+
+  // Update lastUpdate timestamp when sensor data changes
+  useEffect(() => {
+    if (sensors.length > 0 && mounted) {
+      setLastUpdate(new Date());
+    }
+  }, [sensors, mounted]);
 
   const filteredSensors =
     selectedCategory === "all"
@@ -363,8 +178,9 @@ export default function LiveMonitoringPage() {
     all: sensors.length,
     temperature: sensors.filter((s) => s.category === "temperature").length,
     humidity: sensors.filter((s) => s.category === "humidity").length,
+    occupancy: sensors.filter((s) => s.category === "occupancy").length,
+    lighting: sensors.filter((s) => s.category === "lighting").length,
     power: sensors.filter((s) => s.category === "power").length,
-    environmental: sensors.filter((s) => s.category === "environmental").length,
     system: sensors.filter((s) => s.category === "system").length,
   };
 
@@ -377,12 +193,46 @@ export default function LiveMonitoringPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-[#111827] mb-2">
-            Live Monitoring
-          </h1>
-          <p className="text-gray-600">
-            Real-time sensor data and device status tracking
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-[#111827] mb-2">
+                Live Monitoring
+              </h1>
+              <p className="text-gray-600">
+                Real-time sensor data from Firebase Realtime Database
+              </p>
+            </div>
+
+            {/* Connection Status Indicator */}
+            <div className="flex items-center gap-2">
+              {loading ? (
+                <div className="flex items-center gap-2 text-gray-500">
+                  <div className="w-2 h-2 rounded-full bg-gray-400 animate-pulse" />
+                  <span className="text-sm">Connecting...</span>
+                </div>
+              ) : error ? (
+                <div className="flex items-center gap-2 text-red-600">
+                  <div className="w-2 h-2 rounded-full bg-red-600" />
+                  <span className="text-sm">{error}</span>
+                </div>
+              ) : connectionStatus === "connected" && sensors.length > 0 ? (
+                <div className="flex items-center gap-2 text-emerald-600">
+                  <div className="w-2 h-2 rounded-full bg-emerald-600 animate-pulse" />
+                  <span className="text-sm">Live from Firebase</span>
+                </div>
+              ) : connectionStatus === "stale" && sensors.length > 0 ? (
+                <div className="flex items-center gap-2 text-orange-600">
+                  <div className="w-2 h-2 rounded-full bg-orange-600 animate-pulse" />
+                  <span className="text-sm">Stale data (not updating)</span>
+                </div>
+              ) : (
+                <div className="flex items-center gap-2 text-gray-500">
+                  <div className="w-2 h-2 rounded-full bg-gray-500" />
+                  <span className="text-sm">No data available</span>
+                </div>
+              )}
+            </div>
+          </div>
         </div>
 
         {/* Status Summary */}
@@ -474,14 +324,10 @@ export default function LiveMonitoringPage() {
                   } Sensors`}
             </h2>
             <div className="flex items-center text-sm text-gray-500">
-              <svg
-                className="w-4 h-4 mr-1.5 text-emerald-600"
-                fill="currentColor"
-                viewBox="0 0 20 20"
-              >
-                <circle cx="10" cy="10" r="4" />
-              </svg>
-              <span>Live</span>
+              <span>
+                Last updated:{" "}
+                {lastUpdate ? lastUpdate.toLocaleTimeString() : "Loading..."}
+              </span>
             </div>
           </div>
 
@@ -494,14 +340,41 @@ export default function LiveMonitoringPage() {
                 unit={sensor.unit}
                 status={sensor.status}
                 description={sensor.description}
-                lastUpdate={lastUpdate}
+                lastUpdate={
+                  sensor.lastUpdate ||
+                  (lastUpdate ? lastUpdate.toISOString() : undefined)
+                }
               />
             ))}
           </div>
 
-          {filteredSensors.length === 0 && (
+          {filteredSensors.length === 0 && !loading && (
             <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-              <p className="text-gray-500">No sensors found in this category</p>
+              <div className="flex flex-col items-center gap-3">
+                <div className="w-12 h-12 rounded-full bg-gray-100 flex items-center justify-center">
+                  <svg
+                    className="w-6 h-6 text-gray-400"
+                    fill="none"
+                    stroke="currentColor"
+                    viewBox="0 0 24 24"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M20 13V6a2 2 0 00-2-2H6a2 2 0 00-2 2v7m16 0v5a2 2 0 01-2 2H6a2 2 0 01-2-2v-5m16 0h-2.586a1 1 0 00-.707.293l-2.414 2.414a1 1 0 01-.707.293h-3.172a1 1 0 01-.707-.293l-2.414-2.414A1 1 0 006.586 13H4"
+                    />
+                  </svg>
+                </div>
+                <div>
+                  <p className="text-gray-900 font-medium mb-1">
+                    No sensors available
+                  </p>
+                  <p className="text-gray-500 text-sm">
+                    Add sensors to Firebase to see live data here
+                  </p>
+                </div>
+              </div>
             </div>
           )}
         </section>
