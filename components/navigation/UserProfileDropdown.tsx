@@ -5,16 +5,12 @@ import { useState } from "react";
 interface UserProfileDropdownProps {
   user: UserProfile;
   onSignOut?: () => void;
-  onProfileClick?: () => void;
-  onSettingsClick?: () => void;
   className?: string;
 }
 
 export function UserProfileDropdown({
   user,
   onSignOut,
-  onProfileClick,
-  onSettingsClick,
   className = "",
 }: UserProfileDropdownProps) {
   const [isOpen, setIsOpen] = useState(false);
@@ -97,7 +93,11 @@ export function UserProfileDropdown({
             </div>
             <div className="py-1">
               <button
-                onClick={() => handleMenuItemClick(onProfileClick)}
+                onClick={() =>
+                  handleMenuItemClick(() => {
+                    window.location.href = "/profile";
+                  })
+                }
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                 role="menuitem"
               >
@@ -118,7 +118,11 @@ export function UserProfileDropdown({
                 View Profile
               </button>
               <button
-                onClick={() => handleMenuItemClick(onSettingsClick)}
+                onClick={() =>
+                  handleMenuItemClick(() => {
+                    window.location.href = "/settings";
+                  })
+                }
                 className="w-full text-left px-4 py-2 text-sm text-gray-700 hover:bg-gray-100 flex items-center gap-2"
                 role="menuitem"
               >

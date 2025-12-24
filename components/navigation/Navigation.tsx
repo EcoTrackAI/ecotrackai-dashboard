@@ -15,8 +15,6 @@ interface NavigationProps {
   notifications?: NotificationItem[];
   onNotificationClick?: (notification: NotificationItem) => void;
   onSignOut?: () => void;
-  onProfileClick?: () => void;
-  onSettingsClick?: () => void;
   className?: string;
 }
 
@@ -34,8 +32,6 @@ export function Navigation({
   notifications = [],
   onNotificationClick,
   onSignOut,
-  onProfileClick,
-  onSettingsClick,
   className = "",
 }: NavigationProps) {
   return (
@@ -98,12 +94,7 @@ export function Navigation({
             />
 
             {/* User Profile */}
-            <UserProfileDropdown
-              user={user}
-              onSignOut={onSignOut}
-              onProfileClick={onProfileClick}
-              onSettingsClick={onSettingsClick}
-            />
+            <UserProfileDropdown user={user} onSignOut={onSignOut} />
           </div>
         </div>
       </div>
