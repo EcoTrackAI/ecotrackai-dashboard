@@ -219,3 +219,6 @@ export function subscribeSensorsByCategory(
     callback(filtered);
   });
 }
+
+// Alias for API usage
+export const getSensorData = fetchSensorData;

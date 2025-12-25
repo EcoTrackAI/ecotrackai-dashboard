@@ -184,6 +184,8 @@ declare global {
     energy: number;
     temperature?: number;
     humidity?: number;
+    lighting?: number;
+    motion?: number;
   }
 
   interface DateRange {

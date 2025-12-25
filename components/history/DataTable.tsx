@@ -101,6 +101,12 @@ export const DataTable: React.FC<DataTableProps> = ({
         ...(point.humidity !== undefined && {
           "Humidity (%)": point.humidity,
         }),
+        ...(point.lighting !== undefined && {
+          "Lighting (%)": point.lighting,
+        }),
+        ...(point.motion !== undefined && {
+          "Motion": point.motion === 1 ? "Detected" : "Not detected",
+        }),
       };
     });
 
@@ -321,6 +327,24 @@ export const DataTable: React.FC<DataTableProps> = ({
                   <SortIcon column="humidity" />
                 </div>
               </th>
+              <th
+                className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                onClick={() => handleSort("lighting")}
+              >
+                <div className="flex items-center justify-end gap-1">
+                  <span>Lighting (%)</span>
+                  <SortIcon column="lighting" />
+                </div>
+              </th>
+              <th
+                className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
+                onClick={() => handleSort("motion")}
+              >
+                <div className="flex items-center justify-end gap-1">
+                  <span>Motion</span>
+                  <SortIcon column="motion" />
+                </div>
+              </th>
             </tr>
           </thead>
           <tbody className="bg-white divide-y divide-gray-200">
@@ -354,6 +378,16 @@ export const DataTable: React.FC<DataTableProps> = ({
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 text-right">
                   {row.humidity !== undefined ? row.humidity.toFixed(0) : "-"}
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 text-right">
+                  {row.lighting !== undefined ? row.lighting.toFixed(0) : "-"}
+                </td>
+                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 text-right">
+                  {row.motion !== undefined 
+                    ? row.motion === 1 
+                      ? "✓ Detected" 
+                      : "— None"
+                    : "-"}
                 </td>
               </tr>
             ))}

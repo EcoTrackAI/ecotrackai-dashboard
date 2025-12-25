@@ -33,7 +33,7 @@ interface HistoricalChartProps {
    * Metric to display on Y-axis
    * @default 'energy'
    */
-  metric?: "power" | "energy" | "temperature" | "humidity";
+  metric?: "power" | "energy" | "temperature" | "humidity" | "lighting" | "motion";
 
   /**
    * Chart title
@@ -87,12 +87,19 @@ const CustomTooltip: React.FC<any> = ({ active, payload, metric }) => {
         return "°C";
       case "humidity":
         return "%";
+      case "lighting":
+        return "%";
+      case "motion":
+        return "";
       default:
         return "";
     }
   };
 
   const formatValue = (value: number) => {
+    if (metric === "motion") {
+      return value === 1 ? "Detected" : "Not detected";
+    }
     return value.toFixed(2);
   };
 
@@ -190,6 +197,10 @@ export const HistoricalChart: React.FC<HistoricalChartProps> = ({
         return "Temperature (°C)";
       case "humidity":
         return "Humidity (%)";
+      case "lighting":
+        return "Lighting (%)";
+      case "motion":
+        return "Motion/Occupancy";
       default:
         return metric;
     }

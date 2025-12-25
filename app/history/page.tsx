@@ -16,7 +16,7 @@ import {
 } from "@/lib/api";
 
 type ChartType = "line" | "area" | "bar";
-type MetricType = "power" | "energy" | "temperature" | "humidity";
+type MetricType = "power" | "energy" | "temperature" | "humidity" | "lighting" | "motion";
 
 export default function HistoryPage() {
   // State management
@@ -261,6 +261,8 @@ export default function HistoryPage() {
                 <option value="power">Power (W)</option>
                 <option value="temperature">Temperature (°C)</option>
                 <option value="humidity">Humidity (%)</option>
+                <option value="lighting">Lighting (%)</option>
+                <option value="motion">Motion/Occupancy</option>
               </select>
             </div>
 

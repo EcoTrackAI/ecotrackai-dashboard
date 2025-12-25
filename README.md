@@ -5,10 +5,12 @@ A modern, real-time energy monitoring dashboard built with Next.js, TypeScript, 
 ## ✨ Features
 
 - **Real-time Monitoring**: Live sensor data from Firebase Realtime Database
+- **Historical Data Storage**: PostgreSQL integration for long-term data analysis
 - **Energy Analytics**: Track power usage, appliance consumption, and trends
 - **Smart Automation**: Control appliances with automated rules
-- **Historical Data**: Compare usage across different time periods
+- **Historical Comparison**: Compare usage across different time periods
 - **AI Recommendations**: ML-powered suggestions for energy optimization
+- **Data Export**: Export historical data to CSV for external analysis
 - **Responsive Design**: Works seamlessly on desktop, tablet, and mobile
 - **Dark Mode**: Modern UI with Tailwind CSS
 
@@ -50,7 +52,35 @@ A modern, real-time energy monitoring dashboard built with Next.js, TypeScript, 
    NEXT_PUBLIC_FIREBASE_DATABASE_URL=your_database_url
    ```
 
-4. **Run the development server**
+4. **Configure PostgreSQL (Optional - for historical data)**
+   
+   For storing and querying historical sensor data:
+   
+   a. Install PostgreSQL from [postgresql.org](https://www.postgresql.org/download/)
+   
+   b. Run the setup script:
+   ```bash
+   # Windows PowerShell
+   .\scripts\setup-postgres.ps1
+   ```
+   
+   c. Or manually add to `.env.local`:
+   ```env
+   POSTGRES_HOST=localhost
+   POSTGRES_PORT=5432
+   POSTGRES_DATABASE=ecotrackai
+   POSTGRES_USER=postgres
+   POSTGRES_PASSWORD=your_password
+   ```
+   
+   d. Sync Firebase data to PostgreSQL:
+   ```bash
+   node scripts/sync-firebase-to-postgres.js
+   ```
+   
+   See [docs/postgresql-setup.md](docs/postgresql-setup.md) for detailed instructions.
+
+5. **Run the development server**
    ```bash
    npm run dev
    # or
@@ -59,7 +89,7 @@ A modern, real-time energy monitoring dashboard built with Next.js, TypeScript, 
    pnpm dev
    ```
 
-5. **Open the app**
+6. **Open the app**
    
    Navigate to [http://localhost:3000](http://localhost:3000)
 
@@ -89,15 +119,24 @@ ecotrackai-dashboard/
 │   ├── firebase.ts          # Firebase initialization
 │   ├── firebase-sensors.ts  # Real-time sensor data service
 │   ├── firebase-system-status.ts  # System status service
+│   ├── database.ts          # PostgreSQL connection and queries
+│   ├── api.ts               # API client functions
 │   └── constants.ts         # App constants
 ├── types/                   # TypeScript type definitions
 │   └── globals.d.ts         # Global types (all types consolidated)
+├── database/                # Database schema and migrations
+│   └── schema.sql           # PostgreSQL schema
 ├── docs/                    # Documentation
-│   ├── firebase-integration.md    # Firebase setup guide
-│   ├── analytics-setup.md         # Analytics configuration
-│   ├── component-*.md             # Component documentation
+│   ├── firebase-integration.md       # Firebase setup guide
+│   ├── postgresql-setup.md           # PostgreSQL setup guide
+│   ├── firebase-postgres-integration.md  # Integration overview
+│   ├── analytics-setup.md            # Analytics configuration
+│   ├── component-*.md                # Component documentation
 │   └── ...
 ├── scripts/                 # Utility scripts
+│   ├── setup-postgres.ps1            # PostgreSQL setup script
+│   ├── sync-firebase-to-postgres.js  # Data sync script
+│   └── ...
 │   ├── test-firebase-connection.js  # Test Firebase setup
 │   ├── add-test-data.js             # Populate test data
 │   └── set-system-status.js         # Set system status
