@@ -1,35 +1,5 @@
 import React from "react";
 
-/**
- * Status types for sensor monitoring
- */
-export type SensorStatus = "normal" | "warning" | "critical" | "offline";
-
-/**
- * Props for the LiveSensorCard component
- */
-export interface LiveSensorCardProps {
-  /** Display name of the sensor */
-  sensorName: string;
-  /** Current sensor reading value */
-  currentValue: number | string;
-  /** Unit of measurement (e.g., 'kWh', '°C', '%') */
-  unit: string;
-  /** Current operational status of the sensor */
-  status: SensorStatus;
-  /** Optional additional context or description */
-  description?: string;
-  /** Optional timestamp of last update */
-  lastUpdate?: Date | string;
-  /** Optional callback when card is clicked */
-  onClick?: () => void;
-  /** Optional CSS class name for custom styling */
-  className?: string;
-}
-
-/**
- * Configuration for status indicator colors and labels
- */
 const STATUS_CONFIG: Record<
   SensorStatus,
   { color: string; bgColor: string; label: string; ariaLabel: string }
@@ -60,49 +30,17 @@ const STATUS_CONFIG: Record<
   },
 };
 
-/**
- * Format timestamp for display
- */
 const formatTimestamp = (timestamp: Date | string): string => {
   const date = typeof timestamp === "string" ? new Date(timestamp) : timestamp;
+  if (isNaN(date.getTime())) return "Invalid date";
 
-  if (isNaN(date.getTime())) {
-    return "Invalid date";
-  }
-
-  const now = new Date();
-  const diffMs = now.getTime() - date.getTime();
-  const diffSec = Math.floor(diffMs / 1000);
-  const diffMin = Math.floor(diffSec / 60);
-  const diffHour = Math.floor(diffMin / 60);
-
-  if (diffSec < 60) return "Just now";
+  const diffMin = Math.floor((new Date().getTime() - date.getTime()) / 60000);
+  if (diffMin < 1) return "Just now";
   if (diffMin < 60) return `${diffMin}m ago`;
-  if (diffHour < 24) return `${diffHour}h ago`;
-
-  return date.toLocaleTimeString("en-US", {
-    hour: "2-digit",
-    minute: "2-digit",
-  });
+  if (diffMin < 1440) return `${Math.floor(diffMin / 60)}h ago`;
+  return date.toLocaleTimeString("en-US", { hour: "2-digit", minute: "2-digit" });
 };
 
-/**
- * LiveSensorCard - Displays real-time sensor data with status indicator
- *
- * A reusable card component for displaying live IoT sensor readings.
- * Features status indicators, timestamps, and responsive design.
- *
- * @example
- * ```tsx
- * <LiveSensorCard
- *   sensorName="Living Room Temperature"
- *   currentValue={22.5}
- *   unit="°C"
- *   status="normal"
- *   lastUpdate={new Date()}
- * />
- * ```
- */
 export const LiveSensorCard: React.FC<LiveSensorCardProps> = ({
   sensorName,
   currentValue,

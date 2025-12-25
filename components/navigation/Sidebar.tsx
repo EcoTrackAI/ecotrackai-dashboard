@@ -15,18 +15,6 @@ import {
   XIcon,
 } from "lucide-react";
 
-interface NavigationItem {
-  name: string;
-  href: string;
-  icon: React.ComponentType<{ className?: string }>;
-  description: string;
-}
-
-interface SidebarProps {
-  className?: string;
-  systemStatus?: SystemStatus;
-}
-
 const navigationItems: NavigationItem[] = [
   {
     name: "Overview",
@@ -71,80 +59,41 @@ export function Sidebar({ className = "", systemStatus = "offline" }: SidebarPro
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  const isActiveRoute = (href: string) => {
-    if (href === "/") {
-      return pathname === "/";
-    }
-    return pathname.startsWith(href);
-  };
-
-  const toggleCollapsed = () => {
-    setIsCollapsed(!isCollapsed);
-  };
-
-  const toggleMobileMenu = () => {
-    setIsMobileOpen(!isMobileOpen);
-  };
-
-  const closeMobileMenu = () => {
-    setIsMobileOpen(false);
-  };
+  const isActiveRoute = (href: string) => href === "/" ? pathname === "/" : pathname.startsWith(href);
 
   return (
     <>
-      {/* Mobile Menu Button - Slides with sidebar */}
       <button
-        onClick={toggleMobileMenu}
-        className={`lg:hidden fixed top-20 z-50 p-2 rounded-r-lg bg-white shadow-md border border-l-0 border-gray-200 hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 transition-all duration-300 ease-in-out ${
+        onClick={() => setIsMobileOpen(!isMobileOpen)}
+        className={`lg:hidden fixed top-20 z-50 p-2 rounded-r-lg bg-white shadow-md border border-l-0 border-gray-200 hover:bg-gray-50 transition-all duration-300 ${
           isMobileOpen ? "left-64" : "left-0"
         }`}
         aria-label={isMobileOpen ? "Close menu" : "Open menu"}
-        aria-expanded={isMobileOpen}
       >
-        {isMobileOpen ? (
-          <XIcon className="w-6 h-6 text-gray-700" />
-        ) : (
-          <MenuIcon className="w-6 h-6 text-gray-700" />
-        )}
+        {isMobileOpen ? <XIcon className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}
       </button>
 
-      {/* Mobile Overlay */}
       {isMobileOpen && (
         <div
           className="lg:hidden fixed inset-0 bg-gray-900 bg-opacity-50 z-40"
-          onClick={closeMobileMenu}
-          aria-hidden="true"
+          onClick={() => setIsMobileOpen(false)}
         />
       )}
 
-      {/* Sidebar */}
       <aside
-        className={`
-          fixed top-16 left-0 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 z-40
-          transition-all duration-300 ease-in-out
-          ${isCollapsed ? "w-20" : "w-64"}
-          ${
-            isMobileOpen
-              ? "translate-x-0"
-              : "-translate-x-full lg:translate-x-0"
-          }
-          ${className}
-        `}
-        aria-label="Sidebar navigation"
+        className={`fixed top-16 left-0 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 z-40 transition-all duration-300 ${
+          isCollapsed ? "w-20" : "w-64"
+        } ${isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} ${className}`}
       >
         <div className="flex flex-col h-full">
-          {/* Navigation Items */}
-          <nav className="flex-1 overflow-y-auto py-2 px-2" role="navigation">
-            {/* Collapse Button */}
+          <nav className="flex-1 overflow-y-auto py-2 px-2">
             <div className="hidden lg:block mb-2 px-1">
               <button
-                onClick={toggleCollapsed}
-                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 ${
+                onClick={() => setIsCollapsed(!isCollapsed)}
+                className={`w-full flex items-center gap-3 px-3 py-2.5 rounded-lg text-gray-700 hover:bg-gray-50 transition-colors ${
                   isCollapsed ? "justify-center" : ""
                 }`}
                 aria-label={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
-                aria-expanded={!isCollapsed}
-                title={isCollapsed ? "Expand sidebar" : "Collapse sidebar"}
               >
                 <ChevronLeftIcon
                   className={`w-5 h-5 shrink-0 text-gray-500 transition-transform duration-300 ${

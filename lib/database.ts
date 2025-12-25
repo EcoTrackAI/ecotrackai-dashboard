@@ -1,6 +1,5 @@
 import { Pool, QueryResult } from "pg";
 
-// Database connection pool
 let pool: Pool | null = null;
 
 export function getPool(): Pool {
@@ -23,83 +22,27 @@ export function getPool(): Pool {
   return pool;
 }
 
-// Types
-export interface Room {
-  id: string;
-  name: string;
-  floor: number;
-  type: string;
-  created_at: Date;
-  updated_at: Date;
-}
-
-export interface SensorDataRecord {
-  id: number;
-  sensor_id: string;
-  sensor_name: string;
-  room_id: string;
-  category: string;
-  current_value: number;
-  unit: string;
-  status: string;
-  description?: string;
-  timestamp: Date;
-  created_at: Date;
-}
-
-export interface HistoricalDataPoint {
-  timestamp: Date;
-  roomId: string;
-  roomName: string;
-  energy: number;
-  power: number;
-  temperature: number;
-  humidity: number;
-  lighting: number;
-  motion: number;
-}
-
-// Database functions
-
-/**
- * Get all rooms from the database
- */
-export async function getRooms(): Promise<Room[]> {
-  const pool = getPool();
-  const result: QueryResult<Room> = await pool.query(
-    "SELECT * FROM rooms ORDER BY name"
-  );
+export async function getRooms(): Promise<DBRoom[]> {
+  const result: QueryResult<DBRoom> = await getPool().query("SELECT * FROM rooms ORDER BY name");
   return result.rows;
 }
 
-/**
- * Insert or update a room
- */
 export async function upsertRoom(
   id: string,
   name: string,
   floor: number = 1,
   type: string = "residential"
 ): Promise<void> {
-  const pool = getPool();
-  await pool.query(
-    `
-    INSERT INTO rooms (id, name, floor, type, updated_at)
-    VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
-    ON CONFLICT (id) 
-    DO UPDATE SET 
-      name = EXCLUDED.name,
-      floor = EXCLUDED.floor,
-      type = EXCLUDED.type,
-      updated_at = CURRENT_TIMESTAMP
-    `,
+  await getPool().query(
+    `INSERT INTO rooms (id, name, floor, type, updated_at)
+     VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
+     ON CONFLICT (id) DO UPDATE SET 
+       name = EXCLUDED.name, floor = EXCLUDED.floor, 
+       type = EXCLUDED.type, updated_at = CURRENT_TIMESTAMP`,
     [id, name, floor, type]
   );
 }
 
-/**
- * Insert sensor data record
- */
 export async function insertSensorData(data: {
   sensor_id: string;
   sensor_name: string;
@@ -111,13 +54,10 @@ export async function insertSensorData(data: {
   description?: string;
   timestamp?: Date;
 }): Promise<void> {
-  const pool = getPool();
-  await pool.query(
-    `
-    INSERT INTO sensor_data 
+  await getPool().query(
+    `INSERT INTO sensor_data 
       (sensor_id, sensor_name, room_id, category, current_value, unit, status, description, timestamp)
-    VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
-    `,
+     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
     [
       data.sensor_id,
       data.sensor_name,
@@ -132,9 +72,6 @@ export async function insertSensorData(data: {
   );
 }
 
-/**
- * Batch insert sensor data records (more efficient for multiple records)
- */
 export async function batchInsertSensorData(
   records: Array<{
     sensor_id: string;
@@ -150,34 +87,19 @@ export async function batchInsertSensorData(
 ): Promise<void> {
   if (records.length === 0) return;
 
-  const pool = getPool();
   const values = records
-    .map(
-      (_, i) =>
-        `($${i * 9 + 1}, $${i * 9 + 2}, $${i * 9 + 3}, $${i * 9 + 4}, $${
-          i * 9 + 5
-        }, $${i * 9 + 6}, $${i * 9 + 7}, $${i * 9 + 8}, $${i * 9 + 9})`
-    )
+    .map((_, i) => `($${i * 9 + 1}, $${i * 9 + 2}, $${i * 9 + 3}, $${i * 9 + 4}, $${i * 9 + 5}, $${i * 9 + 6}, $${i * 9 + 7}, $${i * 9 + 8}, $${i * 9 + 9})`)
     .join(", ");
 
-  const params = records.flatMap((record) => [
-    record.sensor_id,
-    record.sensor_name,
-    record.room_id,
-    record.category,
-    record.current_value,
-    record.unit,
-    record.status,
-    record.description || null,
-    record.timestamp || new Date(),
+  const params = records.flatMap((r) => [
+    r.sensor_id, r.sensor_name, r.room_id, r.category,
+    r.current_value, r.unit, r.status, r.description || null, r.timestamp || new Date(),
   ]);
 
-  await pool.query(
-    `
-    INSERT INTO sensor_data 
+  await getPool().query(
+    `INSERT INTO sensor_data 
       (sensor_id, sensor_name, room_id, category, current_value, unit, status, description, timestamp)
-    VALUES ${values}
-    `,
+     VALUES ${values}`,
     params
   );
 }
@@ -303,35 +225,21 @@ export async function getLatestSensorReadings(
   return result.rows;
 }
 
-/**
- * Delete old sensor data (for data retention)
- */
 export async function cleanupOldData(daysToKeep: number = 90): Promise<number> {
-  const pool = getPool();
-  const result = await pool.query(
-    "SELECT cleanup_old_sensor_data($1)",
-    [daysToKeep]
-  );
+  const result = await getPool().query("SELECT cleanup_old_sensor_data($1)", [daysToKeep]);
   return result.rows[0].cleanup_old_sensor_data;
 }
 
-/**
- * Test database connection
- */
 export async function testConnection(): Promise<boolean> {
   try {
-    const pool = getPool();
-    await pool.query("SELECT 1");
+    await getPool().query("SELECT 1");
     return true;
   } catch (error) {
-    console.error("Database connection test failed:", error);
+    console.error("Database connection failed:", error);
     return false;
   }
 }
 
-/**
- * Close the connection pool (useful for cleanup)
- */
 export async function closePool(): Promise<void> {
   if (pool) {
     await pool.end();

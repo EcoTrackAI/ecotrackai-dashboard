@@ -1,10 +1,5 @@
 "use client";
 
-interface WeatherSummaryProps {
-  weather: WeatherData;
-  className?: string;
-}
-
 const WEATHER_ICONS = {
   sunny: "☀️",
   "partly-cloudy": "⛅",

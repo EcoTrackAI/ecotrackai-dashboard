@@ -2,12 +2,6 @@
 
 import { useState } from "react";
 
-interface UserProfileDropdownProps {
-  user: UserProfile;
-  onSignOut?: () => void;
-  className?: string;
-}
-
 export function UserProfileDropdown({
   user,
   onSignOut,

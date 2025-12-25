@@ -9,6 +9,7 @@ declare global {
   // ============================================================================
   
   type SystemStatus = "online" | "offline" | "warning";
+  type SystemStatusCallback = (status: SystemStatus) => void;
 
   interface WeatherData {
     temperature: number;
@@ -246,6 +247,111 @@ declare global {
   interface TableSortConfig {
     key: keyof HistoricalDataPoint;
     direction: SortDirection;
+  }
+
+  // ============================================================================
+  // Recommendations Types
+  // ============================================================================
+
+  // Sensor Types
+  type SensorStatus = "normal" | "warning" | "critical" | "offline";
+  type SensorDataCallback = (sensors: FirebaseSensorData[]) => void;
+
+  interface FirebaseSensorData {
+    id: string;
+    sensorName: string;
+    currentValue: number | string;
+    unit: string;
+    status: SensorStatus;
+    description?: string;
+    lastUpdate?: string;
+    category?: string;
+    room?: string;
+  }
+
+  interface LiveSensorCardProps {
+    sensorName: string;
+    currentValue: number | string;
+    unit: string;
+    status: SensorStatus;
+    description?: string;
+    lastUpdate?: Date | string;
+    onClick?: () => void;
+    className?: string;
+  }
+
+  // Database Types
+  interface DBRoom {
+    id: string;
+    name: string;
+    floor: number;
+    type: string;
+    created_at: Date;
+    updated_at: Date;
+  }
+
+  interface SensorDataRecord {
+    id: number;
+    sensor_id: string;
+    sensor_name: string;
+    room_id: string;
+    category: string;
+    current_value: number;
+    unit: string;
+    status: string;
+    description?: string;
+    timestamp: Date;
+    created_at: Date;
+  }
+
+  interface RoomStatusCardProps {
+    roomName: string;
+    isOccupied: boolean;
+    activeDevices: number;
+    totalDevices: number;
+    currentPower: number;
+    temperature?: number;
+    className?: string;
+  }
+
+  interface ProfileCardProps {
+    title: string;
+    children: React.ReactNode;
+    className?: string;
+  }
+
+  interface ProfileFieldProps {
+    label: string;
+    value: string | number;
+    icon?: React.ReactNode;
+  }
+
+  interface ToggleFieldProps {
+    label: string;
+    checked: boolean;
+    onChange: (checked: boolean) => void;
+  }
+
+  interface MLRecommendationCardProps {
+    recommendation: MLRecommendation;
+    onApply?: (id: string) => void;
+  }
+
+  interface WeatherSummaryProps {
+    weather: WeatherData;
+  }
+
+  interface UserProfileDropdownProps {
+    user: UserProfile;
+  }
+
+  interface SystemStatusIndicatorProps {
+    status: SystemStatus;
+  }
+
+  interface NavigationProps {
+    currentPath: string;
+    onNavigate?: (path: string) => void;
   }
 
   // ============================================================================

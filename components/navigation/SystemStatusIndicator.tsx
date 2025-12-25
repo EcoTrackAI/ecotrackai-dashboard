@@ -2,11 +2,6 @@
 
 import { STATUS_COLORS } from "@/lib/constants";
 
-interface SystemStatusIndicatorProps {
-  status: SystemStatus;
-  className?: string;
-}
-
 export function SystemStatusIndicator({
   status,
   className = "",

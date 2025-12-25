@@ -8,16 +8,6 @@ import { NotificationIcon } from "./NotificationIcon";
 import { UserProfileDropdown } from "./UserProfileDropdown";
 import Image from "next/image";
 
-interface NavigationProps {
-  systemStatus?: SystemStatus;
-  weather?: WeatherData;
-  user?: UserProfile;
-  notifications?: NotificationItem[];
-  onNotificationClick?: (notification: NotificationItem) => void;
-  onSignOut?: () => void;
-  className?: string;
-}
-
 export function Navigation({
   systemStatus = "online",
   weather = {

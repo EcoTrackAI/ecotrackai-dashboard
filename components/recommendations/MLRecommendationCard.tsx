@@ -1,30 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-// Types are globally available from types/globals.d.ts
 
-interface MLRecommendationCardProps {
-  recommendation: MLRecommendation;
-  onApply?: (recommendationId: string) => void | Promise<void>;
-  onIgnore?: (recommendationId: string) => void | Promise<void>;
-  className?: string;
-}
-
-/**
- * MLRecommendationCard Component
- *
- * Displays AI-generated energy optimization recommendations with confidence scores
- * and transparent decision-making inputs.
- *
- * @example
- * ```tsx
- * <MLRecommendationCard
- *   recommendation={recommendation}
- *   onApply={handleApply}
- *   onIgnore={handleIgnore}
- * />
- * ```
- */
 export const MLRecommendationCard: React.FC<MLRecommendationCardProps> = ({
   recommendation,
   onApply,

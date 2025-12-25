@@ -1,15 +1,5 @@
 import React from "react";
 
-export interface RoomStatusCardProps {
-  roomName: string;
-  isOccupied: boolean;
-  activeDevices: number;
-  totalDevices: number;
-  currentPower: number; // in watts
-  temperature?: number;
-  className?: string;
-}
-
 export const RoomStatusCard: React.FC<RoomStatusCardProps> = ({
   roomName,
   isOccupied,
