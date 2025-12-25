@@ -1,8 +1,3 @@
-import {
-  HistoricalDataPoint,
-  HistoricalDataApiResponse,
-  RoomOption,
-} from "@/types/history";
 import { API_CONFIG } from "./constants";
 
 /**

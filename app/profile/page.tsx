@@ -7,7 +7,7 @@
 
 import React, { useState } from "react";
 import { ProfileCard, ProfileField, ToggleField } from "@/components/profile";
-import type { ProfileData } from "@/types/profile";
+// ProfileData type is globally available from types/globals.d.ts
 
 // Mock data - replace with actual data fetching
 const mockProfileData: ProfileData = {

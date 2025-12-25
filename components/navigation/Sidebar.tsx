@@ -24,6 +24,7 @@ interface NavigationItem {
 
 interface SidebarProps {
   className?: string;
+  systemStatus?: SystemStatus;
 }
 
 const navigationItems: NavigationItem[] = [
@@ -65,7 +66,7 @@ const navigationItems: NavigationItem[] = [
   },
 ];
 
-export function Sidebar({ className = "" }: SidebarProps) {
+export function Sidebar({ className = "", systemStatus = "offline" }: SidebarProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
@@ -217,15 +218,36 @@ export function Sidebar({ className = "" }: SidebarProps) {
               <div className="text-xs text-gray-500 space-y-1">
                 <p className="font-medium text-gray-700">System Status</p>
                 <div className="flex items-center gap-2">
-                  <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse" />
-                  <span>All systems operational</span>
+                  <div
+                    className={`w-2 h-2 rounded-full ${
+                      systemStatus === "online"
+                        ? "bg-green-500 animate-pulse"
+                        : systemStatus === "warning"
+                        ? "bg-yellow-500 animate-pulse"
+                        : "bg-red-500"
+                    }`}
+                  />
+                  <span>
+                    {systemStatus === "online"
+                      ? "All systems operational"
+                      : systemStatus === "warning"
+                      ? "System warnings detected"
+                      : "System offline"}
+                  </span>
                 </div>
               </div>
             ) : (
               <div className="flex justify-center">
                 <div
-                  className="w-2 h-2 bg-green-500 rounded-full animate-pulse"
-                  aria-label="System operational"
+                  className={`w-2 h-2 rounded-full ${
+                    systemStatus === "online"
+                      ? "bg-green-500 animate-pulse"
+                      : systemStatus === "warning"
+                      ? "bg-yellow-500 animate-pulse"
+                      : "bg-red-500"
+                  }`}
+                  aria-label={`System ${systemStatus}`}
+                  title={`System ${systemStatus}`}
                 />
               </div>
             )}

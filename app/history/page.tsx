@@ -7,7 +7,7 @@ import {
   HistoricalChart,
   DataTable,
 } from "@/components/history";
-import { DateRange, RoomOption, HistoricalDataPoint } from "@/types/history";
+// Types are globally available from types/globals.d.ts
 import {
   fetchHistoricalData,
   fetchRooms,

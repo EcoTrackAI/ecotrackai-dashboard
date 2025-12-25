@@ -26,8 +26,10 @@ export function Navigation({
     location: "Home",
   },
   user = {
+    id: "guest",
     name: "Guest User",
     email: "guest@example.com",
+    role: "User",
   },
   notifications = [],
   onNotificationClick,

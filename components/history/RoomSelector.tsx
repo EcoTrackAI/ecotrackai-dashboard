@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-import { RoomOption } from "@/types/history";
+// RoomOption type is globally available from types/globals.d.ts
 
 interface RoomSelectorProps {
   /**

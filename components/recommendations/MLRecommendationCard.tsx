@@ -1,11 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import {
-  MLRecommendation,
-  ConfidenceLevel,
-  RecommendationInputs,
-} from "@/types/recommendations";
+// Types are globally available from types/globals.d.ts
 
 interface MLRecommendationCardProps {
   recommendation: MLRecommendation;

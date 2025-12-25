@@ -1,7 +1,7 @@
 "use client";
 
 import { MLRecommendationCard } from "@/components/recommendations";
-import { MLRecommendation } from "@/types/recommendations";
+// MLRecommendation type is globally available from types/globals.d.ts
 
 const mockRecommendations: MLRecommendation[] = [
   {

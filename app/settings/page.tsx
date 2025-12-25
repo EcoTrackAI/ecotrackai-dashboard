@@ -2,17 +2,12 @@
 
 import { useState, useEffect } from "react";
 import {
-  Room,
-  Appliance,
-  TariffSettings,
-  DataSamplingSettings,
-  NotificationSettings,
   DEFAULT_ROOMS,
   DEFAULT_APPLIANCES,
   DEFAULT_TARIFF,
   DEFAULT_DATA_SAMPLING,
   DEFAULT_NOTIFICATIONS,
-} from "@/types/settings";
+} from "@/lib/constants";
 
 export default function SettingsPage() {
   const [rooms, setRooms] = useState<Room[]>(DEFAULT_ROOMS);
@@ -90,9 +85,15 @@ export default function SettingsPage() {
     const newAppliance: Appliance = {
       id: `appliance-${Date.now()}`,
       name: "New Appliance",
+      type: "other",
+      room: rooms[0]?.id || "",
       roomId: rooms[0]?.id || "",
+      status: "off",
+      controlMode: "manual",
+      powerConsumption: 0,
       powerRating: 100,
       isEnabled: true,
+      isOnline: true,
     };
     setAppliances([...appliances, newAppliance]);
   };

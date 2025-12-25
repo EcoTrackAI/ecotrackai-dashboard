@@ -1,22 +1,19 @@
 /**
  * Global Type Definitions
- * These types are available throughout the application without importing
+ * All types are available throughout the application without importing
  */
 
 declare global {
+  // ============================================================================
+  // System & Navigation Types
+  // ============================================================================
+  
   type SystemStatus = "online" | "offline" | "warning";
 
   interface WeatherData {
     temperature: number;
     condition: "sunny" | "cloudy" | "rainy" | "snowy" | "partly-cloudy";
     location: string;
-  }
-
-  interface UserProfile {
-    name: string;
-    email: string;
-    avatar?: string;
-    role?: string;
   }
 
   interface NotificationItem {
@@ -28,90 +25,326 @@ declare global {
     read: boolean;
   }
 
-  /**
-   * Navigation item configuration
-   */
   interface NavigationItem {
-    /** Display name of the navigation item */
     name: string;
-
-    /** Route path for Next.js navigation */
     href: string;
-
-    /** Lucide React icon component */
     icon: React.ComponentType<{ className?: string }>;
-
-    /** Short description shown when sidebar is expanded */
     description: string;
-
-    /** Optional badge count (for notifications, etc.) */
     badge?: number;
-
-    /** Whether this item is disabled */
     disabled?: boolean;
   }
 
-  /**
-   * Sidebar component props
-   */
   interface SidebarProps {
-    /** Additional CSS classes to apply to the sidebar */
     className?: string;
-
-    /** Optional custom navigation items (overrides default) */
     navigationItems?: NavigationItem[];
-
-    /** Optional callback when navigation item is clicked */
     onNavigate?: (href: string) => void;
-
-    /** Whether the sidebar should start collapsed (desktop only) */
     defaultCollapsed?: boolean;
   }
 
-  /**
-   * Sidebar state
-   */
   interface SidebarState {
-    /** Whether the sidebar is collapsed on desktop */
     isCollapsed: boolean;
-
-    /** Whether the mobile menu is open */
     isMobileOpen: boolean;
   }
 
-  /**
-   * Sidebar configuration
-   */
   interface SidebarConfig {
-    /** Width when expanded (in pixels or tailwind class) */
     expandedWidth: string;
-
-    /** Width when collapsed (in pixels or tailwind class) */
     collapsedWidth: string;
-
-    /** Breakpoint for mobile/desktop switch */
     mobileBreakpoint: string;
-
-    /** Animation duration in milliseconds */
     transitionDuration: number;
   }
 
-  /**
-   * Navigation group (for future nested navigation)
-   */
   interface NavigationGroup {
-    /** Group label */
     label: string;
-
-    /** Items in this group */
     items: NavigationItem[];
-
-    /** Whether the group is collapsible */
     collapsible?: boolean;
-
-    /** Whether the group starts expanded */
     defaultExpanded?: boolean;
   }
+
+  // ============================================================================
+  // User Profile Types
+  // ============================================================================
+
+  interface UserProfile {
+    id: string;
+    name: string;
+    email: string;
+    role: "Admin" | "User";
+    avatarUrl?: string;
+    avatarInitials?: string;
+    avatar?: string;
+  }
+
+  interface SystemInfo {
+    connectedDevices: number;
+    activeRooms: number;
+    lastLogin: Date | string;
+  }
+
+  interface UserPreferences {
+    theme: "light" | "dark";
+    notificationsEnabled: boolean;
+    automationMode: boolean;
+  }
+
+  interface ProfileData {
+    user: UserProfile;
+    systemInfo: SystemInfo;
+    preferences: UserPreferences;
+  }
+
+  // ============================================================================
+  // Analytics Types
+  // ============================================================================
+
+  interface PowerUsageDataPoint {
+    timestamp: string;
+    power: number;
+    date?: string;
+  }
+
+  interface ApplianceEnergyData {
+    appliance: string;
+    energy: number;
+    percentage?: number;
+  }
+
+  interface AutomationComparisonData {
+    month: string;
+    before: number;
+    after: number;
+    savings?: number;
+  }
+
+  interface AnalyticsApiResponse<T> {
+    success: boolean;
+    data: T;
+    timestamp?: string;
+    error?: string;
+  }
+
+  interface TimeRange {
+    start: Date;
+    end: Date;
+  }
+
+  // ============================================================================
+  // Automation Types
+  // ============================================================================
+
+  type ApplianceType = "air_conditioner" | "fan" | "light" | "heater" | "dehumidifier" | "other";
+  type ControlMode = "auto" | "manual";
+  type ApplianceStatus = "on" | "off";
+
+  interface FanSettings {
+    speed: number;
+  }
+
+  interface ACSettings {
+    temperature: number;
+    mode: "cool" | "heat" | "fan" | "dry";
+  }
+
+  interface ApplianceSettings {
+    fan?: FanSettings;
+    ac?: ACSettings;
+  }
+
+  interface Appliance {
+    id: string;
+    name: string;
+    type: ApplianceType;
+    room: string;
+    status: ApplianceStatus;
+    controlMode: ControlMode;
+    powerConsumption: number;
+    settings?: ApplianceSettings;
+    isOnline: boolean;
+    roomId?: string;
+    powerRating?: number;
+    isEnabled?: boolean;
+  }
+
+  interface AutomationRule {
+    id: string;
+    applianceId: string;
+    condition: string;
+    action: string;
+    enabled: boolean;
+  }
+
+  // ============================================================================
+  // History & Comparison Types
+  // ============================================================================
+
+  interface HistoricalDataPoint {
+    timestamp: string;
+    roomId: string;
+    roomName: string;
+    power: number;
+    energy: number;
+    temperature?: number;
+    humidity?: number;
+  }
+
+  interface DateRange {
+    start: Date;
+    end: Date;
+    label?: string;
+  }
+
+  interface RoomOption {
+    id: string;
+    name: string;
+    type: string;
+  }
+
+  interface ComparisonData {
+    roomId: string;
+    roomName: string;
+    currentPeriod: {
+      energy: number;
+      avgPower: number;
+      peakPower: number;
+    };
+    previousPeriod: {
+      energy: number;
+      avgPower: number;
+      peakPower: number;
+    };
+    change: {
+      energy: number;
+      avgPower: number;
+      peakPower: number;
+    };
+  }
+
+  interface HistoricalDataApiResponse {
+    success: boolean;
+    data: HistoricalDataPoint[];
+    count: number;
+    dateRange: {
+      start: string;
+      end: string;
+    };
+    error?: string;
+  }
+
+  interface ExportDataRow {
+    Date: string;
+    Time: string;
+    Room: string;
+    "Power (W)": number;
+    "Energy (kWh)": number;
+    "Temperature (°C)"?: number;
+    "Humidity (%)"?: number;
+  }
+
+  type SortDirection = "asc" | "desc";
+
+  interface TableSortConfig {
+    key: keyof HistoricalDataPoint;
+    direction: SortDirection;
+  }
+
+  // ============================================================================
+  // Recommendations Types
+  // ============================================================================
+
+  interface MLRecommendation {
+    id: string;
+    title: string;
+    description: string;
+    confidenceScore: number;
+    inputs: RecommendationInputs;
+    action: RecommendationAction;
+    timestamp: Date;
+    category: RecommendationCategory;
+    potentialSavings?: {
+      amount: number;
+      unit: "kWh" | "percentage" | "currency";
+    };
+  }
+
+  interface RecommendationInputs {
+    weather?: {
+      temperature: number;
+      condition: string;
+    };
+    occupancy?: {
+      current: number;
+      predicted: number;
+    };
+    timeOfDay?: {
+      hour: number;
+      period: "morning" | "afternoon" | "evening" | "night";
+    };
+    historicalPattern?: string;
+  }
+
+  interface RecommendationAction {
+    type: "schedule" | "adjust" | "alert" | "optimize";
+    target: string;
+    parameters?: Record<string, unknown>;
+  }
+
+  type RecommendationCategory =
+    | "energy-savings"
+    | "comfort-optimization"
+    | "predictive-maintenance"
+    | "cost-reduction"
+    | "peak-demand";
+
+  type ConfidenceLevel = "low" | "medium" | "high" | "very-high";
+
+  // ============================================================================
+  // Settings Types
+  // ============================================================================
+
+  interface Room {
+    id: string;
+    name: string;
+    isEnabled: boolean;
+    type?: string;
+  }
+
+  interface TariffSettings {
+    currency: string;
+    unitPrice: number;
+    timeBasedPricing: boolean;
+    peakRate?: number;
+    offPeakRate?: number;
+    peakStartHour?: number;
+    peakEndHour?: number;
+  }
+
+  interface DataSamplingSettings {
+    interval: number;
+    retentionDays: number;
+    aggregationMethod: "average" | "sum" | "max" | "min";
+  }
+
+  interface NotificationSettings {
+    emailNotifications: boolean;
+    pushNotifications: boolean;
+    highUsageAlert: boolean;
+    highUsageThreshold: number;
+    offlineDeviceAlert: boolean;
+  }
+
+  interface SystemSettings {
+    rooms: Room[];
+    appliances: Appliance[];
+    tariff: TariffSettings;
+    dataSampling: DataSamplingSettings;
+    notifications: NotificationSettings;
+  }
+
+  // Default configurations
+  const DEFAULT_ROOMS: Room[];
+  const DEFAULT_APPLIANCES: Appliance[];
+  const DEFAULT_TARIFF: TariffSettings;
+  const DEFAULT_DATA_SAMPLING: DataSamplingSettings;
+  const DEFAULT_NOTIFICATIONS: NotificationSettings;
 }
 
 export {};

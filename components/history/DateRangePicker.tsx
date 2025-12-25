@@ -1,7 +1,7 @@
 "use client";
 
 import React, { useState } from "react";
-import { DateRange } from "@/types/history";
+// DateRange type is globally available from types/globals.d.ts
 
 interface DateRangePickerProps {
   /**

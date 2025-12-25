@@ -8,11 +8,7 @@
 
 import React, { useState } from "react";
 import ApplianceControlCard from "./ApplianceControlCard";
-import type {
-  Appliance,
-  ControlMode,
-  ApplianceStatus,
-} from "@/types/automation";
+// Types are globally available from types/globals.d.ts
 
 interface AutomationControlPanelProps {
   initialAppliances?: Appliance[];

@@ -1,11 +1,7 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-import {
-  HistoricalDataPoint,
-  TableSortConfig,
-  ExportDataRow,
-} from "@/types/history";
+// Types are globally available from types/globals.d.ts
 
 interface DataTableProps {
   /**

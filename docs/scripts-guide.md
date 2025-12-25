@@ -62,6 +62,38 @@ node scripts/add-test-data.js
 
 ---
 
+### 3. **set-system-status.js**
+
+Sets the system status in Firebase for testing the navigation and sidebar indicators.
+
+**Usage:**
+
+```bash
+# Set status to online (default)
+node scripts/set-system-status.js online
+
+# Set status to warning
+node scripts/set-system-status.js warning
+
+# Set status to offline
+node scripts/set-system-status.js offline
+```
+
+**What it does:**
+
+- ✅ Updates the system/status path in Firebase
+- ✅ Accepts one of three statuses: online, warning, or offline
+- ✅ Validates the status before setting
+- ✅ Provides confirmation of successful update
+
+**Status Options:**
+
+- `online` - All systems operational (green indicator)
+- `warning` - System warnings detected (yellow indicator)
+- `offline` - System offline (red indicator)
+
+---
+
 ## 🔧 Requirements
 
 - Node.js installed
@@ -130,6 +162,10 @@ Update Firebase Security Rules to allow read/write:
 {
   "rules": {
     "sensors": {
+      ".read": true,
+      ".write": true
+    },
+    "system": {
       ".read": true,
       ".write": true
     }

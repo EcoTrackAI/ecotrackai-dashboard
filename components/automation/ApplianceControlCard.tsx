@@ -7,11 +7,7 @@
 "use client";
 
 import React, { useState } from "react";
-import type {
-  Appliance,
-  ControlMode,
-  ApplianceStatus,
-} from "@/types/automation";
+// Types are globally available from types/globals.d.ts
 
 interface ApplianceControlCardProps {
   appliance: Appliance;

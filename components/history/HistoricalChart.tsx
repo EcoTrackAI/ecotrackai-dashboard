@@ -15,7 +15,7 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-import { HistoricalDataPoint } from "@/types/history";
+// HistoricalDataPoint type is globally available from types/globals.d.ts
 
 interface HistoricalChartProps {
   /**
