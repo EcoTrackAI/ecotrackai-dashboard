@@ -1,29 +1,8 @@
 "use client";
 
 import React, { useState } from "react";
-// DateRange type is globally available from types/globals.d.ts
 
-interface DateRangePickerProps {
-  /**
-   * Currently selected date range
-   */
-  value: DateRange;
-
-  /**
-   * Callback when date range changes
-   */
-  onChange: (range: DateRange) => void;
-
-  /**
-   * Optional CSS class
-   */
-  className?: string;
-}
-
-type PresetOption = {
-  label: string;
-  getValue: () => DateRange;
-};
+// DateRangePickerProps, DateRange, and PresetOption are globally available from types/globals.d.ts
 
 const DATE_PRESETS: PresetOption[] = [
   {

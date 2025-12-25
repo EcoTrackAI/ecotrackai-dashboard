@@ -1,7 +1,9 @@
 import { MetricCard } from "@/components/metrics";
 import { RoomStatusCard } from "@/components/rooms";
 import { AutomationActivityItem } from "@/components/automation";
-import { LiveSensorCard, SensorStatus } from "@/components/sensors";
+import { LiveSensorCard } from "@/components/sensors";
+
+// SensorStatus type is globally available from types/globals.d.ts
 
 export default function Home() {
   // In production, this would come from Firebase/API

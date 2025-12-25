@@ -2,11 +2,7 @@
 
 import { useState } from "react";
 
-interface NotificationIconProps {
-  notifications: NotificationItem[];
-  onNotificationClick?: (notification: NotificationItem) => void;
-  className?: string;
-}
+// NotificationIconProps and NotificationItem are globally available from types/globals.d.ts
 
 export function NotificationIcon({
   notifications,

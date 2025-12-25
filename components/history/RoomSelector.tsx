@@ -1,41 +1,8 @@
 "use client";
 
 import React, { useState, useRef, useEffect } from "react";
-// RoomOption type is globally available from types/globals.d.ts
 
-interface RoomSelectorProps {
-  /**
-   * List of available rooms
-   */
-  rooms: RoomOption[];
-
-  /**
-   * Currently selected room IDs (supports multiple selection)
-   */
-  selectedRoomIds: string[];
-
-  /**
-   * Callback when selection changes
-   */
-  onChange: (roomIds: string[]) => void;
-
-  /**
-   * Whether to allow multiple room selection
-   * @default true
-   */
-  multiple?: boolean;
-
-  /**
-   * Optional CSS class
-   */
-  className?: string;
-
-  /**
-   * Whether the selector is in a loading state
-   * @default false
-   */
-  isLoading?: boolean;
-}
+// RoomSelectorProps and RoomOption are globally available from types/globals.d.ts
 
 /**
  * RoomSelector Component

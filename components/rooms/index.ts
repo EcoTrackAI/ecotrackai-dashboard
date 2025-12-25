@@ -1,1 +1,1 @@
-export { RoomStatusCard } from './RoomStatusCard';
+export { RoomStatusCard } from "./RoomStatusCard";

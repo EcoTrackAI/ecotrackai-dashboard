@@ -1,31 +1,8 @@
 "use client";
 
 import React, { useState, useMemo } from "react";
-// Types are globally available from types/globals.d.ts
 
-interface DataTableProps {
-  /**
-   * Data to display in the table
-   */
-  data: HistoricalDataPoint[];
-
-  /**
-   * Whether to show the export button
-   * @default true
-   */
-  showExport?: boolean;
-
-  /**
-   * Optional CSS class
-   */
-  className?: string;
-
-  /**
-   * Whether the table is loading
-   * @default false
-   */
-  isLoading?: boolean;
-}
+// DataTableProps and all other types are globally available from types/globals.d.ts
 
 /**
  * DataTable Component
@@ -105,7 +82,7 @@ export const DataTable: React.FC<DataTableProps> = ({
           "Lighting (%)": point.lighting,
         }),
         ...(point.motion !== undefined && {
-          "Motion": point.motion === 1 ? "Detected" : "Not detected",
+          Motion: point.motion === 1 ? "Detected" : "Not detected",
         }),
       };
     });
@@ -383,9 +360,9 @@ export const DataTable: React.FC<DataTableProps> = ({
                   {row.lighting !== undefined ? row.lighting.toFixed(0) : "-"}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 text-right">
-                  {row.motion !== undefined 
-                    ? row.motion === 1 
-                      ? "✓ Detected" 
+                  {row.motion !== undefined
+                    ? row.motion === 1
+                      ? "✓ Detected"
                       : "— None"
                     : "-"}
                 </td>

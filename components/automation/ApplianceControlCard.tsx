@@ -7,15 +7,8 @@
 "use client";
 
 import React, { useState } from "react";
-// Types are globally available from types/globals.d.ts
 
-interface ApplianceControlCardProps {
-  appliance: Appliance;
-  onStatusChange: (id: string, status: ApplianceStatus) => void;
-  onModeChange: (id: string, mode: ControlMode) => void;
-  onFanSpeedChange: (id: string, speed: number) => void;
-  onACTemperatureChange: (id: string, temperature: number) => void;
-}
+// ApplianceControlCardProps and all types are globally available from types/globals.d.ts
 
 export default function ApplianceControlCard({
   appliance,

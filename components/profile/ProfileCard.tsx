@@ -40,7 +40,7 @@ export const ToggleField: React.FC<ToggleFieldProps> = ({
     <div className="flex items-center justify-between py-2">
       <span className="text-sm font-medium text-gray-600">{label}</span>
       <button
-        onClick={() => onChange(!checked)}
+        onClick={() => onChange?.(!checked)}
         className={`w-10 h-5 rounded-full transition-colors ${
           checked ? "bg-green-500" : "bg-gray-300"
         }`}

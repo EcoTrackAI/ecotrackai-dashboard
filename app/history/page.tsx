@@ -7,19 +7,9 @@ import {
   HistoricalChart,
   DataTable,
 } from "@/components/history";
-// Types are globally available from types/globals.d.ts
-import {
-  fetchHistoricalData,
-  fetchRooms,
-  generateMockHistoricalData,
-  generateMockRooms,
-} from "@/lib/api";
-
-type ChartType = "line" | "area" | "bar";
-type MetricType = "power" | "energy" | "temperature" | "humidity" | "lighting" | "motion";
+import { fetchHistoricalData, fetchRooms } from "@/lib/api";
 
 export default function HistoryPage() {
-  // State management
   const [dateRange, setDateRange] = useState<DateRange>(() => {
     const end = new Date();
     const start = new Date();
@@ -33,21 +23,17 @@ export default function HistoryPage() {
   const [historicalData, setHistoricalData] = useState<HistoricalDataPoint[]>(
     []
   );
-  const [isLoadingRooms, setIsLoadingRooms] = useState(false);
-  const [isLoadingData, setIsLoadingData] = useState(false);
+  const [isLoading, setIsLoading] = useState({ rooms: false, data: false });
   const [error, setError] = useState<string | null>(null);
 
-  // Chart preferences
   const [chartType, setChartType] = useState<ChartType>("line");
   const [metric, setMetric] = useState<MetricType>("energy");
   const [compareRooms, setCompareRooms] = useState(false);
 
-  // Load rooms on mount
   useEffect(() => {
     loadRooms();
   }, []);
 
-  // Load data when filters change
   useEffect(() => {
     if (selectedRoomIds.length > 0) {
       loadHistoricalData();
@@ -57,64 +43,38 @@ export default function HistoryPage() {
   }, [dateRange, selectedRoomIds]);
 
   const loadRooms = async () => {
-    setIsLoadingRooms(true);
+    setIsLoading((prev) => ({ ...prev, rooms: true }));
     setError(null);
     try {
-      // Try to fetch from API, fallback to mock data
-      let roomsData: RoomOption[];
-      try {
-        roomsData = await fetchRooms();
-      } catch (apiError) {
-        console.warn("API not available, using mock data");
-        roomsData = generateMockRooms();
-      }
-
+      const roomsData = await fetchRooms();
       setRooms(roomsData);
-      // Select all rooms by default
       setSelectedRoomIds(roomsData.map((r) => r.id));
     } catch (err) {
-      setError("Failed to load rooms");
+      setError("Failed to load rooms. Please check API connection.");
       console.error(err);
+      setRooms([]);
     } finally {
-      setIsLoadingRooms(false);
+      setIsLoading((prev) => ({ ...prev, rooms: false }));
     }
   };
 
   const loadHistoricalData = async () => {
-    setIsLoadingData(true);
+    setIsLoading((prev) => ({ ...prev, data: true }));
     setError(null);
     try {
-      // Try to fetch from API, fallback to mock data
-      let data: HistoricalDataPoint[];
-      try {
-        data = await fetchHistoricalData(
-          dateRange.start,
-          dateRange.end,
-          selectedRoomIds
-        );
-      } catch (apiError) {
-        console.warn("API not available, using mock data");
-        const selectedRooms = rooms.filter((r) =>
-          selectedRoomIds.includes(r.id)
-        );
-        data = generateMockHistoricalData(
-          dateRange.start,
-          dateRange.end,
-          selectedRooms
-        );
-      }
-
+      const data = await fetchHistoricalData(
+        dateRange.start,
+        dateRange.end,
+        selectedRoomIds
+      );
       setHistoricalData(data);
     } catch (err) {
-      setError("Failed to load historical data");
+      setError("Failed to load historical data. Please check API connection.");
       console.error(err);
+      setHistoricalData([]);
     } finally {
-      setIsLoadingData(false);
+      setIsLoading((prev) => ({ ...prev, data: false }));
     }
-  };
-
-  const handleRefresh = () => {
-    loadHistoricalData();
   };
 
   return (
@@ -177,16 +137,16 @@ export default function HistoryPage() {
                 rooms={rooms}
                 selectedRoomIds={selectedRoomIds}
                 onChange={setSelectedRoomIds}
-                isLoading={isLoadingRooms}
+                isLoading={isLoading.rooms}
               />
               <div className="mt-4">
                 <button
-                  onClick={handleRefresh}
-                  disabled={isLoadingData || selectedRoomIds.length === 0}
+                  onClick={loadHistoricalData}
+                  disabled={isLoading.data || selectedRoomIds.length === 0}
                   className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#6366F1] rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-[#6366F1] focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
                   aria-label="Refresh data"
                 >
-                  {isLoadingData ? (
+                  {isLoading.data ? (
                     <>
                       <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
                       <span>Loading...</span>
@@ -317,7 +277,7 @@ export default function HistoryPage() {
         </div>
 
         {/* Data Table */}
-        <DataTable data={historicalData} isLoading={isLoadingData} />
+        <DataTable data={historicalData} isLoading={isLoading.data} />
       </div>
     </div>
   );

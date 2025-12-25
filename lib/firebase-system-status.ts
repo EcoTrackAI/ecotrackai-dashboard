@@ -1,11 +1,13 @@
 import { ref, onValue, set } from "firebase/database";
 import { getFirebaseDatabase } from "./firebase";
 
-export function subscribeSystemStatus(callback: SystemStatusCallback): () => void {
+export function subscribeSystemStatus(
+  callback: SystemStatusCallback
+): () => void {
   try {
     const database = getFirebaseDatabase();
     const statusRef = ref(database, "system/status");
-    
+
     return onValue(
       statusRef,
       (snapshot) => {

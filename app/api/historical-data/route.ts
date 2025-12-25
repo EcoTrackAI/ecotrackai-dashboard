@@ -1,9 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  getHistoricalData,
-  getAggregatedHourlyData,
-  testConnection,
-} from "@/lib/database";
+import { getHistoricalData, testConnection } from "@/lib/database";
 
 /**
  * GET /api/historical-data
@@ -31,7 +27,9 @@ export async function GET(request: NextRequest) {
     const startDateStr = searchParams.get("startDate");
     const endDateStr = searchParams.get("endDate");
     const roomIdsStr = searchParams.get("roomIds");
-    const aggregation = searchParams.get("aggregation") || "raw";
+    const aggregation = (searchParams.get("aggregation") || "raw") as
+      | "raw"
+      | "hourly";
 
     // Validate required parameters
     if (!startDateStr || !endDateStr) {
@@ -57,17 +55,20 @@ export async function GET(request: NextRequest) {
       ? roomIdsStr.split(",").map((id) => id.trim())
       : undefined;
 
-    // Fetch data based on aggregation type
-    let data;
-    if (aggregation === "hourly") {
-      data = await getAggregatedHourlyData(startDate, endDate, roomIds);
-    } else {
-      data = await getHistoricalData(startDate, endDate, roomIds);
-    }
+    // Fetch data with aggregation support
+    const data = await getHistoricalData(
+      startDate,
+      endDate,
+      roomIds,
+      aggregation
+    );
 
     // Transform data to match frontend format
     const transformedData = data.map((record) => ({
-      timestamp: record.timestamp.toISOString(),
+      timestamp:
+        typeof record.timestamp === "string"
+          ? record.timestamp
+          : (record.timestamp as Date).toISOString(),
       roomId: record.roomId,
       roomName: record.roomName,
       energy: Number(record.energy) || 0,

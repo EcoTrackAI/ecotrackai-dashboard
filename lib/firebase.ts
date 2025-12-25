@@ -1,9 +1,6 @@
 import { initializeApp, getApps, FirebaseApp } from "firebase/app";
 import { getDatabase, Database } from "firebase/database";
 
-/**
- * Firebase configuration from environment variables
- */
 const firebaseConfig = {
   apiKey: process.env.NEXT_PUBLIC_FIREBASE_API_KEY,
   authDomain: process.env.NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN,
@@ -14,41 +11,18 @@ const firebaseConfig = {
   databaseURL: process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL,
 };
 
-/**
- * Initialize Firebase app (singleton pattern)
- */
 let app: FirebaseApp;
 let database: Database;
 
 export function initializeFirebase() {
-  if (!getApps().length) {
-    app = initializeApp(firebaseConfig);
-  } else {
-    app = getApps()[0];
+  if (!app) {
+    app = getApps().length ? getApps()[0] : initializeApp(firebaseConfig);
+    database = getDatabase(app);
   }
-
-  database = getDatabase(app);
   return { app, database };
 }
 
-/**
- * Get Firebase database instance
- */
 export function getFirebaseDatabase(): Database {
-  if (!database) {
-    const { database: db } = initializeFirebase();
-    return db;
-  }
+  if (!database) initializeFirebase();
   return database;
-}
-
-/**
- * Get Firebase app instance
- */
-export function getFirebaseApp(): FirebaseApp {
-  if (!app) {
-    const { app: firebaseApp } = initializeFirebase();
-    return firebaseApp;
-  }
-  return app;
 }

@@ -1,17 +1,6 @@
 import React from "react";
 
-export interface MetricCardProps {
-  title: string;
-  value: string | number;
-  unit: string;
-  icon: React.ReactNode;
-  trend?: {
-    direction: "up" | "down";
-    value: number;
-    isPositive?: boolean; // Explicitly mark if trend is good or bad
-  };
-  className?: string;
-}
+// MetricCardProps is globally available from types/globals.d.ts
 
 export const MetricCard: React.FC<MetricCardProps> = ({
   title,

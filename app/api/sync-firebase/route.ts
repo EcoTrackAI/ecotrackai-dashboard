@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getSensorData } from "@/lib/firebase-sensors";
+import { fetchSensorData } from "@/lib/firebase-sensors";
 import {
   batchInsertSensorData,
   upsertRoom,
@@ -22,7 +22,7 @@ export async function POST(request: NextRequest) {
     }
 
     // Fetch current sensor data from Firebase
-    const sensors = await getSensorData();
+    const sensors = await fetchSensorData();
 
     if (!sensors || sensors.length === 0) {
       return NextResponse.json(

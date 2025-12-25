@@ -11,58 +11,7 @@ import {
   ResponsiveContainer,
 } from "recharts";
 
-interface RealtimeLineChartProps {
-  /**
-   * Array of data points to display
-   * Each object should contain a timestamp and the dataKey value
-   */
-  data: Record<string, any>[];
-
-  /**
-   * The key in the data object to plot on the Y-axis
-   */
-  dataKey: string;
-
-  /**
-   * Color for the line (hex code)
-   * @default '#6366F1'
-   */
-  color?: string;
-
-  /**
-   * Unit label to display in tooltip and axis (e.g., 'W', 'kWh', '°C')
-   */
-  unit?: string;
-
-  /**
-   * Optional height in pixels
-   * @default 300
-   */
-  height?: number;
-
-  /**
-   * Optional title for the chart
-   */
-  title?: string;
-
-  /**
-   * Key for X-axis (usually timestamp)
-   * @default 'timestamp'
-   */
-  xAxisKey?: string;
-
-  /**
-   * Whether to show grid lines
-   * @default true
-   */
-  showGrid?: boolean;
-
-  /**
-   * Whether to animate the line
-   * @default true
-   */
-  animate?: boolean;
-}
+// RealtimeLineChartProps is globally available from types/globals.d.ts
 
 /**
  * Custom tooltip component for the chart

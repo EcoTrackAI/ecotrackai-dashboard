@@ -5,9 +5,7 @@ import { Navigation } from "./Navigation";
 import { Sidebar } from "./Sidebar";
 import { subscribeSystemStatus } from "@/lib/firebase-system-status";
 
-interface AppShellProps {
-  children: React.ReactNode;
-}
+// AppShellProps is globally available from types/globals.d.ts
 
 /**
  * App Shell component that wraps the entire application

@@ -1,173 +1,64 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { LiveSensorCard, SensorStatus } from "@/components/sensors";
-import {
-  subscribeSensorData,
-  FirebaseSensorData,
-} from "@/lib/firebase-sensors";
+import { LiveSensorCard } from "@/components/sensors";
+import { subscribeSensorData } from "@/lib/firebase-sensors";
 import { initializeFirebase } from "@/lib/firebase";
 
-interface SensorData {
-  id: string;
-  sensorName: string;
-  currentValue: number | string;
-  unit: string;
-  status: SensorStatus;
-  description: string;
-  category:
-    | "temperature"
-    | "humidity"
-    | "occupancy"
-    | "lighting"
-    | "power"
-    | "system";
-  lastUpdate?: string;
-}
+const STALE_THRESHOLD = 30000; // 30 seconds
+
+const isSensorStale = (lastUpdate: string | undefined): boolean => {
+  if (!lastUpdate) return true;
+  return Date.now() - new Date(lastUpdate).getTime() >= STALE_THRESHOLD;
+};
 
 export default function LiveMonitoringPage() {
-  const [sensors, setSensors] = useState<SensorData[]>([]);
+  const [sensors, setSensors] = useState<FirebaseSensorData[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [connectionStatus, setConnectionStatus] = useState<
-    "connecting" | "connected" | "stale" | "error"
-  >("connecting");
-
-  // Check if individual sensor data is stale
-  const isSensorStale = (lastUpdate: string | undefined): boolean => {
-    if (!lastUpdate) return true;
-    const now = new Date().getTime();
-    const sensorTime = new Date(lastUpdate).getTime();
-    const STALE_THRESHOLD = 30000; // 30 seconds
-    return now - sensorTime >= STALE_THRESHOLD;
-  };
-
-  // Check if data is recent (within last 30 seconds)
-  const checkDataFreshness = (sensors: SensorData[]) => {
-    if (sensors.length === 0) return false;
-
-    const now = new Date().getTime();
-    const STALE_THRESHOLD = 30000; // 30 seconds
-
-    // Check if any sensor has a recent update
-    const hasRecentData = sensors.some((sensor) => {
-      if (!sensor.lastUpdate) return false;
-      const sensorTime = new Date(sensor.lastUpdate).getTime();
-      return now - sensorTime < STALE_THRESHOLD;
-    });
-
-    return hasRecentData;
-  };
+  const [selectedCategory, setSelectedCategory] = useState<string>("all");
 
   useEffect(() => {
-    // Initialize Firebase
     try {
       initializeFirebase();
-      setConnectionStatus("connected");
     } catch (err) {
       console.error("Failed to initialize Firebase:", err);
       setError("Failed to connect to Firebase");
-      setConnectionStatus("error");
       setLoading(false);
       return;
     }
 
-    // Subscribe to real-time sensor data
-    const unsubscribe = subscribeSensorData(
-      (firebaseSensors: FirebaseSensorData[]) => {
-        try {
-          // Transform Firebase data to match component interface
-          const now = new Date().getTime();
-          const STALE_THRESHOLD = 30000; // 30 seconds
+    const unsubscribe = subscribeSensorData((firebaseSensors) => {
+      setSensors(
+        firebaseSensors.map((sensor) => ({
+          ...sensor,
+          status: (isSensorStale(sensor.lastUpdate)
+            ? "offline"
+            : sensor.status) as SensorStatus,
+        }))
+      );
+      setLoading(false);
+      setError(null);
+    });
 
-          const transformedSensors: SensorData[] = firebaseSensors.map(
-            (sensor) => {
-              // Check if sensor data is stale
-              const isStale =
-                !sensor.lastUpdate ||
-                now - new Date(sensor.lastUpdate).getTime() >= STALE_THRESHOLD;
-
-              return {
-                id: sensor.id,
-                sensorName: sensor.sensorName,
-                currentValue: sensor.currentValue,
-                unit: sensor.unit,
-                status: isStale ? "offline" : sensor.status, // Set to offline if stale
-                description: sensor.description || "",
-                category: (sensor.category as any) || "system",
-                lastUpdate: sensor.lastUpdate,
-              };
-            }
-          );
-
-          setSensors(transformedSensors);
-          setLoading(false);
-          setError(null);
-
-          // Check if data is fresh
-          const isFresh = checkDataFreshness(transformedSensors);
-          setConnectionStatus(isFresh ? "connected" : "stale");
-        } catch (err) {
-          console.error("Error processing sensor data:", err);
-          setError("Error processing sensor data");
-          setLoading(false);
-        }
-      }
-    );
-
-    // Cleanup subscription on unmount
-    return () => {
-      unsubscribe();
-    };
+    return () => unsubscribe();
   }, []);
 
-  // Check data freshness periodically and update sensor statuses
   useEffect(() => {
     if (sensors.length === 0) return;
 
     const interval = setInterval(() => {
-      const now = new Date().getTime();
-      const STALE_THRESHOLD = 30000; // 30 seconds
-
-      // Update sensor statuses based on staleness
-      setSensors((prevSensors) =>
-        prevSensors.map((sensor) => {
-          const isStale =
-            !sensor.lastUpdate ||
-            now - new Date(sensor.lastUpdate).getTime() >= STALE_THRESHOLD;
-
-          // Only update status if it changed
-          if (isStale && sensor.status !== "offline") {
-            return { ...sensor, status: "offline" as SensorStatus };
-          }
-          return sensor;
-        })
+      setSensors((prev) =>
+        prev.map((sensor) =>
+          isSensorStale(sensor.lastUpdate) && sensor.status !== "offline"
+            ? { ...sensor, status: "offline" as SensorStatus }
+            : sensor
+        )
       );
-
-      // Check overall connection status
-      const isFresh = checkDataFreshness(sensors);
-      setConnectionStatus(isFresh ? "connected" : "stale");
-    }, 5000); // Check every 5 seconds
+    }, 5000);
 
     return () => clearInterval(interval);
-  }, [sensors]);
-
-  const [lastUpdate, setLastUpdate] = useState<Date | null>(null);
-  const [selectedCategory, setSelectedCategory] = useState<string>("all");
-  const [mounted, setMounted] = useState(false);
-
-  // Set mounted flag and initial timestamp on client side only
-  useEffect(() => {
-    setMounted(true);
-    setLastUpdate(new Date());
-  }, []);
-
-  // Update lastUpdate timestamp when sensor data changes
-  useEffect(() => {
-    if (sensors.length > 0 && mounted) {
-      setLastUpdate(new Date());
-    }
-  }, [sensors, mounted]);
+  }, [sensors.length]);
 
   const filteredSensors =
     selectedCategory === "all"
@@ -185,8 +76,16 @@ export default function LiveMonitoringPage() {
   };
 
   const activeSensors = sensors.filter((s) => s.status !== "offline").length;
-  const warningSensors = sensors.filter((s) => s.status === "warning").length;
-  const criticalSensors = sensors.filter((s) => s.status === "critical").length;
+  const hasRecentData = sensors.some(
+    (s) => s.lastUpdate && !isSensorStale(s.lastUpdate)
+  );
+  const connectionStatus = loading
+    ? "connecting"
+    : error
+    ? "error"
+    : hasRecentData
+    ? "connected"
+    : "stale";
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
@@ -250,7 +149,9 @@ export default function LiveMonitoringPage() {
               <span className="w-2 h-2 rounded-full bg-orange-500" />
               <span className="text-sm font-medium text-gray-600">Warning</span>
             </div>
-            <p className="text-2xl font-bold text-gray-900">{warningSensors}</p>
+            <p className="text-2xl font-bold text-gray-900">
+              {sensors.filter((s) => s.status === "warning").length}
+            </p>
           </div>
 
           <div className="bg-white rounded-lg border border-gray-200 p-4">
@@ -261,7 +162,7 @@ export default function LiveMonitoringPage() {
               </span>
             </div>
             <p className="text-2xl font-bold text-gray-900">
-              {criticalSensors}
+              {sensors.filter((s) => s.status === "critical").length}
             </p>
           </div>
 
@@ -311,40 +212,21 @@ export default function LiveMonitoringPage() {
 
         {/* Sensor Grid */}
         <section aria-labelledby="sensors-heading">
-          <div className="flex items-center justify-between mb-6">
-            <h2
-              id="sensors-heading"
-              className="text-xl font-semibold text-[#111827]"
-            >
-              {selectedCategory === "all"
-                ? "All Sensors"
-                : `${
-                    selectedCategory.charAt(0).toUpperCase() +
-                    selectedCategory.slice(1)
-                  } Sensors`}
-            </h2>
-            <div className="flex items-center text-sm text-gray-500">
-              <span>
-                Last updated:{" "}
-                {lastUpdate ? lastUpdate.toLocaleTimeString() : "Loading..."}
-              </span>
-            </div>
-          </div>
+          <h2
+            id="sensors-heading"
+            className="text-xl font-semibold text-[#111827] mb-6"
+          >
+            {selectedCategory === "all"
+              ? "All Sensors"
+              : `${
+                  selectedCategory.charAt(0).toUpperCase() +
+                  selectedCategory.slice(1)
+                } Sensors`}
+          </h2>
 
           <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-4 gap-4">
             {filteredSensors.map((sensor) => (
-              <LiveSensorCard
-                key={sensor.id}
-                sensorName={sensor.sensorName}
-                currentValue={sensor.currentValue}
-                unit={sensor.unit}
-                status={sensor.status}
-                description={sensor.description}
-                lastUpdate={
-                  sensor.lastUpdate ||
-                  (lastUpdate ? lastUpdate.toISOString() : undefined)
-                }
-              />
+              <LiveSensorCard key={sensor.id} {...sensor} />
             ))}
           </div>
 

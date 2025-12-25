@@ -54,12 +54,17 @@ const navigationItems: NavigationItem[] = [
   },
 ];
 
-export function Sidebar({ className = "", systemStatus = "offline" }: SidebarProps) {
+export function Sidebar({
+  className = "",
+  systemStatus = "offline",
+}: SidebarProps) {
   const pathname = usePathname();
   const [isCollapsed, setIsCollapsed] = useState(false);
   const [isMobileOpen, setIsMobileOpen] = useState(false);
 
-  const isActiveRoute = (href: string) => href === "/" ? pathname === "/" : pathname.startsWith(href);
+  const isActiveRoute = (href: string) =>
+    href === "/" ? pathname === "/" : pathname.startsWith(href);
+  const closeMobileMenu = () => setIsMobileOpen(false);
 
   return (
     <>
@@ -70,7 +75,11 @@ export function Sidebar({ className = "", systemStatus = "offline" }: SidebarPro
         }`}
         aria-label={isMobileOpen ? "Close menu" : "Open menu"}
       >
-        {isMobileOpen ? <XIcon className="w-6 h-6" /> : <MenuIcon className="w-6 h-6" />}
+        {isMobileOpen ? (
+          <XIcon className="w-6 h-6" />
+        ) : (
+          <MenuIcon className="w-6 h-6" />
+        )}
       </button>
 
       {isMobileOpen && (
@@ -83,7 +92,9 @@ export function Sidebar({ className = "", systemStatus = "offline" }: SidebarPro
       <aside
         className={`fixed top-16 left-0 h-[calc(100vh-4rem)] bg-white border-r border-gray-200 z-40 transition-all duration-300 ${
           isCollapsed ? "w-20" : "w-64"
-        } ${isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"} ${className}`}
+        } ${
+          isMobileOpen ? "translate-x-0" : "-translate-x-full lg:translate-x-0"
+        } ${className}`}
       >
         <div className="flex flex-col h-full">
           <nav className="flex-1 overflow-y-auto py-2 px-2">

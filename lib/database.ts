@@ -23,7 +23,9 @@ export function getPool(): Pool {
 }
 
 export async function getRooms(): Promise<DBRoom[]> {
-  const result: QueryResult<DBRoom> = await getPool().query("SELECT * FROM rooms ORDER BY name");
+  const result: QueryResult<DBRoom> = await getPool().query(
+    "SELECT * FROM rooms ORDER BY name"
+  );
   return result.rows;
 }
 
@@ -88,12 +90,24 @@ export async function batchInsertSensorData(
   if (records.length === 0) return;
 
   const values = records
-    .map((_, i) => `($${i * 9 + 1}, $${i * 9 + 2}, $${i * 9 + 3}, $${i * 9 + 4}, $${i * 9 + 5}, $${i * 9 + 6}, $${i * 9 + 7}, $${i * 9 + 8}, $${i * 9 + 9})`)
+    .map(
+      (_, i) =>
+        `($${i * 9 + 1}, $${i * 9 + 2}, $${i * 9 + 3}, $${i * 9 + 4}, $${
+          i * 9 + 5
+        }, $${i * 9 + 6}, $${i * 9 + 7}, $${i * 9 + 8}, $${i * 9 + 9})`
+    )
     .join(", ");
 
   const params = records.flatMap((r) => [
-    r.sensor_id, r.sensor_name, r.room_id, r.category,
-    r.current_value, r.unit, r.status, r.description || null, r.timestamp || new Date(),
+    r.sensor_id,
+    r.sensor_name,
+    r.room_id,
+    r.category,
+    r.current_value,
+    r.unit,
+    r.status,
+    r.description || null,
+    r.timestamp || new Date(),
   ]);
 
   await getPool().query(
@@ -105,31 +119,45 @@ export async function batchInsertSensorData(
 }
 
 /**
+ * Base query builder for historical sensor data
+ */
+function buildHistoricalDataQuery(
+  aggregation: "raw" | "hourly" = "raw"
+): string {
+  const timestampColumn =
+    aggregation === "hourly"
+      ? "DATE_TRUNC('hour', sd.timestamp)"
+      : "sd.timestamp";
+  const aggregateFunc = aggregation === "hourly" ? "AVG" : "MAX";
+
+  return `
+    SELECT 
+      ${timestampColumn} as timestamp,
+      sd.room_id as "roomId",
+      r.name as "roomName",
+      ${aggregateFunc}(CASE WHEN sd.category = 'energy' THEN sd.current_value ELSE 0 END) as energy,
+      ${aggregateFunc}(CASE WHEN sd.category = 'power' THEN sd.current_value ELSE 0 END) as power,
+      ${aggregateFunc}(CASE WHEN sd.category = 'temperature' THEN sd.current_value ELSE 0 END) as temperature,
+      ${aggregateFunc}(CASE WHEN sd.category = 'humidity' THEN sd.current_value ELSE 0 END) as humidity,
+      ${aggregateFunc}(CASE WHEN sd.category = 'lighting' THEN sd.current_value ELSE 0 END) as lighting,
+      ${aggregateFunc}(CASE WHEN sd.category = 'occupancy' THEN sd.current_value ELSE 0 END) as motion
+    FROM sensor_data sd
+    JOIN rooms r ON sd.room_id = r.id
+    WHERE sd.timestamp BETWEEN $1 AND $2
+  `;
+}
+
+/**
  * Get historical sensor data for specified date range and rooms
  */
 export async function getHistoricalData(
   startDate: Date,
   endDate: Date,
-  roomIds?: string[]
+  roomIds?: string[],
+  aggregation: "raw" | "hourly" = "raw"
 ): Promise<HistoricalDataPoint[]> {
   const pool = getPool();
-
-  let query = `
-    SELECT 
-      sd.timestamp,
-      sd.room_id as "roomId",
-      r.name as "roomName",
-      MAX(CASE WHEN sd.category = 'energy' THEN sd.current_value ELSE 0 END) as energy,
-      MAX(CASE WHEN sd.category = 'power' THEN sd.current_value ELSE 0 END) as power,
-      MAX(CASE WHEN sd.category = 'temperature' THEN sd.current_value ELSE 0 END) as temperature,
-      MAX(CASE WHEN sd.category = 'humidity' THEN sd.current_value ELSE 0 END) as humidity,
-      MAX(CASE WHEN sd.category = 'lighting' THEN sd.current_value ELSE 0 END) as lighting,
-      MAX(CASE WHEN sd.category = 'occupancy' THEN sd.current_value ELSE 0 END) as motion
-    FROM sensor_data sd
-    JOIN rooms r ON sd.room_id = r.id
-    WHERE sd.timestamp BETWEEN $1 AND $2
-  `;
-
+  let query = buildHistoricalDataQuery(aggregation);
   const params: any[] = [startDate, endDate];
 
   if (roomIds && roomIds.length > 0) {
@@ -137,53 +165,13 @@ export async function getHistoricalData(
     params.push(roomIds);
   }
 
-  query += `
-    GROUP BY sd.timestamp, sd.room_id, r.name
-    ORDER BY sd.timestamp ASC
-  `;
-
-  const result: QueryResult<HistoricalDataPoint> = await pool.query(
-    query,
-    params
-  );
-  return result.rows;
-}
-
-/**
- * Get aggregated hourly data (useful for longer time ranges)
- */
-export async function getAggregatedHourlyData(
-  startDate: Date,
-  endDate: Date,
-  roomIds?: string[]
-): Promise<HistoricalDataPoint[]> {
-  const pool = getPool();
-
-  let query = `
-    SELECT 
-      DATE_TRUNC('hour', sd.timestamp) as timestamp,
-      sd.room_id as "roomId",
-      r.name as "roomName",
-      AVG(CASE WHEN sd.category = 'energy' THEN sd.current_value ELSE 0 END) as energy,
-      AVG(CASE WHEN sd.category = 'power' THEN sd.current_value ELSE 0 END) as power,
-      AVG(CASE WHEN sd.category = 'temperature' THEN sd.current_value ELSE 0 END) as temperature,
-      AVG(CASE WHEN sd.category = 'humidity' THEN sd.current_value ELSE 0 END) as humidity,
-      AVG(CASE WHEN sd.category = 'lighting' THEN sd.current_value ELSE 0 END) as lighting,
-      AVG(CASE WHEN sd.category = 'occupancy' THEN sd.current_value ELSE 0 END) as motion
-    FROM sensor_data sd
-    JOIN rooms r ON sd.room_id = r.id
-    WHERE sd.timestamp BETWEEN $1 AND $2
-  `;
-
-  const params: any[] = [startDate, endDate];
-
-  if (roomIds && roomIds.length > 0) {
-    query += ` AND sd.room_id = ANY($3)`;
-    params.push(roomIds);
-  }
+  const groupBy =
+    aggregation === "hourly"
+      ? "DATE_TRUNC('hour', sd.timestamp), sd.room_id, r.name"
+      : "sd.timestamp, sd.room_id, r.name";
 
   query += `
-    GROUP BY DATE_TRUNC('hour', sd.timestamp), sd.room_id, r.name
+    GROUP BY ${groupBy}
     ORDER BY timestamp ASC
   `;
 
@@ -218,15 +206,14 @@ export async function getLatestSensorReadings(
     ORDER BY sensor_id, timestamp DESC
   `;
 
-  const result: QueryResult<SensorDataRecord> = await pool.query(
-    query,
-    params
-  );
+  const result: QueryResult<SensorDataRecord> = await pool.query(query, params);
   return result.rows;
 }
 
 export async function cleanupOldData(daysToKeep: number = 90): Promise<number> {
-  const result = await getPool().query("SELECT cleanup_old_sensor_data($1)", [daysToKeep]);
+  const result = await getPool().query("SELECT cleanup_old_sensor_data($1)", [
+    daysToKeep,
+  ]);
   return result.rows[0].cleanup_old_sensor_data;
 }
 

@@ -8,11 +8,8 @@
 
 import React, { useState } from "react";
 import ApplianceControlCard from "./ApplianceControlCard";
-// Types are globally available from types/globals.d.ts
 
-interface AutomationControlPanelProps {
-  initialAppliances?: Appliance[];
-}
+// AutomationControlPanelProps and all types are globally available from types/globals.d.ts
 
 export default function AutomationControlPanel({
   initialAppliances = [],

@@ -7,9 +7,24 @@ declare global {
   // ============================================================================
   // System & Navigation Types
   // ============================================================================
-  
+
   type SystemStatus = "online" | "offline" | "warning";
   type SystemStatusCallback = (status: SystemStatus) => void;
+  type SensorCategory =
+    | "temperature"
+    | "humidity"
+    | "occupancy"
+    | "lighting"
+    | "power"
+    | "system";
+  type ChartType = "line" | "area" | "bar";
+  type MetricType =
+    | "power"
+    | "energy"
+    | "temperature"
+    | "humidity"
+    | "lighting"
+    | "motion";
 
   interface WeatherData {
     temperature: number;
@@ -26,6 +41,12 @@ declare global {
     read: boolean;
   }
 
+  interface NotificationIconProps {
+    notifications: NotificationItem[];
+    onNotificationClick?: (notification: NotificationItem) => void;
+    className?: string;
+  }
+
   interface NavigationItem {
     name: string;
     href: string;
@@ -40,25 +61,11 @@ declare global {
     navigationItems?: NavigationItem[];
     onNavigate?: (href: string) => void;
     defaultCollapsed?: boolean;
+    systemStatus?: SystemStatus;
   }
 
-  interface SidebarState {
-    isCollapsed: boolean;
-    isMobileOpen: boolean;
-  }
-
-  interface SidebarConfig {
-    expandedWidth: string;
-    collapsedWidth: string;
-    mobileBreakpoint: string;
-    transitionDuration: number;
-  }
-
-  interface NavigationGroup {
-    label: string;
-    items: NavigationItem[];
-    collapsible?: boolean;
-    defaultExpanded?: boolean;
+  interface AppShellProps {
+    children: React.ReactNode;
   }
 
   // ============================================================================
@@ -128,11 +135,30 @@ declare global {
     end: Date;
   }
 
+  interface MetricCardProps {
+    title: string;
+    value: string | number;
+    unit: string;
+    icon: React.ReactNode;
+    trend?: {
+      direction: "up" | "down";
+      value: number;
+      isPositive?: boolean; // Explicitly mark if trend is good or bad
+    };
+    className?: string;
+  }
+
   // ============================================================================
   // Automation Types
   // ============================================================================
 
-  type ApplianceType = "air_conditioner" | "fan" | "light" | "heater" | "dehumidifier" | "other";
+  type ApplianceType =
+    | "air_conditioner"
+    | "fan"
+    | "light"
+    | "heater"
+    | "dehumidifier"
+    | "other";
   type ControlMode = "auto" | "manual";
   type ApplianceStatus = "on" | "off";
 
@@ -171,6 +197,27 @@ declare global {
     condition: string;
     action: string;
     enabled: boolean;
+  }
+
+  interface AutomationActivityItemProps {
+    title: string;
+    description: string;
+    timestamp: string; // e.g., "2 minutes ago" or ISO string
+    status: "success" | "warning" | "error" | "info";
+    icon?: React.ReactNode;
+    className?: string;
+  }
+
+  interface ApplianceControlCardProps {
+    appliance: Appliance;
+    onStatusChange: (id: string, status: ApplianceStatus) => void;
+    onModeChange: (id: string, mode: ControlMode) => void;
+    onFanSpeedChange: (id: string, speed: number) => void;
+    onACTemperatureChange: (id: string, temperature: number) => void;
+  }
+
+  interface AutomationControlPanelProps {
+    initialAppliances?: Appliance[];
   }
 
   // ============================================================================
@@ -247,6 +294,67 @@ declare global {
   interface TableSortConfig {
     key: keyof HistoricalDataPoint;
     direction: SortDirection;
+  }
+
+  interface DataTableProps {
+    data: HistoricalDataPoint[];
+    showExport?: boolean;
+    className?: string;
+    isLoading?: boolean;
+  }
+
+  interface RoomSelectorProps {
+    rooms: RoomOption[];
+    selectedRoomIds: string[];
+    onChange: (roomIds: string[]) => void;
+    multiple?: boolean;
+    className?: string;
+    isLoading?: boolean;
+  }
+
+  type PresetOption = {
+    label: string;
+    getValue: () => DateRange;
+  };
+
+  interface DateRangePickerProps {
+    value: DateRange;
+    onChange: (range: DateRange) => void;
+    className?: string;
+  }
+
+  interface HistoricalChartProps {
+    data: HistoricalDataPoint[];
+    chartType?: "line" | "area" | "bar";
+    metric?:
+      | "power"
+      | "energy"
+      | "temperature"
+      | "humidity"
+      | "lighting"
+      | "motion";
+    title?: string;
+    height?: number;
+    compareRooms?: boolean;
+    showLegend?: boolean;
+    className?: string;
+  }
+
+  // ============================================================================
+  // Charts Types
+  // ============================================================================
+
+  interface RealtimeLineChartProps {
+    data: Record<string, any>[];
+    dataKey: string;
+    color?: string;
+    unit?: string;
+    height?: number;
+    title?: string;
+    xAxisKey?: string;
+    showGrid?: boolean;
+    animate?: boolean;
+    className?: string;
   }
 
   // ============================================================================
@@ -328,30 +436,45 @@ declare global {
 
   interface ToggleFieldProps {
     label: string;
-    checked: boolean;
-    onChange: (checked: boolean) => void;
+    checked?: boolean;
+    enabled?: boolean;
+    onChange?: (checked: boolean) => void;
+    icon?: React.ReactNode;
   }
 
   interface MLRecommendationCardProps {
     recommendation: MLRecommendation;
     onApply?: (id: string) => void;
+    onIgnore?: (id: string) => void;
+    className?: string;
   }
 
   interface WeatherSummaryProps {
     weather: WeatherData;
+    className?: string;
   }
 
   interface UserProfileDropdownProps {
     user: UserProfile;
+    onSignOut?: () => void;
+    className?: string;
   }
 
   interface SystemStatusIndicatorProps {
     status: SystemStatus;
+    className?: string;
   }
 
   interface NavigationProps {
-    currentPath: string;
+    currentPath?: string;
     onNavigate?: (path: string) => void;
+    systemStatus?: SystemStatus;
+    weather?: WeatherData;
+    user?: UserProfile;
+    notifications?: NotificationItem[];
+    onNotificationClick?: (notification: NotificationItem) => void;
+    onSignOut?: () => void;
+    className?: string;
   }
 
   // ============================================================================
@@ -407,6 +530,12 @@ declare global {
   // ============================================================================
   // Settings Types
   // ============================================================================
+
+  interface FetchOptions {
+    method?: string;
+    headers?: Record<string, string>;
+    body?: string;
+  }
 
   interface Room {
     id: string;

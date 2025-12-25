@@ -15,48 +15,8 @@ import {
   Legend,
   ResponsiveContainer,
 } from "recharts";
-// HistoricalDataPoint type is globally available from types/globals.d.ts
 
-interface HistoricalChartProps {
-  /**
-   * Historical data points to display
-   */
-  data: HistoricalDataPoint[];
-
-  /**
-   * Chart type
-   * @default 'line'
-   */
-  chartType?: "line" | "area" | "bar";
-
-  /**
-   * Metric to display on Y-axis
-   * @default 'energy'
-   */
-  metric?: "power" | "energy" | "temperature" | "humidity" | "lighting" | "motion";
-
-  /**
-   * Chart title
-   */
-  title?: string;
-
-  /**
-   * Chart height in pixels
-   * @default 400
-   */
-  height?: number;
-
-  /**
-   * Whether to show comparison by room
-   * @default false
-   */
-  compareRooms?: boolean;
-
-  /**
-   * Optional CSS class
-   */
-  className?: string;
-}
+// HistoricalChartProps and all types are globally available from types/globals.d.ts
 
 const ROOM_COLORS = [
   "#6366F1", // Primary indigo

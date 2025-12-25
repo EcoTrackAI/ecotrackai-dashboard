@@ -11,16 +11,19 @@ const serviceAccountPath = path.join(__dirname, "../serviceAccountKey.json");
 
 try {
   const serviceAccount = require(serviceAccountPath);
-  
+
   if (!admin.apps.length) {
     admin.initializeApp({
       credential: admin.credential.cert(serviceAccount),
-      databaseURL: "https://ecotrackai-7a140-default-rtdb.asia-southeast1.firebasedatabase.app",
+      databaseURL:
+        "https://ecotrackai-7a140-default-rtdb.asia-southeast1.firebasedatabase.app",
     });
   }
 } catch (error) {
   console.error("Error loading Firebase credentials:", error.message);
-  console.log("\nPlease ensure serviceAccountKey.json exists in the project root.");
+  console.log(
+    "\nPlease ensure serviceAccountKey.json exists in the project root."
+  );
   process.exit(1);
 }
 
@@ -127,7 +130,9 @@ async function addSensors() {
   try {
     for (const [sensorId, sensorData] of Object.entries(sensorsToAdd)) {
       await db.ref(`sensors/${sensorId}`).set(sensorData);
-      console.log(`✓ Added ${sensorData.category} sensor: ${sensorId} (${sensorData.room})`);
+      console.log(
+        `✓ Added ${sensorData.category} sensor: ${sensorId} (${sensorData.room})`
+      );
     }
 
     console.log("\n✅ All motion and lighting sensors added successfully!");
@@ -138,7 +143,7 @@ async function addSensors() {
     console.log("- Appear in the Live Monitoring dashboard");
     console.log("- Be synced to PostgreSQL automatically");
     console.log("- Show in analytics and history views");
-    
+
     process.exit(0);
   } catch (error) {
     console.error("Error adding sensors:", error);

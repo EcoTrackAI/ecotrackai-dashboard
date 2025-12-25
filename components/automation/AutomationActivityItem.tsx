@@ -1,13 +1,6 @@
 import React from "react";
 
-export interface AutomationActivityItemProps {
-  title: string;
-  description: string;
-  timestamp: string; // e.g., "2 minutes ago" or ISO string
-  status: "success" | "warning" | "error" | "info";
-  icon?: React.ReactNode;
-  className?: string;
-}
+// AutomationActivityItemProps is globally available from types/globals.d.ts
 
 export const AutomationActivityItem: React.FC<AutomationActivityItemProps> = ({
   title,
