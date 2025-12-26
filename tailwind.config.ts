@@ -2,19 +2,22 @@ import type { Config } from "tailwindcss";
 
 const config: Config = {
   content: [
-    "./app/**/*.{js,ts,jsx,tsx,mdx}",
+    "./pages/**/*.{js,ts,jsx,tsx,mdx}",
     "./components/**/*.{js,ts,jsx,tsx,mdx}",
+    "./app/**/*.{js,ts,jsx,tsx,mdx}",
   ],
   theme: {
     extend: {
-      screens: {
-        xs: "480px",
-        // Default breakpoints are:
-        // sm: '640px'
-        // md: '768px'
-        // lg: '1024px'
-        // xl: '1280px'
-        // 2xl: '1536px'
+      colors: {
+        background: "#F8FAFC",
+        card: "#FFFFFF",
+        primary: "#6366F1",
+        secondary: "#16A34A",
+        warning: "#FB923C",
+        error: "#DC2626",
+        textPrimary: "#111827",
+        textMuted: "#6B7280",
+        border: "#E5E7EB",
       },
     },
   },
