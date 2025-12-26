@@ -13,25 +13,17 @@ import { getHistoricalData, testConnection } from "@/lib/database";
  */
 export async function GET(request: NextRequest) {
   try {
-    // Test database connection
-    const isConnected = await testConnection();
-    if (!isConnected) {
+    if (!(await testConnection())) {
       return NextResponse.json(
         { error: "Database connection failed" },
         { status: 500 }
       );
     }
 
-    // Parse query parameters
-    const searchParams = request.nextUrl.searchParams;
+    const { searchParams } = request.nextUrl;
     const startDateStr = searchParams.get("startDate");
     const endDateStr = searchParams.get("endDate");
-    const roomIdsStr = searchParams.get("roomIds");
-    const aggregation = (searchParams.get("aggregation") || "raw") as
-      | "raw"
-      | "hourly";
 
-    // Validate required parameters
     if (!startDateStr || !endDateStr) {
       return NextResponse.json(
         { error: "Missing required parameters: startDate and endDate" },
@@ -39,7 +31,6 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Parse dates
     const startDate = new Date(startDateStr);
     const endDate = new Date(endDateStr);
 
@@ -50,12 +41,14 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    // Parse room IDs
-    const roomIds = roomIdsStr
-      ? roomIdsStr.split(",").map((id) => id.trim())
-      : undefined;
+    const roomIds = searchParams
+      .get("roomIds")
+      ?.split(",")
+      .map((id) => id.trim());
+    const aggregation = (searchParams.get("aggregation") || "raw") as
+      | "raw"
+      | "hourly";
 
-    // Fetch data with aggregation support
     const data = await getHistoricalData(
       startDate,
       endDate,
@@ -63,7 +56,6 @@ export async function GET(request: NextRequest) {
       aggregation
     );
 
-    // Transform data to match frontend format
     const transformedData = data.map((record) => ({
       timestamp:
         typeof record.timestamp === "string"
@@ -88,12 +80,10 @@ export async function GET(request: NextRequest) {
       aggregation,
     });
   } catch (error) {
-    console.error("Error fetching historical data:", error);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    console.error("Historical data error:", message);
     return NextResponse.json(
-      {
-        error: "Failed to fetch historical data",
-        details: error instanceof Error ? error.message : "Unknown error",
-      },
+      { error: "Failed to fetch historical data", details: message },
       { status: 500 }
     );
   }

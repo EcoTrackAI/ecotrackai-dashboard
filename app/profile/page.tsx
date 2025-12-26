@@ -36,12 +36,10 @@ export default function ProfilePage() {
 
   const handleEditProfile = () => {
     // Handle edit profile action
-    console.log("Edit profile clicked");
   };
 
   const handleLogout = () => {
     // Handle logout action
-    console.log("Logout clicked");
   };
 
   const formatLastLogin = (date: Date | string): string => {

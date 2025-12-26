@@ -183,15 +183,11 @@ const mockRecommendations: MLRecommendation[] = [
 
 export default function InsightsPage() {
   const handleApply = async (recommendationId: string) => {
-    // Simulate API call to apply recommendation
-    console.log("Applying recommendation:", recommendationId);
     await new Promise((resolve) => setTimeout(resolve, 1000));
     alert(`Recommendation ${recommendationId} applied successfully!`);
   };
 
   const handleIgnore = async (recommendationId: string) => {
-    // Simulate API call to ignore recommendation
-    console.log("Ignoring recommendation:", recommendationId);
     await new Promise((resolve) => setTimeout(resolve, 500));
     alert(`Recommendation ${recommendationId} ignored.`);
   };

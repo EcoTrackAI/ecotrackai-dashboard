@@ -4,19 +4,34 @@ let pool: Pool | null = null;
 
 export function getPool(): Pool {
   if (!pool) {
-    pool = new Pool({
-      host: process.env.POSTGRES_HOST || "localhost",
-      port: parseInt(process.env.POSTGRES_PORT || "5432"),
-      database: process.env.POSTGRES_DATABASE || "ecotrackai",
-      user: process.env.POSTGRES_USER || "postgres",
-      password: process.env.POSTGRES_PASSWORD || "",
-      max: 20, // Maximum number of clients in the pool
-      idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 2000,
-    });
+    const connectionString =
+      process.env.DATABASE_URL || process.env.POSTGRES_URL;
+    const isProd = process.env.NODE_ENV === "production";
+
+    pool = new Pool(
+      connectionString
+        ? {
+            connectionString,
+            ssl: isProd ? { rejectUnauthorized: false } : false,
+            max: 20,
+            idleTimeoutMillis: 30000,
+            connectionTimeoutMillis: isProd ? 5000 : 2000,
+          }
+        : {
+            host: process.env.POSTGRES_HOST || "localhost",
+            port: parseInt(process.env.POSTGRES_PORT || "5432"),
+            database: process.env.POSTGRES_DATABASE || "ecotrackai",
+            user: process.env.POSTGRES_USER || "postgres",
+            password: process.env.POSTGRES_PASSWORD || "",
+            max: 20,
+            idleTimeoutMillis: 30000,
+            connectionTimeoutMillis: 2000,
+          }
+    );
 
     pool.on("error", (err) => {
-      console.error("Unexpected error on idle client", err);
+      console.error("Database pool error:", err.message);
+      pool = null;
     });
   }
   return pool;
@@ -118,29 +133,29 @@ export async function batchInsertSensorData(
   );
 }
 
-/**
- * Base query builder for historical sensor data
- */
 function buildHistoricalDataQuery(
   aggregation: "raw" | "hourly" = "raw"
 ): string {
-  const timestampColumn =
-    aggregation === "hourly"
-      ? "DATE_TRUNC('hour', sd.timestamp)"
-      : "sd.timestamp";
-  const aggregateFunc = aggregation === "hourly" ? "AVG" : "MAX";
+  const isHourly = aggregation === "hourly";
+  const timestamp = isHourly
+    ? "DATE_TRUNC('hour', sd.timestamp)"
+    : "sd.timestamp";
+  const aggFunc = isHourly ? "AVG" : "MAX";
+  const categories = ["energy", "power", "temperature", "humidity", "lighting"];
+  const aggregates = categories
+    .map(
+      (cat) =>
+        `${aggFunc}(CASE WHEN sd.category = '${cat}' THEN sd.current_value ELSE 0 END) as ${cat}`
+    )
+    .join(",\n      ");
 
   return `
     SELECT 
-      ${timestampColumn} as timestamp,
+      ${timestamp} as timestamp,
       sd.room_id as "roomId",
       r.name as "roomName",
-      ${aggregateFunc}(CASE WHEN sd.category = 'energy' THEN sd.current_value ELSE 0 END) as energy,
-      ${aggregateFunc}(CASE WHEN sd.category = 'power' THEN sd.current_value ELSE 0 END) as power,
-      ${aggregateFunc}(CASE WHEN sd.category = 'temperature' THEN sd.current_value ELSE 0 END) as temperature,
-      ${aggregateFunc}(CASE WHEN sd.category = 'humidity' THEN sd.current_value ELSE 0 END) as humidity,
-      ${aggregateFunc}(CASE WHEN sd.category = 'lighting' THEN sd.current_value ELSE 0 END) as lighting,
-      ${aggregateFunc}(CASE WHEN sd.category = 'occupancy' THEN sd.current_value ELSE 0 END) as motion
+      ${aggregates},
+      ${aggFunc}(CASE WHEN sd.category = 'occupancy' THEN sd.current_value ELSE 0 END) as motion
     FROM sensor_data sd
     JOIN rooms r ON sd.room_id = r.id
     WHERE sd.timestamp BETWEEN $1 AND $2

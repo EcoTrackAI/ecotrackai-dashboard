@@ -1,14 +1,21 @@
 /**
  * Scheduled Firebase to PostgreSQL Sync
- * Runs every 5 minutes via node-cron
+ * Runs every minute using setTimeout for Vercel compatibility
+ * Note: Vercel has limitations with cron jobs, so we use a timeout-based approach
  */
 
-const cron = require("node-cron");
-
 const API_URL = process.env.NEXT_PUBLIC_API_URL || "http://localhost:3000";
+const SYNC_INTERVAL = 60 * 1000; // 1 minute in milliseconds
 
-// Schedule the sync to run every minute
-cron.schedule("* * * * *", async () => {
+let isRunning = false;
+
+async function syncFirebaseData() {
+  if (isRunning) {
+    console.log("⏳ Previous sync still running, skipping...");
+    return;
+  }
+
+  isRunning = true;
   const timestamp = new Date().toISOString();
   console.log(`[${timestamp}] Running Firebase sync...`);
 
@@ -27,7 +34,19 @@ cron.schedule("* * * * *", async () => {
     }
   } catch (error) {
     console.error(`❌ Sync error:`, error.message);
+  } finally {
+    isRunning = false;
   }
-});
+}
 
+function scheduleNextSync() {
+  setTimeout(async () => {
+    await syncFirebaseData();
+    scheduleNextSync(); // Schedule the next sync
+  }, SYNC_INTERVAL);
+}
+
+// Start the sync loop
 console.log("🔄 Firebase sync scheduler started, running every minute...");
+syncFirebaseData(); // Run immediately on startup
+scheduleNextSync(); // Then schedule recurring syncs
