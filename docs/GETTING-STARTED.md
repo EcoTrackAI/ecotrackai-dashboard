@@ -1,6 +1,6 @@
 # Getting Started Guide
 
-**Version**: 1.0.0  
+**Version**: 1.1  
 **Last Updated**: December 26, 2025  
 **Estimated Setup Time**: 15-20 minutes
 

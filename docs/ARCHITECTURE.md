@@ -1,6 +1,6 @@
 # System Architecture
 
-**Version**: 1.0.0  
+**Version**: 1.1  
 **Last Updated**: December 26, 2025  
 **Status**: Production Ready
 
@@ -613,7 +613,7 @@ GitHub Repository → Vercel Build → Edge Network
                                   ↓
                            Global Distribution
                                   ↓
-                    ┌──────────────┴──────────────┐
+                    ┌─────────────┴───────────────┐
                     ↓                             ↓
               Static Assets                  Serverless Functions
               (CDN Cached)                   (Edge Functions)
@@ -655,6 +655,6 @@ For implementation details, see:
 
 ---
 
-**Document Version**: 1.0.0  
+**Document Version**: 1.1  
 **Last Updated**: December 26, 2025  
 **Maintained By**: EcoTrack AI Team

@@ -1,6 +1,6 @@
 # Project Summary
 
-**Version**: 1.0.0  
+**Version**: 1.1  
 **Last Updated**: December 26, 2025  
 **Status**: Production Ready  
 **License**: MIT
@@ -19,7 +19,7 @@ EcoTrack AI Dashboard is an enterprise-grade, real-time energy monitoring and au
 | **Historical Storage**  | PostgreSQL 14+               |
 | **Deployment**          | Vercel (serverless)          |
 | **Development Started** | 2025                         |
-| **Current Version**     | 1.0.0                        |
+| **Current Version**     | 1.1                          |
 | **Build Status**        | ✅ Passing                   |
 
 ## 📋 Project Overview
