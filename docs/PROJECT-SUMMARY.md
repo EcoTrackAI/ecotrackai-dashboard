@@ -1,12 +1,30 @@
-# Project Summary - EcoTrack AI Dashboard
+# Project Summary
 
-**Generated**: December 26, 2025  
 **Version**: 1.0.0  
-**Status**: Production Ready
+**Last Updated**: December 26, 2025  
+**Status**: Production Ready  
+**License**: MIT
 
-## 📋 Overview
+## Executive Summary
 
-EcoTrack AI Dashboard is a modern, real-time energy monitoring and automation platform built with Next.js 16, TypeScript, Firebase, and PostgreSQL. The application enables smart home energy management through live sensor monitoring, historical analytics, intelligent automation, and AI-powered insights.
+EcoTrack AI Dashboard is an enterprise-grade, real-time energy monitoring and automation platform built with modern web technologies. The application provides comprehensive smart home and building energy management through live sensor monitoring, historical data analytics, intelligent automation, and AI-powered optimization insights.
+
+### Quick Facts
+
+| Aspect                  | Details                      |
+| ----------------------- | ---------------------------- |
+| **Primary Language**    | TypeScript 5                 |
+| **Framework**           | Next.js 16.1 with App Router |
+| **Real-Time Database**  | Firebase Realtime Database   |
+| **Historical Storage**  | PostgreSQL 14+               |
+| **Deployment**          | Vercel (serverless)          |
+| **Development Started** | 2025                         |
+| **Current Version**     | 1.0.0                        |
+| **Build Status**        | ✅ Passing                   |
+
+## 📋 Project Overview
+
+EcoTrack AI Dashboard addresses the growing need for intelligent energy management in homes and commercial buildings. By combining real-time IoT sensor data with advanced analytics and machine learning, the platform helps users reduce energy costs by up to 30% while minimizing environmental impact.
 
 ## 🎯 Project Goals
 

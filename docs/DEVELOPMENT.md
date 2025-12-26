@@ -1,6 +1,33 @@
 # Development Guide
 
-Guide for developers contributing to or extending EcoTrack AI Dashboard.
+**Version**: 1.0.0  
+**Last Updated**: December 26, 2025  
+**Status**: Production Ready
+
+## Overview
+
+This guide is designed for developers who want to contribute to or extend the EcoTrack AI Dashboard. It covers development environment setup, coding standards, workflow guidelines, and best practices.
+
+### For Contributors
+
+Whether you're:
+
+- 🐛 **Fixing bugs** - Report and fix issues
+- ✨ **Adding features** - Implement new capabilities
+- 📖 **Improving docs** - Enhance documentation
+- 🎨 **Refining UI** - Improve user experience
+- 🔧 **Optimizing performance** - Make it faster
+
+This guide will help you get started and be productive quickly.
+
+### Development Philosophy
+
+- **Code Quality**: Write clean, maintainable, well-documented code
+- **Type Safety**: Leverage TypeScript for reliability
+- **Testing**: Ensure code works before committing
+- **Collaboration**: Communicate with the team
+- **Documentation**: Keep docs up-to-date
+- **Performance**: Optimize for speed and efficiency
 
 ## Table of Contents
 

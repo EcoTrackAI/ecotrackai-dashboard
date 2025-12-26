@@ -1,15 +1,69 @@
 # API Reference
 
-Complete API documentation for EcoTrack AI Dashboard endpoints.
+**Version**: 1.0.0  
+**Last Updated**: December 26, 2025  
+**Status**: Production Ready
 
-## Base URL
+## Overview
 
-- **Development**: `http://localhost:3000`
-- **Production**: `https://your-domain.vercel.app`
+The EcoTrack AI Dashboard provides a RESTful API for accessing room data, historical sensor readings, and triggering data synchronization operations. All endpoints return JSON responses and follow standard HTTP status codes.
+
+This document provides comprehensive API documentation including request/response formats, parameters, error handling, and practical examples.
+
+## Base URLs
+
+| Environment     | Base URL                                 | Description              |
+| --------------- | ---------------------------------------- | ------------------------ |
+| **Development** | `http://localhost:3000`                  | Local development server |
+| **Production**  | `https://your-domain.vercel.app`         | Production deployment    |
+| **Staging**     | `https://staging-your-domain.vercel.app` | Staging environment      |
 
 ## Authentication
 
-Currently, all endpoints are public. Authentication will be added in future releases using Firebase Auth.
+**Current Status**: All endpoints are currently public and require no authentication.
+
+**Roadmap**: Firebase Authentication will be implemented in version 2.0, requiring Bearer tokens for all requests:
+
+```http
+Authorization: Bearer <firebase-id-token>
+```
+
+## Response Format
+
+All API responses follow a consistent JSON structure:
+
+**Success Response**:
+
+```json
+{
+  "data": {
+    /* response data */
+  },
+  "success": true,
+  "timestamp": "2025-12-26T10:30:00.000Z"
+}
+```
+
+**Error Response**:
+
+```json
+{
+  "error": "Error message",
+  "details": "Detailed error information",
+  "success": false,
+  "statusCode": 400
+}
+```
+
+## HTTP Status Codes
+
+| Code  | Description                                                    |
+| ----- | -------------------------------------------------------------- |
+| `200` | Success - Request completed successfully                       |
+| `400` | Bad Request - Invalid parameters or malformed request          |
+| `404` | Not Found - Resource doesn't exist                             |
+| `500` | Internal Server Error - Server-side error occurred             |
+| `503` | Service Unavailable - Database or external service unavailable |
 
 ## Endpoints
 
