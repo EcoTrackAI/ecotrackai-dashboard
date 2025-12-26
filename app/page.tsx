@@ -1,289 +1,386 @@
-"use client";
+import { MetricCard } from "@/components/metrics";
+import { RoomStatusCard } from "@/components/rooms";
+import { AutomationActivityItem } from "@/components/automation";
+import { LiveSensorCard } from "@/components/sensors";
 
-import { useEffect, useState, useRef } from "react";
-import { ref, onValue } from "firebase/database";
-import { db } from "@/lib/firebase";
-import Header from "@/components/Header";
-import SensorStatusCard from "@/components/SensorStatusCard";
-import EnvironmentSummary from "@/components/EnvironmentSummary";
-import AIRecommendation from "@/components/AIRecommendation";
-import Charts from "@/components/Charts";
-import ControlPanel from "@/components/ControlPanel";
-import Footer from "@/components/Footer";
+// SensorStatus type is globally available from types/globals.d.ts
 
 export default function Home() {
-  const [data, setData] = useState<SensorData | null>(null);
-  const [isOnline, setIsOnline] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
-  const [historicalTemp, setHistoricalTemp] = useState<HistoricalDataPoint[]>(
-    []
-  );
-  const [historicalHumidity, setHistoricalHumidity] = useState<
-    HistoricalDataPoint[]
-  >([]);
-  const [historicalLight, setHistoricalLight] = useState<HistoricalDataPoint[]>(
-    []
-  );
-  const lastDataHash = useRef<string>("");
-  const connectionTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
-  const lastUpdateTimeRef = useRef<number>(0);
-
-  useEffect(() => {
-    const liveRef = ref(db, "ecotrack/data");
-
-    const unsubscribe = onValue(
-      liveRef,
-      (snapshot) => {
-        const val = snapshot.val();
-        if (val) {
-          const newData: SensorData = {
-            temperature: val.temperature || 0,
-            humidity: val.humidity || 0,
-            light: val.light || 0,
-            motion: val.motion || false,
-            timestamp: Date.now(),
-          };
-
-          // Round values to avoid floating point comparison issues
-          const dataHash = JSON.stringify({
-            temp: Math.round(newData.temperature * 10) / 10,
-            hum: Math.round(newData.humidity * 10) / 10,
-            light: Math.round(newData.light),
-            motion: newData.motion,
-          });
-
-          // Only update if data changed AND at least 2 seconds have passed (debounce)
-          const now = Date.now();
-          if (
-            dataHash !== lastDataHash.current &&
-            now - lastUpdateTimeRef.current > 2000
-          ) {
-            lastDataHash.current = dataHash;
-            lastUpdateTimeRef.current = now;
-            setIsOnline(true);
-            setLastUpdated(now);
-
-            // Add to historical data only when data changes
-            setHistoricalTemp((prev) => {
-              const updated = [
-                ...prev,
-                { timestamp: now, value: newData.temperature },
-              ];
-              return updated.slice(-100);
-            });
-            setHistoricalHumidity((prev) => {
-              const updated = [
-                ...prev,
-                { timestamp: now, value: newData.humidity },
-              ];
-              return updated.slice(-100);
-            });
-            setHistoricalLight((prev) => {
-              const updated = [
-                ...prev,
-                { timestamp: now, value: newData.light },
-              ];
-              return updated.slice(-100);
-            });
-
-            // Reset connection timeout - mark offline after 10 seconds of no changes
-            if (connectionTimeoutRef.current) {
-              clearTimeout(connectionTimeoutRef.current);
-            }
-            connectionTimeoutRef.current = setTimeout(() => {
-              setIsOnline(false);
-            }, 10000);
-          }
-
-          setData(newData);
-        }
+  // In production, this would come from Firebase/API
+  const mockData = {
+    metrics: {
+      currentPower: 4.2,
+      powerTrend: { direction: "up" as const, value: 8.3 },
+      dailyEnergy: 87.5,
+      energyTrend: { direction: "down" as const, value: 12.4 },
+      todayCost: 24.85,
+      costTrend: { direction: "up" as const, value: 3.2 },
+      monthlySavings: 248,
+      savingsTrend: { direction: "up" as const, value: 15.7, isPositive: true },
+    },
+    sensors: [
+      {
+        sensorName: "Living Room Temperature",
+        currentValue: 22.5,
+        unit: "°C",
+        status: "normal" as SensorStatus,
+        description: "Main living area",
+        lastUpdate: new Date(Date.now() - 45000), // 45 seconds ago
       },
-      (error) => {
-        console.error("Firebase error:", error);
-        setIsOnline(false);
-      }
-    );
-
-    return () => {
-      unsubscribe();
-      if (connectionTimeoutRef.current) {
-        clearTimeout(connectionTimeoutRef.current);
-      }
-    };
-  }, []);
-
-  const getTemperatureStatus = (
-    temp: number
-  ): "normal" | "warning" | "critical" => {
-    if (temp < 15 || temp > 30) return "critical";
-    if (temp < 18 || temp > 28) return "warning";
-    return "normal";
-  };
-
-  const getHumidityStatus = (
-    humidity: number
-  ): "normal" | "warning" | "critical" => {
-    if (humidity < 20 || humidity > 80) return "critical";
-    if (humidity < 30 || humidity > 70) return "warning";
-    return "normal";
-  };
-
-  const getLightStatus = (light: number): "normal" | "warning" | "critical" => {
-    if (light > 90) return "critical"; // Very dark
-    if (light > 80) return "warning"; // Dark
-    return "normal"; // Well lit
+      {
+        sensorName: "Bedroom Humidity",
+        currentValue: 68,
+        unit: "%",
+        status: "normal" as SensorStatus,
+        description: "Master bedroom",
+        lastUpdate: new Date(Date.now() - 30000), // 30 seconds ago
+      },
+      {
+        sensorName: "Total Power Consumption",
+        currentValue: 4.2,
+        unit: "kW",
+        status: "warning" as SensorStatus,
+        description: "Whole house",
+        lastUpdate: new Date(Date.now() - 15000), // 15 seconds ago
+      },
+      {
+        sensorName: "Kitchen Temperature",
+        currentValue: 23.8,
+        unit: "°C",
+        status: "normal" as SensorStatus,
+        description: "Kitchen area",
+        lastUpdate: new Date(Date.now() - 60000), // 1 minute ago
+      },
+      {
+        sensorName: "HVAC Power Draw",
+        currentValue: 2.8,
+        unit: "kW",
+        status: "normal" as SensorStatus,
+        description: "Air conditioning system",
+        lastUpdate: new Date(Date.now() - 20000), // 20 seconds ago
+      },
+      {
+        sensorName: "Solar Panel Output",
+        currentValue: 3.15,
+        unit: "kW",
+        status: "normal" as SensorStatus,
+        description: "Rooftop array",
+        lastUpdate: new Date(Date.now() - 10000), // 10 seconds ago
+      },
+      {
+        sensorName: "Battery Level",
+        currentValue: 87,
+        unit: "%",
+        status: "normal" as SensorStatus,
+        description: "Home battery backup",
+        lastUpdate: new Date(Date.now() - 90000), // 1.5 minutes ago
+      },
+      {
+        sensorName: "Water Heater Temp",
+        currentValue: 54.5,
+        unit: "°C",
+        status: "normal" as SensorStatus,
+        description: "Hot water system",
+        lastUpdate: new Date(Date.now() - 120000), // 2 minutes ago
+      },
+      {
+        sensorName: "Office Air Quality",
+        currentValue: 45,
+        unit: "AQI",
+        status: "normal" as SensorStatus,
+        description: "Indoor air quality",
+        lastUpdate: new Date(Date.now() - 40000), // 40 seconds ago
+      },
+      {
+        sensorName: "Garage Motion Sensor",
+        currentValue: "--",
+        unit: "",
+        status: "offline" as SensorStatus,
+        description: "Motion detector",
+        lastUpdate: new Date(Date.now() - 3600000), // 1 hour ago
+      },
+    ],
+    rooms: [
+      {
+        name: "Living Room",
+        isOccupied: true,
+        activeDevices: 5,
+        totalDevices: 8,
+        currentPower: 850,
+        temperature: 22,
+      },
+      {
+        name: "Kitchen",
+        isOccupied: false,
+        activeDevices: 2,
+        totalDevices: 6,
+        currentPower: 320,
+        temperature: 21,
+      },
+      {
+        name: "Bedroom",
+        isOccupied: true,
+        activeDevices: 3,
+        totalDevices: 5,
+        currentPower: 180,
+        temperature: 20,
+      },
+      {
+        name: "Office",
+        isOccupied: true,
+        activeDevices: 4,
+        totalDevices: 7,
+        currentPower: 420,
+        temperature: 23,
+      },
+      {
+        name: "Bathroom",
+        isOccupied: false,
+        activeDevices: 1,
+        totalDevices: 3,
+        currentPower: 45,
+      },
+      {
+        name: "Garage",
+        isOccupied: false,
+        activeDevices: 0,
+        totalDevices: 4,
+        currentPower: 0,
+      },
+    ],
+    automationActivity: [
+      {
+        title: "AC turned off in bedroom",
+        description: "No occupancy detected for 15 minutes",
+        timestamp: "2 min ago",
+        status: "success" as const,
+      },
+      {
+        title: "Peak hour alert",
+        description:
+          "Electricity rates increased. Consider reducing consumption.",
+        timestamp: "18 min ago",
+        status: "warning" as const,
+      },
+      {
+        title: "Living room lights automated",
+        description: "Lights dimmed to 60% based on natural light level",
+        timestamp: "32 min ago",
+        status: "info" as const,
+      },
+      {
+        title: "Smart plug disconnected",
+        description: "Kitchen coffee maker lost connection",
+        timestamp: "1 hour ago",
+        status: "error" as const,
+      },
+      {
+        title: "Energy goal achieved",
+        description: "Daily consumption target met with 15% buffer",
+        timestamp: "2 hours ago",
+        status: "success" as const,
+      },
+    ],
   };
 
   return (
-    <>
-      <Header isOnline={isOnline} />
-
-      <main className="min-h-screen bg-gray-50 pt-16 pb-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {!data ? (
-            <div className="flex items-center justify-center h-[60vh] animate-fadeIn">
-              <div className="text-center">
-                <div className="inline-block rounded-full h-12 w-12 border-3 border-gray-200 border-t-blue-600 mb-4 animate-spin"></div>
-                <p className="text-gray-700 text-base font-medium">
-                  Connecting to sensors...
-                </p>
-                <p className="text-gray-500 text-sm mt-1">
-                  Please wait
-                </p>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {/* Live Sensor Status Cards */}
-              <section className="animate-fadeIn">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 flex items-center gap-2">
-                    <span className="w-1 h-7 bg-blue-600 rounded-full"></span>
-                    <span className="truncate">Live Sensor Data</span>
-                  </h2>
-                  <div className="flex items-center gap-2 text-xs text-gray-600">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse-subtle"></div>
-                    <span className="hidden xs:inline whitespace-nowrap font-medium">
-                      Real-time
-                    </span>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <SensorStatusCard
-                    title="Temperature"
-                    value={data.temperature}
-                    unit="°C"
-                    status={getTemperatureStatus(data.temperature)}
-                    icon={
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                        />
-                      </svg>
-                    }
-                  />
-                  <SensorStatusCard
-                    title="Humidity"
-                    value={data.humidity}
-                    unit="%"
-                    status={getHumidityStatus(data.humidity)}
-                    icon={
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"
-                        />
-                      </svg>
-                    }
-                  />
-                  <SensorStatusCard
-                    title="Light Level"
-                    value={data.light}
-                    unit="%"
-                    status={getLightStatus(data.light)}
-                    icon={
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-                        />
-                      </svg>
-                    }
-                  />
-                  <SensorStatusCard
-                    title="Occupancy"
-                    value={data.motion ? "Detected" : "Idle"}
-                    unit=""
-                    status={data.motion ? "normal" : "warning"}
-                    icon={
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                        />
-                      </svg>
-                    }
-                  />
-                </div>
-              </section>
-
-              {/* Insights Section */}
-              <section className="grid grid-cols-1 md:grid-cols-2 gap-5 animate-fadeIn">
-                <AIRecommendation data={data} />
-                <EnvironmentSummary data={data} />
-              </section>
-
-              {/* Main Dashboard Grid */}
-              <section className="grid grid-cols-1 xl:grid-cols-3 gap-5 animate-fadeIn">
-                <div className="xl:col-span-2">
-                  <Charts
-                    temperatureData={historicalTemp}
-                    humidityData={historicalHumidity}
-                    lightData={historicalLight}
-                  />
-                </div>
-                <div className="xl:col-span-1">
-                  <div className="xl:sticky xl:top-24">
-                    <ControlPanel />
-                  </div>
-                </div>
-              </section>
-            </div>
-          )}
+    <div className="min-h-screen bg-[#F8FAFC]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-[#111827] mb-2">
+            Overview Dashboard
+          </h1>
+          <p className="text-gray-600">
+            Real-time energy monitoring and automation insights
+          </p>
         </div>
-      </main>
 
-      {/* Footer */}
-      <Footer lastUpdated={lastUpdated} isConnected={isOnline} />
-    </>
+        {/* Metrics Grid */}
+        <section aria-labelledby="metrics-heading" className="mb-8">
+          <h2 id="metrics-heading" className="sr-only">
+            Energy Metrics
+          </h2>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-6">
+            <MetricCard
+              title="Current Power Usage"
+              value={mockData.metrics.currentPower}
+              unit="kW"
+              icon={
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M13 10V3L4 14h7v7l9-11h-7z"
+                  />
+                </svg>
+              }
+              trend={mockData.metrics.powerTrend}
+            />
+
+            <MetricCard
+              title="Daily Energy"
+              value={mockData.metrics.dailyEnergy}
+              unit="kWh"
+              icon={
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
+                  />
+                </svg>
+              }
+              trend={mockData.metrics.energyTrend}
+            />
+
+            <MetricCard
+              title="Today's Cost"
+              value={`$${mockData.metrics.todayCost.toFixed(2)}`}
+              unit="USD"
+              icon={
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M12 8c-1.657 0-3 .895-3 2s1.343 2 3 2 3 .895 3 2-1.343 2-3 2m0-8c1.11 0 2.08.402 2.599 1M12 8V7m0 1v8m0 0v1m0-1c-1.11 0-2.08-.402-2.599-1M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                  />
+                </svg>
+              }
+              trend={mockData.metrics.costTrend}
+            />
+
+            <MetricCard
+              title="Monthly Savings"
+              value={`$${mockData.metrics.monthlySavings}`}
+              unit="saved"
+              icon={
+                <svg
+                  className="w-6 h-6"
+                  fill="none"
+                  stroke="currentColor"
+                  viewBox="0 0 24 24"
+                >
+                  <path
+                    strokeLinecap="round"
+                    strokeLinejoin="round"
+                    strokeWidth={2}
+                    d="M5 3v4M3 5h4M6 17v4m-2-2h4m5-16l2.286 6.857L21 12l-5.714 2.143L13 21l-2.286-6.857L5 12l5.714-2.143L13 3z"
+                  />
+                </svg>
+              }
+              trend={mockData.metrics.savingsTrend}
+            />
+          </div>
+        </section>
+
+        {/* Live Sensors Section */}
+        <section aria-labelledby="sensors-heading" className="mb-8">
+          <div className="flex items-center justify-between mb-6">
+            <h2
+              id="sensors-heading"
+              className="text-xl font-semibold text-[#111827]"
+            >
+              Live Sensor Monitoring
+            </h2>
+            <span className="text-sm text-gray-500">
+              {mockData.sensors.filter((s) => s.status !== "offline").length}{" "}
+              active
+            </span>
+          </div>
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 xl:grid-cols-5 gap-4">
+            {mockData.sensors.map((sensor, index) => (
+              <LiveSensorCard
+                key={index}
+                sensorName={sensor.sensorName}
+                currentValue={sensor.currentValue}
+                unit={sensor.unit}
+                status={sensor.status}
+                description={sensor.description}
+                lastUpdate={sensor.lastUpdate}
+              />
+            ))}
+          </div>
+        </section>
+
+        {/* Two Column Layout for Rooms and Activity */}
+        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+          {/* Room Status Section */}
+          <section aria-labelledby="rooms-heading" className="lg:col-span-2">
+            <div className="flex items-center justify-between mb-6">
+              <h2
+                id="rooms-heading"
+                className="text-xl font-semibold text-[#111827]"
+              >
+                Room Status
+              </h2>
+              <span className="text-sm text-gray-500">
+                {mockData.rooms.filter((r) => r.isOccupied).length} occupied
+              </span>
+            </div>
+            <div className="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-4">
+              {mockData.rooms.map((room) => (
+                <RoomStatusCard
+                  key={room.name}
+                  roomName={room.name}
+                  isOccupied={room.isOccupied}
+                  activeDevices={room.activeDevices}
+                  totalDevices={room.totalDevices}
+                  currentPower={room.currentPower}
+                  temperature={room.temperature}
+                />
+              ))}
+            </div>
+          </section>
+
+          {/* Automation Activity Section */}
+          <section aria-labelledby="activity-heading" className="lg:col-span-1">
+            <div className="flex items-center justify-between mb-6">
+              <h2
+                id="activity-heading"
+                className="text-xl font-semibold text-[#111827]"
+              >
+                Recent Activity
+              </h2>
+              <button
+                className="text-sm font-medium text-[#6366F1] hover:text-[#4F46E5] transition-colors"
+                aria-label="View all automation activity"
+              >
+                View All
+              </button>
+            </div>
+            <div className="space-y-4">
+              {mockData.automationActivity.map((activity, index) => (
+                <AutomationActivityItem
+                  key={index}
+                  title={activity.title}
+                  description={activity.description}
+                  timestamp={activity.timestamp}
+                  status={activity.status}
+                />
+              ))}
+            </div>
+          </section>
+        </div>
+      </div>
+    </div>
   );
 }

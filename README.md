@@ -1,239 +1,163 @@
-# 🌱 EcoTrack AI - Smart Environment Dashboard
+# EcoTrack AI Dashboard
 
-A modern, real-time IoT dashboard for monitoring environmental sensors powered by ESP32, Firebase, and AI-driven recommendations.
+> Smart Home Energy Monitoring & Automation Platform
 
-## 🚀 Features
+A modern, real-time energy monitoring dashboard built with Next.js 16, TypeScript, Firebase Realtime Database, and PostgreSQL. Monitor your home's energy consumption, automate devices, and gain AI-powered insights to reduce costs and environmental impact.
 
-- **Real-time Monitoring**: Live sensor data updates via Firebase Realtime Database
-- **Smart AI Recommendations**: Intelligent insights for optimal comfort and energy efficiency
-- **Historical Trends**: Interactive charts for temperature and humidity tracking
-- **Manual Controls**: Override system with manual fan and AC controls
-- **Responsive Design**: Beautiful UI that works on mobile and desktop
-- **Color-coded Status**: Visual indicators for sensor health at a glance
-- **System Status**: Online/offline detection with connection monitoring
+![License](https://img.shields.io/badge/license-MIT-blue.svg)
+![Next.js](https://img.shields.io/badge/Next.js-16.1-black)
+![TypeScript](https://img.shields.io/badge/TypeScript-5.x-blue)
 
-## 📊 Dashboard Components
+## 🌟 Overview
 
-### Live Sensor Status
+EcoTrack AI is a comprehensive smart home energy management system that helps you reduce energy costs, automate smart devices, monitor in real-time, analyze historical trends, and get AI-powered insights for energy efficiency.
 
-- **Temperature** (°C) - Real-time temperature monitoring
-- **Humidity** (%) - Ambient moisture levels
-- **Light Level** (%) - Room brightness detection
-- **Occupancy** - Motion sensor for presence detection
+## ✨ Features
 
-### AI Insights
+- **Real-Time Monitoring** - Live sensor data with Firebase Realtime Database
+- **Historical Analytics** - PostgreSQL data storage with time-series queries
+- **Smart Automation** - Intelligent device control and scheduling
+- **Energy Insights** - AI-powered recommendations
+- **Responsive Design** - Works seamlessly on all devices
+- **Auto Data Sync** - Client-side sync every minute (no cron jobs needed)
 
-Intelligent recommendations based on:
+## 🏗️ Tech Stack
 
-- Current temperature and humidity
-- Room occupancy
-- Energy efficiency optimization
-- Comfort level maintenance
+- **Next.js 16.1** - React framework with App Router
+- **React 19** - UI library
+- **TypeScript 5** - Type-safe development
+- **Tailwind CSS 4** - Styling
+- **Recharts 3.6** - Data visualization
+- **Firebase 12.7** - Real-time database
+- **PostgreSQL** - Historical data storage
 
-### Historical Analysis
-
-- Temperature trends over time
-- Humidity patterns
-- Configurable time ranges (1h / 6h / 24h)
-
-### Control Panel
-
-- System mode (AUTO / MANUAL)
-- Fan control (ON / OFF / AUTO)
-- AC temperature adjustment (16-30°C)
-
-## 🛠️ Tech Stack
-
-- **Framework**: Next.js 14 (App Router)
-- **Language**: TypeScript
-- **Styling**: Tailwind CSS v4
-- **Database**: Firebase Realtime Database
-- **Charts**: Custom SVG-based visualizations
-- **Icons**: Heroicons (embedded SVG)
-
-## 📁 Project Structure
-
-```
-ecotrackai-dashboard/
-├── app/
-│   ├── page.tsx           # Main dashboard page
-│   ├── layout.tsx         # Root layout
-│   └── globals.css        # Global styles
-├── components/
-│   ├── Header.tsx         # Fixed header with status
-│   ├── SensorStatusCard.tsx    # Reusable sensor card
-│   ├── EnvironmentSummary.tsx  # Human-readable summary
-│   ├── AIRecommendation.tsx    # AI insights section
-│   ├── Charts.tsx         # Historical data charts
-│   ├── ControlPanel.tsx   # Manual control interface
-│   ├── Footer.tsx         # Dashboard footer
-│   └── README.md          # Component documentation
-├── lib/
-│   └── firebase.ts        # Firebase configuration
-├── types/
-│   └── globals.d.ts       # TypeScript type definitions
-└── public/                # Static assets
-```
-
-## 🚀 Getting Started
+## 🚀 Quick Start
 
 ### Prerequisites
 
 - Node.js 18+ and npm
-- Firebase project with Realtime Database enabled
-- ESP32 device (optional for local testing)
+- PostgreSQL database (local or Neon)
+- Firebase project with Realtime Database
 
 ### Installation
 
-1. **Clone the repository**
+```bash
+# Install dependencies
+npm install
 
-   ```bash
-   git clone <repository-url>
-   cd ecotrackai-dashboard
-   ```
+# Setup environment variables
+cp .env.local.example .env.local
+# Setup environment variables
+cp .env.local.example .env.local
+# Edit .env.local with your credentials
 
-2. **Install dependencies**
+# Setup database schema
+psql -U postgres -d ecotrackai -f database/schema.sql
 
-   ```bash
-   npm install
-   ```
-
-3. **Configure Firebase**
-
-   Update `lib/firebase.ts` with your Firebase credentials:
-
-   ```typescript
-   const firebaseConfig = {
-     apiKey: "YOUR_API_KEY",
-     authDomain: "YOUR_AUTH_DOMAIN",
-     databaseURL: "YOUR_DATABASE_URL",
-     projectId: "YOUR_PROJECT_ID",
-     storageBucket: "YOUR_STORAGE_BUCKET",
-     messagingSenderId: "YOUR_MESSAGING_SENDER_ID",
-     appId: "YOUR_APP_ID",
-   };
-   ```
-
-4. **Run the development server**
-
-   ```bash
-   npm run dev
-   ```
-
-5. **Open the dashboard**
-
-   Navigate to [http://localhost:3000](http://localhost:3000)
-
-## 📡 Firebase Database Structure
-
-Expected data structure at `EcoTrackAI/live`:
-
-```json
-{
-  "temperature": 25.5,
-  "humidity": 60,
-  "light": 75,
-  "motion": true
-}
+# Run development server
+npm run dev
 ```
 
-### ESP32 Integration
+Visit [http://localhost:3000](http://localhost:3000)
 
-Your ESP32 should push data to Firebase at the path: `EcoTrackAI/live`
+## 📖 Documentation
 
-Example Arduino code structure:
+Comprehensive documentation is available in the `/docs` folder:
 
-```cpp
-void sendToFirebase() {
-  Firebase.setFloat(firebaseData, "/EcoTrackAI/live/temperature", temp);
-  Firebase.setFloat(firebaseData, "/EcoTrackAI/live/humidity", hum);
-  Firebase.setFloat(firebaseData, "/EcoTrackAI/live/light", light);
-  Firebase.setBool(firebaseData, "/EcoTrackAI/live/motion", motion);
-}
-```
+- **[Architecture](docs/ARCHITECTURE.md)** - System design, data flow, technology stack
+- **[API Reference](docs/API.md)** - Complete API endpoint documentation
+- **[Components](docs/COMPONENTS.md)** - Component library and usage guide
+- **[Features](docs/FEATURES.md)** - Detailed feature documentation
+- **[Deployment](docs/DEPLOYMENT.md)** - Production deployment guide
+- **[Development](docs/DEVELOPMENT.md)** - Development workflow and standards
+- **[Project Summary](docs/PROJECT-SUMMARY.md)** - Complete project overview
 
-## 🎨 Customization
+## 📦 Deploy to Vercel
 
-### Modifying Sensor Thresholds
+### 1. Environment Variables
 
-Edit the status functions in [app/page.tsx](app/page.tsx):
+In your Vercel project settings, add these variables:
 
-```typescript
-const getTemperatureStatus = (
-  temp: number
-): "normal" | "warning" | "critical" => {
-  if (temp < 15 || temp > 30) return "critical";
-  if (temp < 18 || temp > 28) return "warning";
-  return "normal";
-};
-```
+**Firebase Configuration:**
 
-### Customizing AI Recommendations
+- `NEXT_PUBLIC_FIREBASE_API_KEY`
+- `NEXT_PUBLIC_FIREBASE_AUTH_DOMAIN`
+- `NEXT_PUBLIC_FIREBASE_PROJECT_ID`
+- `NEXT_PUBLIC_FIREBASE_STORAGE_BUCKET`
+- `NEXT_PUBLIC_FIREBASE_MESSAGING_SENDER_ID`
+- `NEXT_PUBLIC_FIREBASE_APP_ID`
+- `NEXT_PUBLIC_FIREBASE_DATABASE_URL`
 
-Update the logic in [components/AIRecommendation.tsx](components/AIRecommendation.tsx):
+**Database Configuration:**
 
-```typescript
-const getRecommendation = (): AIRecommendationData => {
-  // Add your custom AI logic here
-};
-```
+- `DATABASE_URL` or `POSTGRES_URL` - Your connection string
 
-## 🔒 Security
-
-- Firebase security rules should be configured to allow only authenticated reads/writes
-- Never expose Firebase credentials in public repositories
-- Use environment variables for production deployments
-
-## 📝 Type Definitions
-
-All TypeScript interfaces are defined in [types/globals.d.ts](types/globals.d.ts):
-
-- `SensorData` - Current sensor readings
-- `HistoricalDataPoint` - Time-series data
-- `AIRecommendationData` - AI recommendation structure
-- `ControlSettings` - Manual control settings
-
-## 🚀 Deployment
-
-### Vercel (Recommended)
-
-1. Push your code to GitHub
-2. Import project in [Vercel](https://vercel.com)
-3. Add Firebase environment variables
-4. Deploy
-
-### Other Platforms
-
-Build the production version:
+### 2. Deploy
 
 ```bash
-npm run build
-npm start
+# Install Vercel CLI
+npm i -g vercel
+
+# Deploy to production
+vercel --prod
 ```
 
-## 🔮 Future Enhancements
+### 3. Setup Database Schema
 
-- [ ] Machine Learning integration for predictive recommendations
-- [ ] Historical data storage and analysis
-- [ ] Email/SMS alerts for critical conditions
-- [ ] Multi-room support
-- [ ] User authentication and preferences
-- [ ] Export data to CSV/PDF reports
-- [ ] Mobile app (React Native)
-- [ ] Voice control integration
+```bash
+# Using Neon dashboard SQL editor or psql
+psql $DATABASE_URL -f database/schema.sql
+```
+
+See [docs/DEPLOYMENT.md](docs/DEPLOYMENT.md) for complete deployment guide.
+
+## 🔄 Data Synchronization
+
+The app uses **client-side automatic syncing** (no server-side cron jobs needed):
+
+- Data syncs every **60 seconds** automatically
+- Firebase sensor data → PostgreSQL historical storage
+- Implemented via `DataSyncProvider` component
+- Works on Vercel free tier
+
+## 📊 API Endpoints
+
+| Endpoint               | Method | Description                         |
+| ---------------------- | ------ | ----------------------------------- |
+| `/api/rooms`           | GET    | List all rooms                      |
+| `/api/historical-data` | GET    | Query historical sensor data        |
+| `/api/sync-firebase`   | POST   | Trigger Firebase to PostgreSQL sync |
+| `/api/sync-firebase`   | GET    | Check database connection status    |
+
+See [docs/API.md](docs/API.md) for detailed API documentation.
+
+## 🛠️ Development
+
+```bash
+npm run dev      # Start development server (port 3000)
+npm run build    # Create production build
+npm run start    # Start production server
+npm run lint     # Run ESLint
+```
+
+See [docs/DEVELOPMENT.md](docs/DEVELOPMENT.md) for development workflow.
+npm install
+
+# Rebuild
+
+npm run build
+
+```
+
+## 📝 License
+
+MIT License - see LICENSE file for details
 
 ## 🤝 Contributing
 
 Contributions are welcome! Please feel free to submit a Pull Request.
 
-## 📄 License
+## 📧 Support
 
-This project is open source and available under the MIT License.
-
-## 👨‍💻 Author
-
-Built with ❤️ for smart home automation
-
----
-
-**Note**: This dashboard is designed to be modular and extensible. Each component is documented in the [components/README.md](components/README.md) file.
+For issues or questions, please open an issue on GitHub.
+```

@@ -1,9 +1,11 @@
 import type { Metadata } from "next";
+import { AppShell } from "@/components/navigation";
+import { DataSyncProvider } from "@/components/providers/DataSyncProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
-  title: "EcoTrack AI - Smart Environment Monitoring",
-  description: "Real-time environmental monitoring dashboard with AI-powered recommendations",
+  title: "EcoTrack AI - Smart Energy Dashboard",
+  description: "IoT smart home energy monitoring and automation dashboard",
 };
 
 export default function RootLayout({
@@ -13,7 +15,11 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en">
-      <body>{children}</body>
+      <body>
+        <DataSyncProvider>
+          <AppShell>{children}</AppShell>
+        </DataSyncProvider>
+      </body>
     </html>
   );
 }
