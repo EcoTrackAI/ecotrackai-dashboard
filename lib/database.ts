@@ -41,7 +41,79 @@ export function getPool(): Pool {
   return pool;
 }
 
+// Initialize database tables if they don't exist
+let isInitialized = false;
+
+export async function initializeDatabase(): Promise<void> {
+  if (isInitialized) return;
+
+  try {
+    const pool = getPool();
+
+    // Create rooms table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS rooms (
+        id VARCHAR(50) PRIMARY KEY,
+        name VARCHAR(255) NOT NULL,
+        floor INTEGER,
+        type VARCHAR(100),
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create sensor_data table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS sensor_data (
+        id SERIAL PRIMARY KEY,
+        sensor_id VARCHAR(100) NOT NULL,
+        sensor_name VARCHAR(255) NOT NULL,
+        room_id VARCHAR(50) REFERENCES rooms(id),
+        category VARCHAR(50) NOT NULL,
+        current_value NUMERIC(10, 2) NOT NULL,
+        unit VARCHAR(20) NOT NULL,
+        status VARCHAR(20) NOT NULL,
+        description TEXT,
+        timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create indexes
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_sensor_data_timestamp ON sensor_data(timestamp DESC)
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_sensor_data_room_id ON sensor_data(room_id)
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_sensor_data_category ON sensor_data(category)
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_sensor_data_sensor_id ON sensor_data(sensor_id)
+    `);
+
+    // Insert default rooms if table is empty
+    await pool.query(`
+      INSERT INTO rooms (id, name, floor, type) VALUES
+        ('living-room', 'Living Room', 1, 'residential'),
+        ('bedroom', 'Master Bedroom', 2, 'residential'),
+        ('kitchen', 'Kitchen', 1, 'residential'),
+        ('office', 'Home Office', 2, 'residential'),
+        ('garage', 'Garage', 0, 'utility')
+      ON CONFLICT (id) DO NOTHING
+    `);
+
+    isInitialized = true;
+    console.log("Database initialized successfully");
+  } catch (error) {
+    console.error("Database initialization error:", error);
+    throw error;
+  }
+}
+
 export async function getRooms(): Promise<DBRoom[]> {
+  await initializeDatabase();
   const result: QueryResult<DBRoom> = await getPool().query(
     "SELECT * FROM rooms ORDER BY name"
   );
@@ -54,6 +126,7 @@ export async function upsertRoom(
   floor: number = 1,
   type: string = "residential"
 ): Promise<void> {
+  await initializeDatabase();
   await getPool().query(
     `INSERT INTO rooms (id, name, floor, type, updated_at)
      VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP)
@@ -75,6 +148,7 @@ export async function insertSensorData(data: {
   description?: string;
   timestamp?: Date;
 }): Promise<void> {
+  await initializeDatabase();
   await getPool().query(
     `INSERT INTO sensor_data 
       (sensor_id, sensor_name, room_id, category, current_value, unit, status, description, timestamp)
@@ -107,6 +181,7 @@ export async function batchInsertSensorData(
   }>
 ): Promise<void> {
   if (records.length === 0) return;
+  await initializeDatabase();
 
   const values = records
     .map(
@@ -185,6 +260,7 @@ export async function getHistoricalData(
   roomIds?: string[],
   aggregation: "raw" | "hourly" = "raw"
 ): Promise<HistoricalDataPoint[]> {
+  await initializeDatabase();
   const pool = getPool();
   let query = buildHistoricalDataQuery(aggregation);
   const params: any[] = [startDate, endDate];
@@ -217,6 +293,7 @@ export async function getHistoricalData(
 export async function getLatestSensorReadings(
   roomId?: string
 ): Promise<SensorDataRecord[]> {
+  await initializeDatabase();
   const pool = getPool();
 
   let query = `
