@@ -2,33 +2,37 @@ import { Pool, QueryResult } from "pg";
 
 let pool: Pool | null = null;
 
+function createPoolConfig() {
+  const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+  const isProd = process.env.NODE_ENV === "production";
+
+  const baseConfig = {
+    max: 20,
+    idleTimeoutMillis: 30000,
+    connectionTimeoutMillis: isProd ? 5000 : 2000,
+  };
+
+  if (connectionString) {
+    return {
+      ...baseConfig,
+      connectionString,
+      ssl: isProd ? { rejectUnauthorized: false } : false,
+    };
+  }
+
+  return {
+    ...baseConfig,
+    host: process.env.POSTGRES_HOST || "localhost",
+    port: parseInt(process.env.POSTGRES_PORT || "5432"),
+    database: process.env.POSTGRES_DATABASE || "ecotrackai",
+    user: process.env.POSTGRES_USER || "postgres",
+    password: process.env.POSTGRES_PASSWORD || "",
+  };
+}
+
 export function getPool(): Pool {
   if (!pool) {
-    const connectionString =
-      process.env.DATABASE_URL || process.env.POSTGRES_URL;
-    const isProd = process.env.NODE_ENV === "production";
-
-    pool = new Pool(
-      connectionString
-        ? {
-            connectionString,
-            ssl: isProd ? { rejectUnauthorized: false } : false,
-            max: 20,
-            idleTimeoutMillis: 30000,
-            connectionTimeoutMillis: isProd ? 5000 : 2000,
-          }
-        : {
-            host: process.env.POSTGRES_HOST || "localhost",
-            port: parseInt(process.env.POSTGRES_PORT || "5432"),
-            database: process.env.POSTGRES_DATABASE || "ecotrackai",
-            user: process.env.POSTGRES_USER || "postgres",
-            password: process.env.POSTGRES_PASSWORD || "",
-            max: 20,
-            idleTimeoutMillis: 30000,
-            connectionTimeoutMillis: 2000,
-          }
-    );
-
+    pool = new Pool(createPoolConfig());
     pool.on("error", (err) => {
       console.error("Database pool error:", err.message);
       pool = null;
@@ -133,6 +137,24 @@ export async function batchInsertSensorData(
   );
 }
 
+const SENSOR_CATEGORIES = [
+  "energy",
+  "power",
+  "temperature",
+  "humidity",
+  "lighting",
+  "occupancy",
+];
+
+function buildCategoryAggregates(aggFunc: string): string {
+  return SENSOR_CATEGORIES.map(
+    (cat) =>
+      `${aggFunc}(CASE WHEN sd.category = '${cat}' THEN sd.current_value ELSE 0 END) as ${
+        cat === "occupancy" ? "motion" : cat
+      }`
+  ).join(",\n      ");
+}
+
 function buildHistoricalDataQuery(
   aggregation: "raw" | "hourly" = "raw"
 ): string {
@@ -141,21 +163,13 @@ function buildHistoricalDataQuery(
     ? "DATE_TRUNC('hour', sd.timestamp)"
     : "sd.timestamp";
   const aggFunc = isHourly ? "AVG" : "MAX";
-  const categories = ["energy", "power", "temperature", "humidity", "lighting"];
-  const aggregates = categories
-    .map(
-      (cat) =>
-        `${aggFunc}(CASE WHEN sd.category = '${cat}' THEN sd.current_value ELSE 0 END) as ${cat}`
-    )
-    .join(",\n      ");
 
   return `
     SELECT 
       ${timestamp} as timestamp,
       sd.room_id as "roomId",
       r.name as "roomName",
-      ${aggregates},
-      ${aggFunc}(CASE WHEN sd.category = 'occupancy' THEN sd.current_value ELSE 0 END) as motion
+      ${buildCategoryAggregates(aggFunc)}
     FROM sensor_data sd
     JOIN rooms r ON sd.room_id = r.id
     WHERE sd.timestamp BETWEEN $1 AND $2

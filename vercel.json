@@ -8,12 +8,6 @@
       "destination": "/api/:path*"
     }
   ],
-  "crons": [
-    {
-      "path": "/api/sync-firebase",
-      "schedule": "* * * * *"
-    }
-  ],
   "env": {
     "NODE_ENV": "production"
   },
