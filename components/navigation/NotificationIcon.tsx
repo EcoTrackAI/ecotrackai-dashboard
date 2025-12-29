@@ -25,7 +25,7 @@ export function NotificationIcon({
     <div className={`relative ${className}`}>
       <button
         onClick={handleToggle}
-        className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+        className="relative p-2 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-transparent focus:ring-offset-2"
         aria-label={`Notifications${
           unreadCount > 0 ? `, ${unreadCount} unread` : ""
         }`}
