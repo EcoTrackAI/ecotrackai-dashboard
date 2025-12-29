@@ -32,6 +32,16 @@ declare global {
     location: string;
   }
 
+  interface OpenWeatherResponse {
+    main: {
+      temp: number;
+    };
+    weather: Array<{
+      main: string;
+    }>;
+    name: string;
+  }
+
   interface NotificationItem {
     id: string;
     title: string;
