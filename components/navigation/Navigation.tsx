@@ -38,7 +38,7 @@ export function Navigation({
           <div className="flex items-center gap-3 shrink-0">
             <Link
               href="/"
-              className="flex items-center gap-3 group focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2 rounded-lg px-2 py-1 -mx-2"
+              className="flex items-center gap-3 focus:outline-none focus:ring-2 focus:ring-transparent focus:ring-offset-2 px-2 py-1 -mx-2"
               aria-label={`${APP_CONFIG.name} home`}
             >
               <Image
@@ -46,7 +46,7 @@ export function Navigation({
                 alt={APP_CONFIG.name}
                 width={32}
                 height={32}
-                className="h-8 w-8 rounded-lg shadow-sm group-hover:shadow-md transition-shadow object-contain"
+                className="h-8 w-8 object-contain"
               />
               <div className="hidden sm:flex flex-col">
                 <span className="text-base font-bold text-gray-900 leading-tight">

@@ -29,7 +29,7 @@ export function UserProfileDropdown({
     <div className={`relative ${className}`}>
       <button
         onClick={handleToggle}
-        className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+        className="flex items-center gap-2 p-1 rounded-lg hover:bg-gray-100 transition-colors focus:outline-none focus:ring-2 focus:ring-transparent focus:ring-offset-2"
         aria-label="User menu"
         aria-expanded={isOpen}
         aria-haspopup="true"
