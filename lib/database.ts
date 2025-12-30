@@ -1,38 +1,19 @@
 import { Pool, QueryResult } from "pg";
-
 let pool: Pool | null = null;
-
-function createPoolConfig() {
-  const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
-  const isProd = process.env.NODE_ENV === "production";
-
-  const baseConfig = {
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: isProd ? 5000 : 2000,
-  };
-
-  if (connectionString) {
-    return {
-      ...baseConfig,
-      connectionString,
-      ssl: isProd ? { rejectUnauthorized: false } : false,
-    };
-  }
-
-  return {
-    ...baseConfig,
-    host: process.env.POSTGRES_HOST || "localhost",
-    port: parseInt(process.env.POSTGRES_PORT || "5432"),
-    database: process.env.POSTGRES_DATABASE || "ecotrackai",
-    user: process.env.POSTGRES_USER || "postgres",
-    password: process.env.POSTGRES_PASSWORD || "",
-  };
-}
 
 export function getPool(): Pool {
   if (!pool) {
-    pool = new Pool(createPoolConfig());
+    const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+    if (!connectionString) {
+      throw new Error("DATABASE_URL or POSTGRES_URL must be set for Neon Postgres connection.");
+    }
+    pool = new Pool({
+      connectionString,
+      ssl: { rejectUnauthorized: false },
+      max: 20,
+      idleTimeoutMillis: 30000,
+      connectionTimeoutMillis: 5000,
+    });
     pool.on("error", (err) => {
       console.error("Database pool error:", err.message);
       pool = null;
