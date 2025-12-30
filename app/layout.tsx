@@ -1,6 +1,5 @@
 import type { Metadata } from "next";
 import { AppShell } from "@/components/navigation";
-import { DataSyncProvider } from "@/components/providers/DataSyncProvider";
 import "./globals.css";
 
 export const metadata: Metadata = {
@@ -16,9 +15,7 @@ export default function RootLayout({
   return (
     <html lang="en">
       <body>
-        <DataSyncProvider>
-          <AppShell>{children}</AppShell>
-        </DataSyncProvider>
+        <AppShell>{children}</AppShell>
       </body>
     </html>
   );
