@@ -73,13 +73,6 @@ DATABASE_URL=postgresql://user:password@host:5432/database?sslmode=require
 # OR
 POSTGRES_URL=postgresql://user:password@host:5432/database?sslmode=require
 
-# Optional: Individual PostgreSQL parameters
-POSTGRES_HOST=db.example.com
-POSTGRES_PORT=5432
-POSTGRES_DATABASE=ecotrackai
-POSTGRES_USER=postgres
-POSTGRES_PASSWORD=your_password
-
 # Node Environment
 NODE_ENV=production
 ```

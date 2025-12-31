@@ -9,7 +9,6 @@
     <img src="https://img.shields.io/badge/TypeScript-5-3178C6?style=flat-square&logo=typescript" alt="TypeScript" />
     <img src="https://img.shields.io/badge/Firebase-12.7-FFCA28?style=flat-square&logo=firebase" alt="Firebase" />
     <img src="https://img.shields.io/badge/PostgreSQL-16-316192?style=flat-square&logo=postgresql" alt="PostgreSQL" />
-    <img src="https://img.shields.io/badge/License-MIT-green?style=flat-square" alt="License" />
   </p>
 
   <p>
@@ -486,18 +485,6 @@ We welcome contributions from the community! Here's how you can help:
 - Add types for all function parameters and returns
 
 For detailed contribution guidelines, see [Development Guide](docs/DEVELOPMENT.md).
-
-## 📄 License
-
-This project is licensed under the **MIT License** - see the [LICENSE](LICENSE) file for details.
-
-### What This Means
-
-- ✅ Commercial use allowed
-- ✅ Modification allowed
-- ✅ Distribution allowed
-- ✅ Private use allowed
-- ❗ No liability or warranty
 
 ## 🙏 Acknowledgments
 
