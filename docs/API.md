@@ -12,11 +12,11 @@ This document provides comprehensive API documentation including request/respons
 
 ## Base URLs
 
-| Environment     | Base URL                                 | Description              |
-| --------------- | ---------------------------------------- | ------------------------ |
-| **Development** | `http://localhost:3000`                  | Local development server |
-| **Production**  | `https://your-domain.vercel.app`         | Production deployment    |
-| **Staging**     | `https://staging-your-domain.vercel.app` | Staging environment      |
+| Environment     | Base URL                                  | Description              |
+| --------------- | ----------------------------------------- | ------------------------ |
+| **Development** | `http://localhost:3000`                   | Local development server |
+| **Production**  | `https://your-domain.vercel.app`          | Production deployment    |
+| **Preview**     | `https://your-domain-preview.vercel.app/` | Preview environment      |
 
 ## Authentication
 

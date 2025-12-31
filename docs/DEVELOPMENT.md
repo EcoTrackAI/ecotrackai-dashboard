@@ -660,15 +660,6 @@ DATABASE_URL=postgresql://localhost:5432/ecotrackai_dev
 NODE_ENV=development
 ```
 
-### Staging
-
-```env
-# .env.staging
-NEXT_PUBLIC_FIREBASE_API_KEY=staging_key
-DATABASE_URL=postgresql://staging-db:5432/ecotrackai_staging
-NODE_ENV=production
-```
-
 ### Production
 
 ```env
