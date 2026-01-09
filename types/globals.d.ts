@@ -7,6 +7,18 @@ declare global {
     timestamp?: number;
   }
 
+  interface SensorReading {
+    id: string;
+    sensorName: string;
+    category: string;
+    currentValue: number | boolean;
+    description: string;
+    room: string;
+    status: string;
+    unit: string;
+    lastUpdate: string;
+  }
+
   interface HistoricalDataPoint {
     timestamp: number;
     value: number;

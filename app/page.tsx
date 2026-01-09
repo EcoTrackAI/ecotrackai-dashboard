@@ -13,6 +13,7 @@ import Footer from "@/components/Footer";
 
 export default function Home() {
   const [data, setData] = useState<SensorData | null>(null);
+  const [sensors, setSensors] = useState<SensorReading[]>([]);
   const [isOnline, setIsOnline] = useState(false);
   const [lastUpdated, setLastUpdated] = useState<number | null>(null);
   const [historicalTemp, setHistoricalTemp] = useState<HistoricalDataPoint[]>(
@@ -29,20 +30,40 @@ export default function Home() {
   const lastUpdateTimeRef = useRef<number>(0);
 
   useEffect(() => {
-    const liveRef = ref(db, "ecotrack/data");
+    const liveRef = ref(db, "sensors");
 
     const unsubscribe = onValue(
       liveRef,
       (snapshot) => {
         const val = snapshot.val();
-        if (val) {
+        const rawSensors = val?.sensors ?? val;
+
+        if (rawSensors) {
+          const sensorList: SensorReading[] = Object.entries(rawSensors).map(
+            ([id, sensor]) => ({ id, ...(sensor as Omit<SensorReading, "id">) })
+          );
+
+          const findByCategory = (category: string) =>
+            sensorList.find((item) => item.category === category);
+
+          const tempSensor = findByCategory("temperature");
+          const humiditySensor = findByCategory("humidity");
+          const lightSensor = findByCategory("lighting");
+          const occupancySensor = findByCategory("occupancy");
+
           const newData: SensorData = {
-            temperature: val.temperature || 0,
-            humidity: val.humidity || 0,
-            light: val.light || 0,
-            motion: val.motion || false,
+            temperature: Number(tempSensor?.currentValue ?? 0),
+            humidity: Number(humiditySensor?.currentValue ?? 0),
+            light: Number(lightSensor?.currentValue ?? 0),
+            motion: Boolean(
+              typeof occupancySensor?.currentValue === "boolean"
+                ? occupancySensor.currentValue
+                : Number(occupancySensor?.currentValue ?? 0) > 0
+            ),
             timestamp: Date.now(),
           };
+
+          setSensors(sensorList);
 
           // Round values to avoid floating point comparison issues
           const dataHash = JSON.stringify({
@@ -61,7 +82,11 @@ export default function Home() {
             lastDataHash.current = dataHash;
             lastUpdateTimeRef.current = now;
             setIsOnline(true);
-            setLastUpdated(now);
+            const newestUpdate = sensorList.reduce((acc, sensor) => {
+              const ts = Date.parse(sensor.lastUpdate);
+              return Number.isNaN(ts) ? acc : Math.max(acc, ts);
+            }, now);
+            setLastUpdated(newestUpdate);
 
             // Add to historical data only when data changes
             setHistoricalTemp((prev) => {
@@ -129,9 +154,99 @@ export default function Home() {
   };
 
   const getLightStatus = (light: number): "normal" | "warning" | "critical" => {
-    if (light > 90) return "critical"; // Very dark
-    if (light > 80) return "warning"; // Dark
-    return "normal"; // Well lit
+    if (light > 90) return "critical";
+    if (light > 80) return "warning";
+    return "normal";
+  };
+
+  const renderSensorTable = () => {
+    if (!sensors.length) return null;
+
+    const statusBadge = (status: string) => {
+      const normalized = status.toLowerCase();
+      const colorClasses =
+        normalized === "critical"
+          ? "bg-rose-50 text-rose-700 border-rose-200"
+          : normalized === "warning"
+          ? "bg-amber-50 text-amber-700 border-amber-200"
+          : "bg-emerald-50 text-emerald-700 border-emerald-200";
+
+      return (
+        <span
+          className={`px-2 py-1 text-xs font-semibold rounded-full border ${colorClasses}`}
+        >
+          {status}
+        </span>
+      );
+    };
+
+    const formatValue = (sensor: SensorReading) => {
+      if (sensor.unit === "boolean") {
+        return sensor.currentValue ? "Active" : "Idle";
+      }
+      const numeric = Number(sensor.currentValue);
+      return Number.isFinite(numeric)
+        ? numeric.toFixed(1)
+        : String(sensor.currentValue);
+    };
+
+    return (
+      <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 shadow-sm">
+        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
+          <div className="flex items-center gap-2">
+            <span className="w-1 h-7 bg-emerald-600 rounded-full"></span>
+            <h3 className="text-lg font-semibold text-gray-900">
+              Sensor Table
+            </h3>
+          </div>
+          <p className="text-sm text-gray-600">
+            Live readings from all sensors
+          </p>
+        </div>
+        <div className="overflow-x-auto">
+          <table className="w-full min-w-160 text-sm text-left">
+            <thead className="bg-gray-50 text-gray-700 font-semibold">
+              <tr>
+                <th className="px-3 py-2 rounded-tl-lg">Name</th>
+                <th className="px-3 py-2">Category</th>
+                <th className="px-3 py-2">Room</th>
+                <th className="px-3 py-2">Value</th>
+                <th className="px-3 py-2">Status</th>
+                <th className="px-3 py-2 rounded-tr-lg">Updated</th>
+              </tr>
+            </thead>
+            <tbody className="divide-y divide-gray-100">
+              {sensors.map((sensor) => (
+                <tr key={sensor.id} className="hover:bg-gray-50">
+                  <td className="px-3 py-2 font-semibold text-gray-900 whitespace-nowrap">
+                    {sensor.sensorName}
+                  </td>
+                  <td className="px-3 py-2 capitalize text-gray-700 whitespace-nowrap">
+                    {sensor.category}
+                  </td>
+                  <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
+                    {sensor.room.replace(/-/g, " ")}
+                  </td>
+                  <td className="px-3 py-2 text-gray-900 whitespace-nowrap">
+                    {formatValue(sensor)}{" "}
+                    {sensor.unit !== "boolean" ? sensor.unit : ""}
+                  </td>
+                  <td className="px-3 py-2 whitespace-nowrap">
+                    {statusBadge(sensor.status)}
+                  </td>
+                  <td className="px-3 py-2 text-gray-600 whitespace-nowrap">
+                    {new Date(sensor.lastUpdate).toLocaleTimeString([], {
+                      hour: "2-digit",
+                      minute: "2-digit",
+                    })}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    );
   };
 
   return (
@@ -147,9 +262,7 @@ export default function Home() {
                 <p className="text-gray-700 text-base font-medium">
                   Connecting to sensors...
                 </p>
-                <p className="text-gray-500 text-sm mt-1">
-                  Please wait
-                </p>
+                <p className="text-gray-500 text-sm mt-1">Please wait</p>
               </div>
             </div>
           ) : (
@@ -260,6 +373,11 @@ export default function Home() {
               <section className="grid grid-cols-1 md:grid-cols-2 gap-5 animate-fadeIn">
                 <AIRecommendation data={data} />
                 <EnvironmentSummary data={data} />
+              </section>
+
+              {/* Sensor Table */}
+              <section className="animate-fadeIn">
+                {renderSensorTable()}
               </section>
 
               {/* Main Dashboard Grid */}
