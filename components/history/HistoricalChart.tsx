@@ -39,10 +39,6 @@ const CustomTooltip: React.FC<any> = ({ active, payload, metric }) => {
 
   const getUnit = () => {
     switch (metric) {
-      case "power":
-        return "W";
-      case "energy":
-        return "kWh";
       case "temperature":
         return "°C";
       case "humidity":
@@ -149,10 +145,6 @@ export const HistoricalChart: React.FC<HistoricalChartProps> = ({
 
   const getMetricLabel = () => {
     switch (metric) {
-      case "power":
-        return "Power (W)";
-      case "energy":
-        return "Energy (kWh)";
       case "temperature":
         return "Temperature (°C)";
       case "humidity":

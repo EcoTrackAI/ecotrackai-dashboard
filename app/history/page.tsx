@@ -27,7 +27,7 @@ export default function HistoryPage() {
   const [error, setError] = useState<string | null>(null);
 
   const [chartType, setChartType] = useState<ChartType>("line");
-  const [metric, setMetric] = useState<MetricType>("energy");
+  const [metric, setMetric] = useState<MetricType>("temperature");
   const [compareRooms, setCompareRooms] = useState(false);
 
   useEffect(() => {
@@ -217,8 +217,6 @@ export default function HistoryPage() {
                 onChange={(e) => setMetric(e.target.value as MetricType)}
                 className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6366F1] focus:border-transparent"
               >
-                <option value="energy">Energy (kWh)</option>
-                <option value="power">Power (W)</option>
                 <option value="temperature">Temperature (°C)</option>
                 <option value="humidity">Humidity (%)</option>
                 <option value="lighting">Lighting (%)</option>

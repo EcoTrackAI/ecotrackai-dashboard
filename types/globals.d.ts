@@ -19,8 +19,6 @@ declare global {
     | "system";
   type ChartType = "line" | "area" | "bar";
   type MetricType =
-    | "power"
-    | "energy"
     | "temperature"
     | "humidity"
     | "lighting"
@@ -299,10 +297,10 @@ declare global {
     Date: string;
     Time: string;
     Room: string;
-    "Power (W)": number;
-    "Energy (kWh)": number;
     "Temperature (°C)"?: number;
     "Humidity (%)"?: number;
+    "Lighting (%)"?: number;
+    Motion?: string;
   }
 
   type SortDirection = "asc" | "desc";

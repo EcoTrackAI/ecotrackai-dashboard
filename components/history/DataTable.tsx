@@ -70,8 +70,6 @@ export const DataTable: React.FC<DataTableProps> = ({
         Date: date.toLocaleDateString("en-US"),
         Time: date.toLocaleTimeString("en-US"),
         Room: point.roomName,
-        "Power (W)": point.power,
-        "Energy (kWh)": point.energy,
         ...(point.temperature !== undefined && {
           "Temperature (°C)": point.temperature,
         }),
@@ -270,24 +268,6 @@ export const DataTable: React.FC<DataTableProps> = ({
               </th>
               <th
                 className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                onClick={() => handleSort("power")}
-              >
-                <div className="flex items-center justify-end gap-1">
-                  <span>Power (W)</span>
-                  <SortIcon column="power" />
-                </div>
-              </th>
-              <th
-                className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                onClick={() => handleSort("energy")}
-              >
-                <div className="flex items-center justify-end gap-1">
-                  <span>Energy (kWh)</span>
-                  <SortIcon column="energy" />
-                </div>
-              </th>
-              <th
-                className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
                 onClick={() => handleSort("temperature")}
               >
                 <div className="flex items-center justify-end gap-1">
@@ -343,12 +323,7 @@ export const DataTable: React.FC<DataTableProps> = ({
                   {row.roomName}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right">
-                  {row.power.toFixed(2)}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right">
-                  {row.energy.toFixed(3)}
-                </td>
-                <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 text-right">
+
                   {row.temperature !== undefined
                     ? row.temperature.toFixed(1)
                     : "-"}
