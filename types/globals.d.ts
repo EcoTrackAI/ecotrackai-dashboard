@@ -28,7 +28,13 @@ declare global {
 
   interface WeatherData {
     temperature: number;
-    condition: "sunny" | "cloudy" | "rainy" | "snowy" | "partly-cloudy";
+    condition:
+      | "sunny"
+      | "cloudy"
+      | "rainy"
+      | "snowy"
+      | "partly-cloudy"
+      | "not-available";
     location: string;
   }
 
