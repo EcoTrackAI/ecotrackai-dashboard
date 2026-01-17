@@ -1,6 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getHistoricalRoomSensorData, testConnection } from "@/lib/database";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 60;
+
 /**
  * GET /api/historical-data
  * Retrieve historical room sensor data from database
