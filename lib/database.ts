@@ -53,7 +53,7 @@ export async function initializeDatabase(): Promise<void> {
         room_id VARCHAR(50) NOT NULL REFERENCES rooms(id),
         temperature NUMERIC(5, 2),
         humidity NUMERIC(5, 2),
-        light INTEGER,
+        light NUMERIC(8, 2),
         motion BOOLEAN,
         timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
