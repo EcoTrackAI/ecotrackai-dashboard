@@ -14,7 +14,10 @@ export function useRelayControl(roomId: string, relayType: string) {
     return unsubscribe;
   }, [relayId]);
 
-  const updateState = useCallback((newState: boolean) => setRelayState(relayId, newState), [relayId]);
+  const updateState = useCallback(
+    (newState: boolean) => setRelayState(relayId, newState),
+    [relayId],
+  );
 
   return { state, loading, setRelayState: updateState };
 }

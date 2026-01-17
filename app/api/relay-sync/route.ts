@@ -1,4 +1,4 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { fetchRelayState } from "@/lib/firebase-relay";
 import { upsertRelayState, testConnection } from "@/lib/database";
 
@@ -20,13 +20,13 @@ const RELAYS = [
  * Sync relay states from Firebase to database
  * Expected to be called by external cron jobs
  */
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     // Check database connection
     if (!(await testConnection())) {
       return NextResponse.json(
         { error: "Database unavailable" },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
@@ -52,7 +52,7 @@ export async function POST(request: NextRequest) {
             error: error instanceof Error ? error.message : "Unknown error",
           };
         }
-      })
+      }),
     );
 
     return NextResponse.json(
@@ -63,14 +63,14 @@ export async function POST(request: NextRequest) {
         results,
         timestamp: new Date().toISOString(),
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Relay sync error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       { error: "Failed to sync relays", details: message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

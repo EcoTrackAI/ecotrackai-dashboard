@@ -1,5 +1,3 @@
-import React from "react";
-
 // MetricCardProps is globally available from types/globals.d.ts
 
 export const MetricCard: React.FC<MetricCardProps> = ({

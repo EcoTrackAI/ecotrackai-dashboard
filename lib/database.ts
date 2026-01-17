@@ -143,7 +143,7 @@ export async function testConnection(): Promise<boolean> {
 export async function getRooms(): Promise<DBRoom[]> {
   await initializeDatabase();
   const result = await getPool().query(
-    "SELECT id, name, floor, type, updated_at FROM rooms ORDER BY name"
+    "SELECT id, name, floor, type, updated_at FROM rooms ORDER BY name",
   );
   return result.rows;
 }
@@ -155,7 +155,7 @@ export async function upsertRoom(
   id: string,
   name: string,
   floor: number = 1,
-  type: string = "residential"
+  type: string = "residential",
 ): Promise<void> {
   await initializeDatabase();
   await getPool().query(
@@ -166,7 +166,7 @@ export async function upsertRoom(
        floor = EXCLUDED.floor,
        type = EXCLUDED.type,
        updated_at = CURRENT_TIMESTAMP`,
-    [id, name, floor, type]
+    [id, name, floor, type],
   );
 }
 
@@ -181,7 +181,7 @@ export async function batchInsertRoomSensorData(
     light?: number;
     motion?: boolean;
     timestamp?: Date;
-  }>
+  }>,
 ): Promise<void> {
   if (!records.length) return;
 
@@ -190,7 +190,7 @@ export async function batchInsertRoomSensorData(
   const values = records
     .map(
       (_, i) =>
-        `($${i * 6 + 1}, $${i * 6 + 2}, $${i * 6 + 3}, $${i * 6 + 4}, $${i * 6 + 5}, $${i * 6 + 6})`
+        `($${i * 6 + 1}, $${i * 6 + 2}, $${i * 6 + 3}, $${i * 6 + 4}, $${i * 6 + 5}, $${i * 6 + 6})`,
     )
     .join(", ");
 
@@ -206,7 +206,7 @@ export async function batchInsertRoomSensorData(
   await getPool().query(
     `INSERT INTO room_sensors (room_id, temperature, humidity, light, motion, timestamp)
      VALUES ${values}`,
-    params
+    params,
   );
 }
 
@@ -222,7 +222,7 @@ export async function batchInsertPZEMData(
     frequency?: number;
     pf?: number;
     timestamp?: Date;
-  }>
+  }>,
 ): Promise<void> {
   if (!records.length) return;
 
@@ -231,7 +231,7 @@ export async function batchInsertPZEMData(
   const values = records
     .map(
       (_, i) =>
-        `($${i * 7 + 1}, $${i * 7 + 2}, $${i * 7 + 3}, $${i * 7 + 4}, $${i * 7 + 5}, $${i * 7 + 6}, $${i * 7 + 7})`
+        `($${i * 7 + 1}, $${i * 7 + 2}, $${i * 7 + 3}, $${i * 7 + 4}, $${i * 7 + 5}, $${i * 7 + 6}, $${i * 7 + 7})`,
     )
     .join(", ");
 
@@ -248,7 +248,7 @@ export async function batchInsertPZEMData(
   await getPool().query(
     `INSERT INTO pzem_data (current, voltage, power, energy, frequency, pf, timestamp)
      VALUES ${values}`,
-    params
+    params,
   );
 }
 
@@ -259,7 +259,7 @@ export async function getHistoricalRoomSensorData(
   startDate: Date,
   endDate: Date,
   roomIds?: string[],
-  aggregation: "raw" | "hourly" = "raw"
+  aggregation: "raw" | "hourly" = "raw",
 ): Promise<HistoricalRoomSensorData[]> {
   await initializeDatabase();
 
@@ -293,7 +293,7 @@ export async function getHistoricalRoomSensorData(
     WHERE rs.timestamp BETWEEN $1 AND $2
   `;
 
-  const params: any[] = [startDate, endDate];
+  const params: (Date | string[])[] = [startDate, endDate];
 
   if (roomIds?.length) {
     query += ` AND rs.room_id = ANY($3)`;
@@ -316,7 +316,7 @@ export async function getHistoricalRoomSensorData(
 export async function getHistoricalPZEMData(
   startDate: Date,
   endDate: Date,
-  aggregation: "raw" | "hourly" = "raw"
+  aggregation: "raw" | "hourly" = "raw",
 ): Promise<HistoricalPZEMData[]> {
   await initializeDatabase();
 
@@ -365,7 +365,7 @@ export async function getHistoricalPZEMData(
  * Get latest room sensor readings
  */
 export async function getLatestRoomSensorReadings(
-  roomId?: string
+  roomId?: string,
 ): Promise<RoomSensorRecord[]> {
   await initializeDatabase();
 
@@ -383,7 +383,7 @@ export async function getLatestRoomSensorReadings(
     JOIN rooms r ON rs.room_id = r.id
   `;
 
-  const params: any[] = [];
+  const params: string[] = [];
 
   if (roomId) {
     query += ` WHERE rs.room_id = $1`;
@@ -406,7 +406,7 @@ export async function getLatestPZEMReading(): Promise<PZEMRecord | null> {
     `SELECT id, current, voltage, power, energy, frequency, pf, timestamp
      FROM pzem_data
      ORDER BY timestamp DESC
-     LIMIT 1`
+     LIMIT 1`,
   );
 
   return result.rows[0] || null;
@@ -416,7 +416,7 @@ export async function getLatestPZEMReading(): Promise<PZEMRecord | null> {
  * Clean up old room sensor data
  */
 export async function cleanupOldRoomSensorData(
-  daysToKeep: number = 90
+  daysToKeep: number = 90,
 ): Promise<number> {
   await initializeDatabase();
 
@@ -425,7 +425,7 @@ export async function cleanupOldRoomSensorData(
 
   const result = await getPool().query(
     `DELETE FROM room_sensors WHERE timestamp < $1`,
-    [cutoffDate]
+    [cutoffDate],
   );
 
   return result.rowCount || 0;
@@ -435,7 +435,7 @@ export async function cleanupOldRoomSensorData(
  * Clean up old PZEM data
  */
 export async function cleanupOldPZEMData(
-  daysToKeep: number = 90
+  daysToKeep: number = 90,
 ): Promise<number> {
   await initializeDatabase();
 
@@ -444,7 +444,7 @@ export async function cleanupOldPZEMData(
 
   const result = await getPool().query(
     `DELETE FROM pzem_data WHERE timestamp < $1`,
-    [cutoffDate]
+    [cutoffDate],
   );
 
   return result.rowCount || 0;
@@ -457,7 +457,7 @@ export async function upsertRelayState(
   relayId: string,
   roomId: string,
   relayType: string,
-  state: boolean
+  state: boolean,
 ): Promise<void> {
   await initializeDatabase();
 
@@ -467,7 +467,7 @@ export async function upsertRelayState(
      ON CONFLICT (id) DO UPDATE SET
        state = EXCLUDED.state,
        updated_at = CURRENT_TIMESTAMP`,
-    [relayId, roomId, relayType, state]
+    [relayId, roomId, relayType, state],
   );
 }
 
@@ -475,13 +475,13 @@ export async function upsertRelayState(
  * Get relay state by ID
  */
 export async function getRelayState(
-  relayId: string
+  relayId: string,
 ): Promise<RelayStateRecord | null> {
   await initializeDatabase();
 
   const result = await getPool().query(
     `SELECT id, room_id, relay_type, state, updated_at FROM relay_states WHERE id = $1`,
-    [relayId]
+    [relayId],
   );
 
   return result.rows[0] || null;
@@ -491,7 +491,7 @@ export async function getRelayState(
  * Get all relay states for a room
  */
 export async function getRoomRelayStates(
-  roomId: string
+  roomId: string,
 ): Promise<RelayStateRecord[]> {
   await initializeDatabase();
 
@@ -500,7 +500,7 @@ export async function getRoomRelayStates(
      FROM relay_states
      WHERE room_id = $1
      ORDER BY updated_at DESC`,
-    [roomId]
+    [roomId],
   );
 
   return result.rows;
@@ -515,7 +515,7 @@ export async function getAllRelayStates(): Promise<RelayStateRecord[]> {
   const result = await getPool().query(
     `SELECT id, room_id, relay_type, state, updated_at
      FROM relay_states
-     ORDER BY updated_at DESC`
+     ORDER BY updated_at DESC`,
   );
 
   return result.rows;

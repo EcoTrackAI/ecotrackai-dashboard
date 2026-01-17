@@ -1,6 +1,7 @@
 export const APP_CONFIG = {
   name: process.env.NEXT_PUBLIC_APP_NAME || "EcoTrack AI",
-  description: process.env.NEXT_PUBLIC_APP_DESCRIPTION || "Smart Home Energy Dashboard",
+  description:
+    process.env.NEXT_PUBLIC_APP_DESCRIPTION || "Smart Home Energy Dashboard",
 } as const;
 
 export const API_CONFIG = {

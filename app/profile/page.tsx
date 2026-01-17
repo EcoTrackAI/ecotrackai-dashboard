@@ -6,6 +6,7 @@
 "use client";
 
 import React, { useState } from "react";
+import Image from "next/image";
 import { ProfileCard, ProfileField, ToggleField } from "@/components/profile";
 // ProfileData type is globally available from types/globals.d.ts
 
@@ -31,8 +32,7 @@ const mockProfileData: ProfileData = {
 };
 
 export default function ProfilePage() {
-  const [profileData, setProfileData] = useState<ProfileData>(mockProfileData);
-  const [isLoading, setIsLoading] = useState(false);
+  const [profileData] = useState<ProfileData>(mockProfileData);
 
   const handleEditProfile = () => {
     // Handle edit profile action
@@ -53,14 +53,6 @@ export default function ProfilePage() {
     });
   };
 
-  if (isLoading) {
-    return (
-      <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
-        <div className="animate-pulse text-gray-500">Loading profile...</div>
-      </div>
-    );
-  }
-
   return (
     <div className="min-h-screen bg-[#F8FAFC] p-4 md:p-6 lg:p-8">
       <div className="max-w-5xl mx-auto">
@@ -78,9 +70,11 @@ export default function ProfilePage() {
             {/* Avatar */}
             <div className="shrink-0">
               {profileData.user.avatarUrl ? (
-                <img
+                <Image
                   src={profileData.user.avatarUrl}
                   alt={profileData.user.name}
+                  width={96}
+                  height={96}
                   className="w-24 h-24 rounded-full object-cover border-2 border-[#6366F1]"
                 />
               ) : (

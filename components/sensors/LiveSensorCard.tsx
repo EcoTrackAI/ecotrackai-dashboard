@@ -1,5 +1,3 @@
-import React from "react";
-
 const STATUS_CONFIG: Record<
   SensorStatus,
   { color: string; bgColor: string; label: string; ariaLabel: string }

@@ -1,8 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import {
-  fetchRoomSensor,
-  fetchPZEMData,
-} from "@/lib/firebase-sensors";
+import { fetchRoomSensor, fetchPZEMData } from "@/lib/firebase-sensors";
 import {
   batchInsertRoomSensorData,
   batchInsertPZEMData,
@@ -36,7 +33,7 @@ export async function GET() {
         database: isConnected ? "connected" : "disconnected",
         timestamp: new Date().toISOString(),
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Health check error:", error);
@@ -46,7 +43,7 @@ export async function GET() {
         database: "error",
         error: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -63,7 +60,7 @@ export async function POST(request: NextRequest) {
     if (!validateApiKey(request)) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -71,7 +68,7 @@ export async function POST(request: NextRequest) {
     if (!(await testConnection())) {
       return NextResponse.json(
         { success: false, error: "Database unavailable", synced: [], count: 0 },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
@@ -143,14 +140,14 @@ export async function POST(request: NextRequest) {
         count: synced.length,
         timestamp: new Date().toISOString(),
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Sync error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       { success: false, error: message, synced: [], count: 0 },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

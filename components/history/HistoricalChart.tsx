@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import {
   LineChart,
   Line,
@@ -29,10 +28,27 @@ const ROOM_COLORS = [
   "#F59E0B", // Amber
 ];
 
+interface TooltipPayload {
+  value: number;
+  name: string;
+  payload: { timestamp: string };
+  color: string;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayload[];
+  metric?: MetricType;
+}
+
 /**
  * Custom tooltip for the chart
  */
-const CustomTooltip: React.FC<any> = ({ active, payload, metric }) => {
+const CustomTooltip: React.FC<CustomTooltipProps> = ({
+  active,
+  payload,
+  metric,
+}) => {
   if (!active || !payload || payload.length === 0) {
     return null;
   }
@@ -43,8 +59,8 @@ const CustomTooltip: React.FC<any> = ({ active, payload, metric }) => {
         return "°C";
       case "humidity":
         return "%";
-      case "lighting":
-        return "%";
+      case "light":
+        return "lux";
       case "motion":
         return "";
       default:
@@ -64,7 +80,7 @@ const CustomTooltip: React.FC<any> = ({ active, payload, metric }) => {
       <p className="text-xs text-gray-600 mb-1">
         {payload[0].payload.timestamp}
       </p>
-      {payload.map((entry: any, index: number) => (
+      {payload.map((entry, index: number) => (
         <p
           key={index}
           className="text-sm font-medium"
@@ -84,7 +100,7 @@ const CustomTooltip: React.FC<any> = ({ active, payload, metric }) => {
 export const HistoricalChart: React.FC<HistoricalChartProps> = ({
   data,
   chartType = "line",
-  metric = "energy",
+  metric = "temperature",
   title,
   height = 400,
   compareRooms = false,
@@ -94,46 +110,57 @@ export const HistoricalChart: React.FC<HistoricalChartProps> = ({
   const prepareChartData = () => {
     if (!compareRooms) {
       // Single metric view - aggregate by timestamp
-      const aggregated = data.reduce((acc, point) => {
-        const key = metric as keyof HistoricalDataPoint;
-        const existing = acc.find((p) => p.timestamp === point.timestamp);
-        if (existing) {
-          existing[metric] =
-            (existing[metric] || 0) + ((point[key] as number) || 0);
-        } else {
-          acc.push({
-            timestamp: new Date(point.timestamp).toLocaleString("en-US", {
-              month: "short",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-            [metric]: (point[key] as number) || 0,
-          });
-        }
-        return acc;
-      }, [] as any[]);
+      const aggregated = data.reduce(
+        (acc, point) => {
+          const key = metric as keyof HistoricalDataPoint;
+          const existing = acc.find((p) => p.timestamp === point.timestamp);
+          if (existing) {
+            const currentValue =
+              typeof existing[metric] === "number" ? existing[metric] : 0;
+            const newValue = (point[key] as number) || 0;
+            existing[metric] = currentValue + newValue;
+          } else {
+            acc.push({
+              timestamp: new Date(point.timestamp).toLocaleString("en-IN", {
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                timeZone: "Asia/Kolkata",
+              }),
+              [metric]: (point[key] as number) || 0,
+            });
+          }
+          return acc;
+        },
+        [] as Record<string, string | number>[],
+      );
       return aggregated;
     } else {
       // Multi-room comparison
-      const grouped: Record<string, any> = {};
+      const grouped: Record<string, Record<string, string | number>> = {};
       const key = metric as keyof HistoricalDataPoint;
 
       data.forEach((point) => {
-        const timeKey = new Date(point.timestamp).toLocaleString("en-US", {
+        const timeKey = new Date(point.timestamp).toLocaleString("en-IN", {
           month: "short",
           day: "numeric",
           hour: "2-digit",
           minute: "2-digit",
+          timeZone: "Asia/Kolkata",
         });
 
         if (!grouped[timeKey]) {
           grouped[timeKey] = { timestamp: timeKey };
         }
 
+        const currentValue =
+          typeof grouped[timeKey][point.roomName] === "number"
+            ? (grouped[timeKey][point.roomName] as number)
+            : 0;
+        const newValue = (point[key] as number) || 0;
         grouped[timeKey][point.roomName] =
-          (grouped[timeKey][point.roomName] || 0) +
-          ((point[key] as number) || 0);
+          (currentValue as number) + (newValue as number);
       });
 
       return Object.values(grouped);
@@ -153,8 +180,8 @@ export const HistoricalChart: React.FC<HistoricalChartProps> = ({
         return "Temperature (°C)";
       case "humidity":
         return "Humidity (%)";
-      case "lighting":
-        return "Lighting (%)";
+      case "light":
+        return "Lighting (lux)";
       case "motion":
         return "Motion/Occupancy";
       default:

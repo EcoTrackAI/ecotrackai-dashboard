@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     if (!(await testConnection())) {
       return NextResponse.json(
         { error: "Database unavailable" },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
@@ -32,7 +32,7 @@ export async function GET(request: NextRequest) {
     if (!startDateStr || !endDateStr) {
       return NextResponse.json(
         { error: "Missing required parameters: startDate and endDate" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -44,7 +44,7 @@ export async function GET(request: NextRequest) {
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
       return NextResponse.json(
         { error: "Invalid date format. Use ISO 8601 format." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -61,33 +61,31 @@ export async function GET(request: NextRequest) {
       startDate,
       endDate,
       roomIds,
-      aggregation
+      aggregation,
     );
 
     // Format response
-    const formattedData = data.map((row: any) => ({
-      timestamp:
-        typeof row.timestamp === "string"
-          ? row.timestamp
-          : row.timestamp.toISOString(),
+    const formattedData = data.map((row: HistoricalRoomSensorData) => ({
+      timestamp: row.timestamp,
       roomId: row.roomId,
       roomName: row.roomName,
-      temperature: row.temperature !== null ? Number(row.temperature) : undefined,
-      humidity: row.humidity !== null ? Number(row.humidity) : undefined,
-      light: row.light !== null ? Number(row.light) : undefined,
+      temperature:
+        row.temperature !== undefined ? Number(row.temperature) : undefined,
+      humidity: row.humidity !== undefined ? Number(row.humidity) : undefined,
+      light: row.light !== undefined ? Number(row.light) : undefined,
       motion: Boolean(row.motion),
     }));
 
     return NextResponse.json(
       { success: true, count: formattedData.length, data: formattedData },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Historical data fetch error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       { error: "Failed to fetch data", details: message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
