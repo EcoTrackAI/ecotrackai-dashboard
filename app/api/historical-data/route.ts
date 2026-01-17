@@ -1,40 +1,93 @@
 import { NextRequest, NextResponse } from "next/server";
 import { getHistoricalRoomSensorData, testConnection } from "@/lib/database";
 
+/**
+ * GET /api/historical-data
+ * Retrieve historical room sensor data from database
+ * Query parameters:
+ *   - startDate: ISO string (required)
+ *   - endDate: ISO string (required)
+ *   - roomIds: comma-separated room IDs (optional)
+ *   - aggregation: "raw" or "hourly" (optional, default: "raw")
+ */
 export async function GET(request: NextRequest) {
-  if (!(await testConnection())) {
-    return NextResponse.json({ error: "DB unavailable" }, { status: 503 });
+  try {
+    // Check database connection
+    if (!(await testConnection())) {
+      return NextResponse.json(
+        { error: "Database unavailable" },
+        { status: 503 }
+      );
+    }
+
+    const { searchParams } = request.nextUrl;
+    const startDateStr = searchParams.get("startDate");
+    const endDateStr = searchParams.get("endDate");
+    const roomIdsStr = searchParams.get("roomIds");
+    const aggregation = (searchParams.get("aggregation") || "raw") as
+      | "raw"
+      | "hourly";
+
+    // Validate required parameters
+    if (!startDateStr || !endDateStr) {
+      return NextResponse.json(
+        { error: "Missing required parameters: startDate and endDate" },
+        { status: 400 }
+      );
+    }
+
+    // Parse dates
+    const startDate = new Date(startDateStr);
+    const endDate = new Date(endDateStr);
+
+    // Validate date format
+    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+      return NextResponse.json(
+        { error: "Invalid date format. Use ISO 8601 format." },
+        { status: 400 }
+      );
+    }
+
+    // Parse room IDs if provided
+    const roomIds = roomIdsStr
+      ? roomIdsStr
+          .split(",")
+          .map((id) => id.trim())
+          .filter((id) => id)
+      : undefined;
+
+    // Fetch historical data
+    const data = await getHistoricalRoomSensorData(
+      startDate,
+      endDate,
+      roomIds,
+      aggregation
+    );
+
+    // Format response
+    const formattedData = data.map((row: any) => ({
+      timestamp:
+        typeof row.timestamp === "string"
+          ? row.timestamp
+          : row.timestamp.toISOString(),
+      roomId: row.roomId,
+      roomName: row.roomName,
+      temperature: row.temperature !== null ? Number(row.temperature) : undefined,
+      humidity: row.humidity !== null ? Number(row.humidity) : undefined,
+      light: row.light !== null ? Number(row.light) : undefined,
+      motion: Boolean(row.motion),
+    }));
+
+    return NextResponse.json(
+      { success: true, count: formattedData.length, data: formattedData },
+      { status: 200 }
+    );
+  } catch (error) {
+    console.error("Historical data fetch error:", error);
+    const message = error instanceof Error ? error.message : "Unknown error";
+    return NextResponse.json(
+      { error: "Failed to fetch data", details: message },
+      { status: 500 }
+    );
   }
-
-  const { searchParams } = request.nextUrl;
-  const start = searchParams.get("startDate");
-  const end = searchParams.get("endDate");
-
-  if (!start || !end) {
-    return NextResponse.json({ error: "Missing dates" }, { status: 400 });
-  }
-
-  const startDate = new Date(start);
-  const endDate = new Date(end);
-
-  if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-    return NextResponse.json({ error: "Invalid dates" }, { status: 400 });
-  }
-
-  const roomIds = searchParams.get("roomIds")?.split(",").map(r => r.trim());
-  const agg = (searchParams.get("aggregation") || "raw") as "raw" | "hourly";
-
-  const data = await getHistoricalRoomSensorData(startDate, endDate, roomIds, agg);
-
-  return NextResponse.json({
-    data: data.map((r: any) => ({
-      timestamp: typeof r.timestamp === "string" ? r.timestamp : r.timestamp.toISOString(),
-      roomId: r.roomId,
-      roomName: r.roomName,
-      temperature: Number(r.temperature) || undefined,
-      humidity: Number(r.humidity) || undefined,
-      light: Number(r.light) || undefined,
-      motion: Boolean(r.motion),
-    })),
-  });
 }

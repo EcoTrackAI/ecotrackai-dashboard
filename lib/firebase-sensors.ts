@@ -1,26 +1,67 @@
 import { ref, onValue, off, get } from "firebase/database";
 import { getFirebaseDatabase } from "./firebase";
 
-export function subscribeRoomSensor(room: "bedroom"|"living_room", callback: (data: RoomSensorData|null)=>void): ()=>void {
-  const db = getFirebaseDatabase(), unsubscribe = onValue(ref(db, `sensors/${room}`), (snapshot)=> callback(snapshot.exists()?(snapshot.val() as RoomSensorData):null));
-  return ()=>off(ref(db, `sensors/${room}`), "value", unsubscribe);
+/**
+ * Subscribe to real-time room sensor updates
+ */
+export function subscribeRoomSensor(
+  room: "bedroom" | "living_room",
+  callback: (data: RoomSensorData | null) => void
+): () => void {
+  const db = getFirebaseDatabase();
+  const sensorRef = ref(db, `sensors/${room}`);
+
+  const unsubscribe = onValue(sensorRef, (snapshot) => {
+    const data = snapshot.exists() ? (snapshot.val() as RoomSensorData) : null;
+    callback(data);
+  });
+
+  return () => off(sensorRef, "value");
 }
 
-export async function fetchRoomSensor(room: "bedroom"|"living_room"): Promise<RoomSensorData|null> {
+/**
+ * Fetch room sensor data once
+ */
+export async function fetchRoomSensor(
+  room: "bedroom" | "living_room"
+): Promise<RoomSensorData | null> {
   try {
-    const snapshot = await get(ref(getFirebaseDatabase(), `sensors/${room}`));
-    return snapshot.exists()?(snapshot.val() as RoomSensorData):null;
-  } catch { return null; }
+    const db = getFirebaseDatabase();
+    const snapshot = await get(ref(db, `sensors/${room}`));
+    return snapshot.exists() ? (snapshot.val() as RoomSensorData) : null;
+  } catch (error) {
+    console.error(`Error fetching ${room} sensor:`, error);
+    return null;
+  }
 }
 
-export function subscribePZEMData(callback: (data: PZEMData|null)=>void): ()=>void {
-  const db = getFirebaseDatabase(), unsubscribe = onValue(ref(db, "home/pzem"), (snapshot)=> callback(snapshot.exists()?(snapshot.val() as PZEMData):null));
-  return ()=>off(ref(db, "home/pzem"), "value", unsubscribe);
+/**
+ * Subscribe to real-time PZEM data updates
+ */
+export function subscribePZEMData(
+  callback: (data: PZEMData | null) => void
+): () => void {
+  const db = getFirebaseDatabase();
+  const pzemRef = ref(db, "home/pzem");
+
+  const unsubscribe = onValue(pzemRef, (snapshot) => {
+    const data = snapshot.exists() ? (snapshot.val() as PZEMData) : null;
+    callback(data);
+  });
+
+  return () => off(pzemRef, "value");
 }
 
-export async function fetchPZEMData(): Promise<PZEMData|null> {
+/**
+ * Fetch PZEM data once
+ */
+export async function fetchPZEMData(): Promise<PZEMData | null> {
   try {
-    const snapshot = await get(ref(getFirebaseDatabase(), "home/pzem"));
-    return snapshot.exists()?(snapshot.val() as PZEMData):null;
-  } catch { return null; }
+    const db = getFirebaseDatabase();
+    const snapshot = await get(ref(db, "home/pzem"));
+    return snapshot.exists() ? (snapshot.val() as PZEMData) : null;
+  } catch (error) {
+    console.error("Error fetching PZEM data:", error);
+    return null;
+  }
 }
