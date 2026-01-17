@@ -1,13 +1,6 @@
-/**
- * Environment variable utility
- * Provides helper to get environment variables with error handling
- */
-
 export function getEnvOrThrow(key: string): string {
   const value = process.env[key];
-  if (!value) {
-    throw new Error(`Missing required environment variable: ${key}`);
-  }
+  if (!value) throw new Error(`Missing required environment variable: ${key}`);
   return value;
 }
 
