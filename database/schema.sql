@@ -21,7 +21,7 @@ CREATE TABLE
     room_id VARCHAR(50) NOT NULL REFERENCES rooms (id),
     temperature NUMERIC(5, 2), -- Temperature in Celsius
     humidity NUMERIC(5, 2), -- Relative humidity percentage (0-100%)
-    light INTEGER, -- Light intensity in lux (0-65535)
+    light NUMERIC(8, 2), -- Light intensity in lux (supports decimal values)
     motion BOOLEAN, -- Motion detection state
     timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
     created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
