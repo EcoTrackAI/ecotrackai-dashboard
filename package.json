@@ -7,7 +7,7 @@
     "build": "next build",
     "start": "next start",
     "lint": "eslint",
-    "sync:firebase": "tsx scripts/sync-firebase.ts"
+    "sync:local": "tsx scripts/sync-firebase.ts"
   },
   "dependencies": {
     "@types/node-cron": "^3.0.11",
