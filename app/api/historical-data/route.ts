@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getHistoricalData, testConnection } from "@/lib/database";
+import { getHistoricalRoomSensorData, testConnection } from "@/lib/database";
 
 /**
  * GET /api/historical-data
@@ -49,7 +49,7 @@ export async function GET(request: NextRequest) {
       | "raw"
       | "hourly";
 
-    const data = await getHistoricalData(
+    const data = await getHistoricalRoomSensorData(
       startDate,
       endDate,
       roomIds,
