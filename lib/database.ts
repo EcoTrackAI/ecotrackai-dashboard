@@ -91,6 +91,27 @@ export async function initializeDatabase(): Promise<void> {
       CREATE INDEX IF NOT EXISTS idx_pzem_data_timestamp ON pzem_data(timestamp DESC)
     `);
 
+    // Create relay_states table
+    await pool.query(`
+      CREATE TABLE IF NOT EXISTS relay_states (
+        id VARCHAR(100) PRIMARY KEY,
+        room_id VARCHAR(50) NOT NULL REFERENCES rooms(id),
+        relay_type VARCHAR(50) NOT NULL,
+        state BOOLEAN NOT NULL DEFAULT FALSE,
+        timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create indexes for relay_states
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_relay_states_room_id ON relay_states(room_id)
+    `);
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_relay_states_updated_at ON relay_states(updated_at DESC)
+    `);
+
     // Insert default rooms if table is empty
     await pool.query(`
       INSERT INTO rooms (id, name, floor, type) VALUES
@@ -448,6 +469,64 @@ export async function testConnection(): Promise<boolean> {
     console.error("Database connection failed:", error);
     return false;
   }
+}
+
+// ============================================================================
+// Relay State Functions
+// ============================================================================
+
+/**
+ * Upsert relay state (insert or update)
+ */
+export async function upsertRelayState(
+  relayId: string, // Format: room_light, bedroom_fan
+  room_id: string,
+  relay_type: string,
+  state: boolean,
+): Promise<void> {
+  await initializeDatabase();
+  await getPool().query(
+    `INSERT INTO relay_states (id, room_id, relay_type, state, timestamp, updated_at)
+     VALUES ($1, $2, $3, $4, CURRENT_TIMESTAMP, CURRENT_TIMESTAMP)
+     ON CONFLICT (id) DO UPDATE SET 
+       state = EXCLUDED.state, updated_at = CURRENT_TIMESTAMP`,
+    [relayId, room_id, relay_type, state],
+  );
+}
+
+/**
+ * Get relay state by ID
+ */
+export async function getRelayState(relayId: string): Promise<RelayStateRecord | null> {
+  await initializeDatabase();
+  const result: QueryResult<RelayStateRecord> = await getPool().query(
+    `SELECT * FROM relay_states WHERE id = $1`,
+    [relayId],
+  );
+  return result.rows[0] || null;
+}
+
+/**
+ * Get all relay states for a room
+ */
+export async function getRoomRelayStates(roomId: string): Promise<RelayStateRecord[]> {
+  await initializeDatabase();
+  const result: QueryResult<RelayStateRecord> = await getPool().query(
+    `SELECT * FROM relay_states WHERE room_id = $1 ORDER BY updated_at DESC`,
+    [roomId],
+  );
+  return result.rows;
+}
+
+/**
+ * Get all relay states
+ */
+export async function getAllRelayStates(): Promise<RelayStateRecord[]> {
+  await initializeDatabase();
+  const result: QueryResult<RelayStateRecord> = await getPool().query(
+    `SELECT * FROM relay_states ORDER BY updated_at DESC`,
+  );
+  return result.rows;
 }
 
 export async function closePool(): Promise<void> {

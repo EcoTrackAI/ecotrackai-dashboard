@@ -538,6 +538,16 @@ declare global {
     created_at: Date;
   }
 
+  interface RelayStateRecord {
+    id: string; // Format: room_light, bedroom_fan
+    room_id: string;
+    relay_type: string; // light, fan, ac, appliance, etc.
+    state: boolean;
+    timestamp: Date;
+    updated_at: Date;
+    created_at: Date;
+  }
+
   interface HistoricalRoomSensorData {
     timestamp: string;
     roomId: string;

@@ -58,6 +58,28 @@ CREATE INDEX IF NOT EXISTS idx_room_sensors_room_timestamp ON room_sensors (room
 -- ============================================================================
 CREATE INDEX IF NOT EXISTS idx_pzem_data_timestamp ON pzem_data (timestamp DESC);
 
+-- ============================================================================
+-- Relay States Table
+-- Stores the state of controllable relays/lights/appliances
+-- ============================================================================
+CREATE TABLE
+  IF NOT EXISTS relay_states (
+    id VARCHAR(100) PRIMARY KEY, -- Format: room_light, bedroom_fan, etc.
+    room_id VARCHAR(50) NOT NULL REFERENCES rooms (id),
+    relay_type VARCHAR(50) NOT NULL, -- light, fan, ac, appliance, etc.
+    state BOOLEAN NOT NULL DEFAULT FALSE, -- ON/OFF state
+    timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+    updated_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+    created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+  );
+
+-- ============================================================================
+-- Indexes for Relay States
+-- ============================================================================
+CREATE INDEX IF NOT EXISTS idx_relay_states_room_id ON relay_states (room_id);
+
+CREATE INDEX IF NOT EXISTS idx_relay_states_updated_at ON relay_states (updated_at DESC);
+
 INSERT INTO
   rooms (id, name, floor, type)
 VALUES
