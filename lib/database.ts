@@ -3,9 +3,12 @@ let pool: Pool | null = null;
 
 export function getPool(): Pool {
   if (!pool) {
-    const connectionString = process.env.DATABASE_URL || process.env.POSTGRES_URL;
+    const connectionString =
+      process.env.DATABASE_URL || process.env.POSTGRES_URL;
     if (!connectionString) {
-      throw new Error("DATABASE_URL or POSTGRES_URL must be set for Neon Postgres connection.");
+      throw new Error(
+        "DATABASE_URL or POSTGRES_URL must be set for Neon Postgres connection.",
+      );
     }
     pool = new Pool({
       connectionString,
@@ -96,7 +99,7 @@ export async function initializeDatabase(): Promise<void> {
 export async function getRooms(): Promise<DBRoom[]> {
   await initializeDatabase();
   const result: QueryResult<DBRoom> = await getPool().query(
-    "SELECT * FROM rooms ORDER BY name"
+    "SELECT * FROM rooms ORDER BY name",
   );
   return result.rows;
 }
@@ -105,7 +108,7 @@ export async function upsertRoom(
   id: string,
   name: string,
   floor: number = 1,
-  type: string = "residential"
+  type: string = "residential",
 ): Promise<void> {
   await initializeDatabase();
   await getPool().query(
@@ -114,7 +117,7 @@ export async function upsertRoom(
      ON CONFLICT (id) DO UPDATE SET 
        name = EXCLUDED.name, floor = EXCLUDED.floor, 
        type = EXCLUDED.type, updated_at = CURRENT_TIMESTAMP`,
-    [id, name, floor, type]
+    [id, name, floor, type],
   );
 }
 
@@ -144,7 +147,7 @@ export async function insertSensorData(data: {
       data.status,
       data.description || null,
       data.timestamp || new Date(),
-    ]
+    ],
   );
 }
 
@@ -159,7 +162,7 @@ export async function batchInsertSensorData(
     status: string;
     description?: string;
     timestamp?: Date;
-  }>
+  }>,
 ): Promise<void> {
   if (records.length === 0) return;
   await initializeDatabase();
@@ -169,7 +172,7 @@ export async function batchInsertSensorData(
       (_, i) =>
         `($${i * 9 + 1}, $${i * 9 + 2}, $${i * 9 + 3}, $${i * 9 + 4}, $${
           i * 9 + 5
-        }, $${i * 9 + 6}, $${i * 9 + 7}, $${i * 9 + 8}, $${i * 9 + 9})`
+        }, $${i * 9 + 6}, $${i * 9 + 7}, $${i * 9 + 8}, $${i * 9 + 9})`,
     )
     .join(", ");
 
@@ -189,7 +192,7 @@ export async function batchInsertSensorData(
     `INSERT INTO sensor_data 
       (sensor_id, sensor_name, room_id, category, current_value, unit, status, description, timestamp)
      VALUES ${values}`,
-    params
+    params,
   );
 }
 
@@ -207,12 +210,12 @@ function buildCategoryAggregates(aggFunc: string): string {
     (cat) =>
       `${aggFunc}(CASE WHEN sd.category = '${cat}' THEN sd.current_value ELSE 0 END) as ${
         cat === "occupancy" ? "motion" : cat
-      }`
+      }`,
   ).join(",\n      ");
 }
 
 function buildHistoricalDataQuery(
-  aggregation: "raw" | "hourly" = "raw"
+  aggregation: "raw" | "hourly" = "raw",
 ): string {
   const isHourly = aggregation === "hourly";
   const timestamp = isHourly
@@ -239,7 +242,7 @@ export async function getHistoricalData(
   startDate: Date,
   endDate: Date,
   roomIds?: string[],
-  aggregation: "raw" | "hourly" = "raw"
+  aggregation: "raw" | "hourly" = "raw",
 ): Promise<HistoricalDataPoint[]> {
   await initializeDatabase();
   const pool = getPool();
@@ -263,7 +266,7 @@ export async function getHistoricalData(
 
   const result: QueryResult<HistoricalDataPoint> = await pool.query(
     query,
-    params
+    params,
   );
   return result.rows;
 }
@@ -272,7 +275,7 @@ export async function getHistoricalData(
  * Get the latest sensor readings
  */
 export async function getLatestSensorReadings(
-  roomId?: string
+  roomId?: string,
 ): Promise<SensorDataRecord[]> {
   await initializeDatabase();
   const pool = getPool();

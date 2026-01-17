@@ -15,7 +15,7 @@ export async function POST(request: NextRequest) {
     if (!(await testConnection())) {
       return NextResponse.json(
         { error: "Database connection failed" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -24,12 +24,14 @@ export async function POST(request: NextRequest) {
     if (!sensors?.length) {
       return NextResponse.json(
         { message: "No sensor data available", synced: 0 },
-        { status: 200 }
+        { status: 200 },
       );
     }
 
     const roomsSet = new Set(
-      sensors.map((s) => s.room).filter((room): room is string => Boolean(room))
+      sensors
+        .map((s) => s.room)
+        .filter((room): room is string => Boolean(room)),
     );
 
     for (const roomId of roomsSet) {
@@ -65,7 +67,7 @@ export async function POST(request: NextRequest) {
     console.error("Sync error:", message);
     return NextResponse.json(
       { error: "Failed to sync data", details: message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -90,7 +92,7 @@ export async function GET(request: NextRequest) {
         error: "Failed to check connection",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

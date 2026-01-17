@@ -5,13 +5,13 @@
 /**
  * Fetch current weather data from OpenWeather API
  * @param apiKey - OpenWeather API key
- * @param lat - Latitude (optional, defaults to a location)
- * @param lon - Longitude (optional, defaults to a location)
+ * @param lat - Latitude
+ * @param lon - Longitude
  */
 export async function fetchWeather(
   apiKey: string,
-  lat: number = 22.5744, // Default: Kolkata
-  lon: number = 88.3629
+  lat: number,
+  lon: number,
 ): Promise<WeatherData | null> {
   try {
     const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;

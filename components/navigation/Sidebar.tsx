@@ -183,16 +183,16 @@ export function Sidebar({
                       systemStatus === "online"
                         ? "bg-green-500 animate-pulse"
                         : systemStatus === "warning"
-                        ? "bg-yellow-500 animate-pulse"
-                        : "bg-red-500"
+                          ? "bg-yellow-500 animate-pulse"
+                          : "bg-red-500"
                     }`}
                   />
                   <span>
                     {systemStatus === "online"
                       ? "All systems operational"
                       : systemStatus === "warning"
-                      ? "System warnings detected"
-                      : "System offline"}
+                        ? "System warnings detected"
+                        : "System offline"}
                   </span>
                 </div>
               </div>
@@ -203,8 +203,8 @@ export function Sidebar({
                     systemStatus === "online"
                       ? "bg-green-500 animate-pulse"
                       : systemStatus === "warning"
-                      ? "bg-yellow-500 animate-pulse"
-                      : "bg-red-500"
+                        ? "bg-yellow-500 animate-pulse"
+                        : "bg-red-500"
                   }`}
                   aria-label={`System ${systemStatus}`}
                   title={`System ${systemStatus}`}

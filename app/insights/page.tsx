@@ -222,10 +222,10 @@ export default function InsightsPage() {
               {Math.round(
                 (mockRecommendations.reduce(
                   (sum, rec) => sum + rec.confidenceScore,
-                  0
+                  0,
                 ) /
                   mockRecommendations.length) *
-                  100
+                  100,
               )}
               %
             </div>

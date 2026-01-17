@@ -222,11 +222,9 @@ You should see the EcoTrack AI Dashboard home page!
 Test that all services are working:
 
 1. **Rooms API**: http://localhost:3000/api/rooms
-
    - Should return: `{"rooms": []}`
 
 2. **Database Connection**: http://localhost:3000/api/sync-firebase
-
    - Should return: `{"databaseConnected": true, ...}`
 
 3. **Live Monitoring**: http://localhost:3000/live-monitoring
@@ -315,20 +313,17 @@ Congratulations! 🎉 Your development environment is ready.
 ### What to do next:
 
 1. **Explore the Dashboard**
-
    - Navigate through different pages
    - Check live monitoring
    - View historical data
 
 2. **Read Documentation**
-
    - [Architecture Guide](ARCHITECTURE.md) - Understand the system
    - [API Reference](API.md) - Learn about endpoints
    - [Component Library](COMPONENTS.md) - Explore UI components
    - [Features Guide](FEATURES.md) - See all capabilities
 
 3. **Start Development**
-
    - [Development Guide](DEVELOPMENT.md) - Coding standards and workflow
    - Create a feature branch
    - Make your first contribution

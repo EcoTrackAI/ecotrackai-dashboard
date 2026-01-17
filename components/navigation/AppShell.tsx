@@ -45,20 +45,24 @@ export function AppShell({ children }: AppShellProps) {
         return;
       }
 
-      let lat = 22.5744; // Default: Kolkata
-      let lon = 88.3629;
-
-      navigator.geolocation.getCurrentPosition((position) => {
-        const { latitude, longitude } = position.coords;
-
-        lat = latitude;
-        lon = longitude;
-      });
-
-      const weatherData = await fetchWeather(apiKey, lat, lon);
-      if (weatherData) {
-        setWeather(weatherData);
-      }
+      navigator.geolocation.getCurrentPosition(
+        async (position) => {
+          const { latitude, longitude } = position.coords;
+          const weatherData = await fetchWeather(apiKey, latitude, longitude);
+          console.log("Fetched weather data:", weatherData);
+          if (weatherData) {
+            setWeather(weatherData);
+          }
+        },
+        () => {
+          // Geolocation not available
+          setWeather({
+            temperature: 0,
+            condition: "not-available",
+            location: "Not Available",
+          });
+        },
+      );
     };
 
     loadWeather();

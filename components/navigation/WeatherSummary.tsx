@@ -6,6 +6,7 @@ const WEATHER_ICONS = {
   cloudy: "☁️",
   rainy: "🌧️",
   snowy: "❄️",
+  "not-available": "❓",
 } as const;
 
 export function WeatherSummary({
