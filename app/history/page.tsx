@@ -11,8 +11,8 @@ import {
 export default function HistoryPage() {
   const [dateRange, setDateRange] = useState<DateRange>(() => {
     const end = new Date();
-    const start = new Date(0);
-    start.setHours(0, 0, 0, 0);
+    // Use a date far in the past to fetch all available data
+    const start = new Date("2000-01-01T00:00:00Z");
     return { start, end, label: "All Time" };
   });
 
@@ -272,8 +272,14 @@ export default function HistoryPage() {
 
             {historicalData.length === 0 && !loading && (
               <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-                <p className="text-gray-500">
-                  No data available for selected rooms
+                <p className="text-gray-500 mb-2">
+                  No sensor data available for the selected date range and rooms
+                </p>
+                <p className="text-sm text-gray-400">
+                  Make sure data has been synced from Firebase to the database.
+                  <br />
+                  You can sync data by calling the POST /api/sync-firebase
+                  endpoint.
                 </p>
               </div>
             )}

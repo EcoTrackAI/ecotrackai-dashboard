@@ -62,7 +62,8 @@ export default function AnalyticsPage() {
     const fetchHistoricalData = async () => {
       try {
         const end = new Date();
-        const start = new Date(0); // fetch all available history
+        // Use a date far in the past to fetch all available history
+        const start = new Date("2000-01-01T00:00:00Z");
         console.log("[Analytics] Fetching PZEM data from", start, "to", end);
 
         const params = new URLSearchParams({
@@ -284,10 +285,16 @@ export default function AnalyticsPage() {
                 Power Usage History
               </h2>
               <div className="h-75 flex items-center justify-center bg-gray-50 rounded">
-                <p className="text-gray-500">
-                  No data available. Make sure data has been synced to the
-                  database.
-                </p>
+                <div className="text-center">
+                  <p className="text-gray-500 mb-2">No PZEM data available.</p>
+                  <p className="text-sm text-gray-400">
+                    Make sure data has been synced from Firebase to the
+                    database.
+                    <br />
+                    You can sync data by calling the POST /api/sync-firebase
+                    endpoint.
+                  </p>
+                </div>
               </div>
             </div>
           )}
