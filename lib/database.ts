@@ -287,21 +287,15 @@ export async function getHistoricalRoomSensorData(
   await initializeDatabase();
   const pool = getPool();
 
-  const timestamp =
-    aggregation === "hourly"
-      ? "DATE_TRUNC('hour', rs.timestamp)"
-      : "rs.timestamp";
-  const aggFunc = aggregation === "hourly" ? "AVG" : "MAX";
-
   let query = `
     SELECT 
-      ${timestamp} as timestamp,
+      ${aggregation === "hourly" ? "DATE_TRUNC('hour', rs.timestamp)" : "rs.timestamp"} as timestamp,
       rs.room_id as "roomId",
       r.name as "roomName",
-      ${aggFunc}(rs.temperature) as temperature,
-      ${aggFunc}(rs.humidity) as humidity,
-      ${aggFunc}(rs.light) as light,
-      BOOL_OR(rs.motion) as motion
+      ${aggregation === "hourly" ? "AVG(rs.temperature)" : "rs.temperature"} as temperature,
+      ${aggregation === "hourly" ? "AVG(rs.humidity)" : "rs.humidity"} as humidity,
+      ${aggregation === "hourly" ? "AVG(rs.light)" : "rs.light"} as light,
+      ${aggregation === "hourly" ? "BOOL_OR(rs.motion)" : "rs.motion"} as motion
     FROM room_sensors rs
     JOIN rooms r ON rs.room_id = r.id
     WHERE rs.timestamp BETWEEN $1 AND $2
@@ -314,13 +308,13 @@ export async function getHistoricalRoomSensorData(
     params.push(roomIds);
   }
 
-  const groupBy =
-    aggregation === "hourly"
-      ? "DATE_TRUNC('hour', rs.timestamp), rs.room_id, r.name"
-      : "rs.timestamp, rs.room_id, r.name";
+  if (aggregation === "hourly") {
+    query += `
+    GROUP BY DATE_TRUNC('hour', rs.timestamp), rs.room_id, r.name
+    `;
+  }
 
   query += `
-    GROUP BY ${groupBy}
     ORDER BY timestamp ASC
   `;
 
@@ -342,26 +336,24 @@ export async function getHistoricalPZEMData(
   await initializeDatabase();
   const pool = getPool();
 
-  const timestamp =
-    aggregation === "hourly"
-      ? "DATE_TRUNC('hour', pz.timestamp)"
-      : "pz.timestamp";
-  const aggFunc = aggregation === "hourly" ? "AVG" : "MAX";
-
-  const query = `
+  let query = `
     SELECT 
-      ${timestamp} as timestamp,
-      ${aggFunc}(pz.current) as current,
-      ${aggFunc}(pz.voltage) as voltage,
-      ${aggFunc}(pz.power) as power,
-      ${aggFunc}(pz.energy) as energy,
-      ${aggFunc}(pz.frequency) as frequency,
-      ${aggFunc}(pz.pf) as pf
+      ${aggregation === "hourly" ? "DATE_TRUNC('hour', pz.timestamp)" : "pz.timestamp"} as timestamp,
+      ${aggregation === "hourly" ? "AVG(pz.current)" : "pz.current"} as current,
+      ${aggregation === "hourly" ? "AVG(pz.voltage)" : "pz.voltage"} as voltage,
+      ${aggregation === "hourly" ? "AVG(pz.power)" : "pz.power"} as power,
+      ${aggregation === "hourly" ? "AVG(pz.energy)" : "pz.energy"} as energy,
+      ${aggregation === "hourly" ? "AVG(pz.frequency)" : "pz.frequency"} as frequency,
+      ${aggregation === "hourly" ? "AVG(pz.pf)" : "pz.pf"} as pf
     FROM pzem_data pz
     WHERE pz.timestamp BETWEEN $1 AND $2
-    ${aggregation === "hourly" ? "GROUP BY DATE_TRUNC('hour', pz.timestamp)" : ""}
-    ORDER BY timestamp ASC
   `;
+
+  if (aggregation === "hourly") {
+    query += ` GROUP BY DATE_TRUNC('hour', pz.timestamp)`;
+  }
+
+  query += ` ORDER BY timestamp ASC`;
 
   const result: QueryResult<HistoricalPZEMData> = await pool.query(query, [
     startDate,
