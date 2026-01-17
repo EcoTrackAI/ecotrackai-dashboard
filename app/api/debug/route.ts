@@ -4,6 +4,8 @@ import {
   getLatestPZEMReading,
   getLatestRoomSensorReadings,
   getRooms,
+  getRoomSensorCount,
+  getPZEMDataCount,
 } from "@/lib/database";
 
 /**
@@ -25,11 +27,14 @@ export async function GET() {
     }
 
     // Get database info
-    const [rooms, latestPZEM, latestSensors] = await Promise.all([
-      getRooms(),
-      getLatestPZEMReading(),
-      getLatestRoomSensorReadings(),
-    ]);
+    const [rooms, latestPZEM, latestSensors, sensorCount, pzemCount] =
+      await Promise.all([
+        getRooms(),
+        getLatestPZEMReading(),
+        getLatestRoomSensorReadings(),
+        getRoomSensorCount(),
+        getPZEMDataCount(),
+      ]);
 
     return NextResponse.json(
       {
@@ -40,18 +45,20 @@ export async function GET() {
             data: rooms,
           },
           pzem: {
+            totalRecords: pzemCount,
             latest: latestPZEM,
             note: latestPZEM
               ? `Latest reading from ${latestPZEM.timestamp}`
-              : "No data",
+              : "No PZEM data found. Run sync to populate.",
           },
           sensors: {
+            totalRecords: sensorCount,
             count: latestSensors.length,
             latest: latestSensors.slice(0, 5),
             note:
               latestSensors.length > 0
                 ? `Latest readings from ${latestSensors[0].timestamp}`
-                : "No data",
+                : "No sensor data found. Run sync to populate.",
           },
         },
         timestamp: new Date().toISOString(),

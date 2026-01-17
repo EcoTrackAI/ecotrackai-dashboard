@@ -149,6 +149,28 @@ export async function getRooms(): Promise<DBRoom[]> {
 }
 
 /**
+ * Get total count of room sensor records
+ */
+export async function getRoomSensorCount(): Promise<number> {
+  await initializeDatabase();
+  const result = await getPool().query(
+    "SELECT COUNT(*) as count FROM room_sensors",
+  );
+  return parseInt(result.rows[0].count, 10);
+}
+
+/**
+ * Get total count of PZEM records
+ */
+export async function getPZEMDataCount(): Promise<number> {
+  await initializeDatabase();
+  const result = await getPool().query(
+    "SELECT COUNT(*) as count FROM pzem_data",
+  );
+  return parseInt(result.rows[0].count, 10);
+}
+
+/**
  * Upsert a room
  */
 export async function upsertRoom(
@@ -290,7 +312,7 @@ export async function getHistoricalRoomSensorData(
       ${selectFields}
     FROM room_sensors rs
     JOIN rooms r ON rs.room_id = r.id
-    WHERE rs.timestamp BETWEEN $1 AND $2
+    WHERE rs.timestamp >= $1 AND rs.timestamp <= $2
   `;
 
   const params: (Date | string[])[] = [startDate, endDate];
@@ -306,7 +328,17 @@ export async function getHistoricalRoomSensorData(
 
   query += ` ORDER BY timestamp ASC`;
 
+  console.log("[DB] Fetching room sensor data:", {
+    startDate: startDate.toISOString(),
+    endDate: endDate.toISOString(),
+    roomIds,
+    aggregation,
+  });
+
   const result = await getPool().query(query, params);
+
+  console.log(`[DB] Retrieved ${result.rows.length} room sensor records`);
+
   return result.rows;
 }
 
@@ -348,7 +380,7 @@ export async function getHistoricalPZEMData(
       ${timeField} as timestamp,
       ${selectFields}
     FROM pzem_data pz
-    WHERE pz.timestamp BETWEEN $1 AND $2
+    WHERE pz.timestamp >= $1 AND pz.timestamp <= $2
   `;
 
   if (isAggregated) {
@@ -357,7 +389,16 @@ export async function getHistoricalPZEMData(
 
   query += ` ORDER BY timestamp ASC`;
 
+  console.log("[DB] Fetching PZEM data:", {
+    startDate: startDate.toISOString(),
+    endDate: endDate.toISOString(),
+    aggregation,
+  });
+
   const result = await getPool().query(query, [startDate, endDate]);
+
+  console.log(`[DB] Retrieved ${result.rows.length} PZEM records`);
+
   return result.rows;
 }
 
