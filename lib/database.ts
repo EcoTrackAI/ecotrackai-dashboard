@@ -46,46 +46,57 @@ export async function initializeDatabase(): Promise<void> {
       )
     `);
 
-    // Create sensor_data table
+    // Create room_sensors table
     await pool.query(`
-      CREATE TABLE IF NOT EXISTS sensor_data (
+      CREATE TABLE IF NOT EXISTS room_sensors (
         id SERIAL PRIMARY KEY,
-        sensor_id VARCHAR(100) NOT NULL,
-        sensor_name VARCHAR(255) NOT NULL,
-        room_id VARCHAR(50) REFERENCES rooms(id),
-        category VARCHAR(50) NOT NULL,
-        current_value NUMERIC(10, 2) NOT NULL,
-        unit VARCHAR(20) NOT NULL,
-        status VARCHAR(20) NOT NULL,
-        description TEXT,
+        room_id VARCHAR(50) NOT NULL REFERENCES rooms(id),
+        temperature NUMERIC(5, 2),
+        humidity NUMERIC(5, 2),
+        light INTEGER,
+        motion BOOLEAN,
         timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
         created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
       )
     `);
 
-    // Create indexes
+    // Create pzem_data table
     await pool.query(`
-      CREATE INDEX IF NOT EXISTS idx_sensor_data_timestamp ON sensor_data(timestamp DESC)
+      CREATE TABLE IF NOT EXISTS pzem_data (
+        id SERIAL PRIMARY KEY,
+        current NUMERIC(10, 3),
+        voltage NUMERIC(10, 2),
+        power NUMERIC(10, 2),
+        energy NUMERIC(12, 3),
+        frequency NUMERIC(5, 2),
+        pf NUMERIC(4, 3),
+        timestamp TIMESTAMP NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        created_at TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Create indexes for room_sensors
+    await pool.query(`
+      CREATE INDEX IF NOT EXISTS idx_room_sensors_timestamp ON room_sensors(timestamp DESC)
     `);
     await pool.query(`
-      CREATE INDEX IF NOT EXISTS idx_sensor_data_room_id ON sensor_data(room_id)
+      CREATE INDEX IF NOT EXISTS idx_room_sensors_room_id ON room_sensors(room_id)
     `);
     await pool.query(`
-      CREATE INDEX IF NOT EXISTS idx_sensor_data_category ON sensor_data(category)
+      CREATE INDEX IF NOT EXISTS idx_room_sensors_room_timestamp ON room_sensors(room_id, timestamp DESC)
     `);
+
+    // Create indexes for pzem_data
     await pool.query(`
-      CREATE INDEX IF NOT EXISTS idx_sensor_data_sensor_id ON sensor_data(sensor_id)
+      CREATE INDEX IF NOT EXISTS idx_pzem_data_timestamp ON pzem_data(timestamp DESC)
     `);
 
     // Insert default rooms if table is empty
     await pool.query(`
       INSERT INTO rooms (id, name, floor, type) VALUES
         ('unknown', 'Unknown', 0, 'utility'),
-        ('living-room', 'Living Room', 1, 'residential'),
-        ('bedroom', 'Master Bedroom', 2, 'residential'),
-        ('kitchen', 'Kitchen', 1, 'residential'),
-        ('office', 'Home Office', 2, 'residential'),
-        ('garage', 'Garage', 0, 'utility')
+        ('living_room', 'Living Room', 1, 'residential'),
+        ('bedroom', 'Bedroom', 1, 'residential')
       ON CONFLICT (id) DO NOTHING
     `);
 
@@ -122,46 +133,43 @@ export async function upsertRoom(
   );
 }
 
-export async function insertSensorData(data: {
-  sensor_id: string;
-  sensor_name: string;
+/**
+ * Insert room sensor data
+ */
+export async function insertRoomSensorData(data: {
   room_id: string;
-  category: string;
-  current_value: number;
-  unit: string;
-  status: string;
-  description?: string;
+  temperature?: number;
+  humidity?: number;
+  light?: number;
+  motion?: boolean;
   timestamp?: Date;
 }): Promise<void> {
   await initializeDatabase();
   await getPool().query(
-    `INSERT INTO sensor_data 
-      (sensor_id, sensor_name, room_id, category, current_value, unit, status, description, timestamp)
-     VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)`,
+    `INSERT INTO room_sensors 
+      (room_id, temperature, humidity, light, motion, timestamp)
+     VALUES ($1, $2, $3, $4, $5, $6)`,
     [
-      data.sensor_id,
-      data.sensor_name,
       data.room_id,
-      data.category,
-      data.current_value,
-      data.unit,
-      data.status,
-      data.description || null,
+      data.temperature ?? null,
+      data.humidity ?? null,
+      data.light ?? null,
+      data.motion ?? null,
       data.timestamp || new Date(),
     ],
   );
 }
 
-export async function batchInsertSensorData(
+/**
+ * Batch insert room sensor data
+ */
+export async function batchInsertRoomSensorData(
   records: Array<{
-    sensor_id: string;
-    sensor_name: string;
     room_id: string;
-    category: string;
-    current_value: number;
-    unit: string;
-    status: string;
-    description?: string;
+    temperature?: number;
+    humidity?: number;
+    light?: number;
+    motion?: boolean;
     timestamp?: Date;
   }>,
 ): Promise<void> {
@@ -171,101 +179,152 @@ export async function batchInsertSensorData(
   const values = records
     .map(
       (_, i) =>
-        `($${i * 9 + 1}, $${i * 9 + 2}, $${i * 9 + 3}, $${i * 9 + 4}, $${
-          i * 9 + 5
-        }, $${i * 9 + 6}, $${i * 9 + 7}, $${i * 9 + 8}, $${i * 9 + 9})`,
+        `($${i * 6 + 1}, $${i * 6 + 2}, $${i * 6 + 3}, $${i * 6 + 4}, $${
+          i * 6 + 5
+        }, $${i * 6 + 6})`,
     )
     .join(", ");
 
   const params = records.flatMap((r) => [
-    r.sensor_id,
-    r.sensor_name,
     r.room_id,
-    r.category,
-    r.current_value,
-    r.unit,
-    r.status,
-    r.description || null,
+    r.temperature ?? null,
+    r.humidity ?? null,
+    r.light ?? null,
+    r.motion ?? null,
     r.timestamp || new Date(),
   ]);
 
   await getPool().query(
-    `INSERT INTO sensor_data 
-      (sensor_id, sensor_name, room_id, category, current_value, unit, status, description, timestamp)
+    `INSERT INTO room_sensors 
+      (room_id, temperature, humidity, light, motion, timestamp)
      VALUES ${values}`,
     params,
   );
 }
 
-const SENSOR_CATEGORIES = [
-  "energy",
-  "power",
-  "temperature",
-  "humidity",
-  "lighting",
-  "occupancy",
-];
-
-function buildCategoryAggregates(aggFunc: string): string {
-  return SENSOR_CATEGORIES.map(
-    (cat) =>
-      `${aggFunc}(CASE WHEN sd.category = '${cat}' THEN sd.current_value ELSE 0 END) as ${
-        cat === "occupancy" ? "motion" : cat
-      }`,
-  ).join(",\n      ");
-}
-
-function buildHistoricalDataQuery(
-  aggregation: "raw" | "hourly" = "raw",
-): string {
-  const isHourly = aggregation === "hourly";
-  const timestamp = isHourly
-    ? "DATE_TRUNC('hour', sd.timestamp)"
-    : "sd.timestamp";
-  const aggFunc = isHourly ? "AVG" : "MAX";
-
-  return `
-    SELECT 
-      ${timestamp} as timestamp,
-      sd.room_id as "roomId",
-      r.name as "roomName",
-      ${buildCategoryAggregates(aggFunc)}
-    FROM sensor_data sd
-    JOIN rooms r ON sd.room_id = r.id
-    WHERE sd.timestamp BETWEEN $1 AND $2
-  `;
+/**
+ * Insert PZEM power meter data
+ */
+export async function insertPZEMData(data: {
+  current?: number;
+  voltage?: number;
+  power?: number;
+  energy?: number;
+  frequency?: number;
+  pf?: number;
+  timestamp?: Date;
+}): Promise<void> {
+  await initializeDatabase();
+  await getPool().query(
+    `INSERT INTO pzem_data 
+      (current, voltage, power, energy, frequency, pf, timestamp)
+     VALUES ($1, $2, $3, $4, $5, $6, $7)`,
+    [
+      data.current ?? null,
+      data.voltage ?? null,
+      data.power ?? null,
+      data.energy ?? null,
+      data.frequency ?? null,
+      data.pf ?? null,
+      data.timestamp || new Date(),
+    ],
+  );
 }
 
 /**
- * Get historical sensor data for specified date range and rooms
+ * Batch insert PZEM data
  */
-export async function getHistoricalData(
+export async function batchInsertPZEMData(
+  records: Array<{
+    current?: number;
+    voltage?: number;
+    power?: number;
+    energy?: number;
+    frequency?: number;
+    pf?: number;
+    timestamp?: Date;
+  }>,
+): Promise<void> {
+  if (records.length === 0) return;
+  await initializeDatabase();
+
+  const values = records
+    .map(
+      (_, i) =>
+        `($${i * 7 + 1}, $${i * 7 + 2}, $${i * 7 + 3}, $${i * 7 + 4}, $${
+          i * 7 + 5
+        }, $${i * 7 + 6}, $${i * 7 + 7})`,
+    )
+    .join(", ");
+
+  const params = records.flatMap((r) => [
+    r.current ?? null,
+    r.voltage ?? null,
+    r.power ?? null,
+    r.energy ?? null,
+    r.frequency ?? null,
+    r.pf ?? null,
+    r.timestamp || new Date(),
+  ]);
+
+  await getPool().query(
+    `INSERT INTO pzem_data 
+      (current, voltage, power, energy, frequency, pf, timestamp)
+     VALUES ${values}`,
+    params,
+  );
+}
+
+/**
+ * Get historical room sensor data for specified date range and rooms
+ */
+export async function getHistoricalRoomSensorData(
   startDate: Date,
   endDate: Date,
   roomIds?: string[],
   aggregation: "raw" | "hourly" = "raw",
-): Promise<HistoricalDataPoint[]> {
+): Promise<HistoricalRoomSensorData[]> {
   await initializeDatabase();
   const pool = getPool();
-  let query = buildHistoricalDataQuery(aggregation);
+
+  const timestamp =
+    aggregation === "hourly"
+      ? "DATE_TRUNC('hour', rs.timestamp)"
+      : "rs.timestamp";
+  const aggFunc = aggregation === "hourly" ? "AVG" : "MAX";
+
+  let query = `
+    SELECT 
+      ${timestamp} as timestamp,
+      rs.room_id as "roomId",
+      r.name as "roomName",
+      ${aggFunc}(rs.temperature) as temperature,
+      ${aggFunc}(rs.humidity) as humidity,
+      ${aggFunc}(rs.light) as light,
+      BOOL_OR(rs.motion) as motion
+    FROM room_sensors rs
+    JOIN rooms r ON rs.room_id = r.id
+    WHERE rs.timestamp BETWEEN $1 AND $2
+  `;
+
   const params: any[] = [startDate, endDate];
 
   if (roomIds && roomIds.length > 0) {
-    query += ` AND sd.room_id = ANY($3)`;
+    query += ` AND rs.room_id = ANY($3)`;
     params.push(roomIds);
   }
 
   const groupBy =
     aggregation === "hourly"
-      ? "DATE_TRUNC('hour', sd.timestamp), sd.room_id, r.name"
-      : "sd.timestamp, sd.room_id, r.name";
+      ? "DATE_TRUNC('hour', rs.timestamp), rs.room_id, r.name"
+      : "rs.timestamp, rs.room_id, r.name";
 
   query += `
     GROUP BY ${groupBy}
     ORDER BY timestamp ASC
   `;
 
-  const result: QueryResult<HistoricalDataPoint> = await pool.query(
+  const result: QueryResult<HistoricalRoomSensorData> = await pool.query(
     query,
     params,
   );
@@ -273,39 +332,120 @@ export async function getHistoricalData(
 }
 
 /**
- * Get the latest sensor readings
+ * Get historical PZEM power data for specified date range
  */
-export async function getLatestSensorReadings(
+export async function getHistoricalPZEMData(
+  startDate: Date,
+  endDate: Date,
+  aggregation: "raw" | "hourly" = "raw",
+): Promise<HistoricalPZEMData[]> {
+  await initializeDatabase();
+  const pool = getPool();
+
+  const timestamp =
+    aggregation === "hourly"
+      ? "DATE_TRUNC('hour', pz.timestamp)"
+      : "pz.timestamp";
+  const aggFunc = aggregation === "hourly" ? "AVG" : "MAX";
+
+  const query = `
+    SELECT 
+      ${timestamp} as timestamp,
+      ${aggFunc}(pz.current) as current,
+      ${aggFunc}(pz.voltage) as voltage,
+      ${aggFunc}(pz.power) as power,
+      ${aggFunc}(pz.energy) as energy,
+      ${aggFunc}(pz.frequency) as frequency,
+      ${aggFunc}(pz.pf) as pf
+    FROM pzem_data pz
+    WHERE pz.timestamp BETWEEN $1 AND $2
+    ${aggregation === "hourly" ? "GROUP BY DATE_TRUNC('hour', pz.timestamp)" : ""}
+    ORDER BY timestamp ASC
+  `;
+
+  const result: QueryResult<HistoricalPZEMData> = await pool.query(query, [
+    startDate,
+    endDate,
+  ]);
+  return result.rows;
+}
+
+/**
+ * Get the latest room sensor readings
+ */
+export async function getLatestRoomSensorReadings(
   roomId?: string,
-): Promise<SensorDataRecord[]> {
+): Promise<RoomSensorRecord[]> {
   await initializeDatabase();
   const pool = getPool();
 
   let query = `
-    SELECT DISTINCT ON (sensor_id) *
-    FROM sensor_data
+    SELECT DISTINCT ON (rs.room_id) 
+      rs.*,
+      r.name as room_name
+    FROM room_sensors rs
+    JOIN rooms r ON rs.room_id = r.id
   `;
 
   const params: any[] = [];
 
   if (roomId) {
-    query += ` WHERE room_id = $1`;
+    query += ` WHERE rs.room_id = $1`;
     params.push(roomId);
   }
 
   query += `
-    ORDER BY sensor_id, timestamp DESC
+    ORDER BY rs.room_id, rs.timestamp DESC
   `;
 
-  const result: QueryResult<SensorDataRecord> = await pool.query(query, params);
+  const result: QueryResult<RoomSensorRecord> = await pool.query(query, params);
   return result.rows;
 }
 
-export async function cleanupOldData(daysToKeep: number = 90): Promise<number> {
-  const result = await getPool().query("SELECT cleanup_old_sensor_data($1)", [
-    daysToKeep,
-  ]);
-  return result.rows[0].cleanup_old_sensor_data;
+/**
+ * Get the latest PZEM reading
+ */
+export async function getLatestPZEMReading(): Promise<PZEMRecord | null> {
+  await initializeDatabase();
+  const pool = getPool();
+
+  const query = `
+    SELECT *
+    FROM pzem_data
+    ORDER BY timestamp DESC
+    LIMIT 1
+  `;
+
+  const result: QueryResult<PZEMRecord> = await pool.query(query);
+  return result.rows[0] || null;
+}
+
+export async function cleanupOldRoomSensorData(
+  daysToKeep: number = 90,
+): Promise<number> {
+  await initializeDatabase();
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+
+  const result = await getPool().query(
+    "DELETE FROM room_sensors WHERE timestamp < $1",
+    [cutoffDate],
+  );
+  return result.rowCount || 0;
+}
+
+export async function cleanupOldPZEMData(
+  daysToKeep: number = 90,
+): Promise<number> {
+  await initializeDatabase();
+  const cutoffDate = new Date();
+  cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
+
+  const result = await getPool().query(
+    "DELETE FROM pzem_data WHERE timestamp < $1",
+    [cutoffDate],
+  );
+  return result.rowCount || 0;
 }
 
 export async function testConnection(): Promise<boolean> {

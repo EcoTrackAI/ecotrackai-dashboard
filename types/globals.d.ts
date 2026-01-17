@@ -514,6 +514,51 @@ declare global {
     updated_at: Date;
   }
 
+  interface RoomSensorRecord {
+    id: number;
+    room_id: string;
+    room_name?: string;
+    temperature?: number;
+    humidity?: number;
+    light?: number;
+    motion?: boolean;
+    timestamp: Date;
+    created_at: Date;
+  }
+
+  interface PZEMRecord {
+    id: number;
+    current?: number;
+    voltage?: number;
+    power?: number;
+    energy?: number;
+    frequency?: number;
+    pf?: number;
+    timestamp: Date;
+    created_at: Date;
+  }
+
+  interface HistoricalRoomSensorData {
+    timestamp: string;
+    roomId: string;
+    roomName: string;
+    temperature?: number;
+    humidity?: number;
+    light?: number;
+    motion?: boolean;
+  }
+
+  interface HistoricalPZEMData {
+    timestamp: string;
+    current?: number;
+    voltage?: number;
+    power?: number;
+    energy?: number;
+    frequency?: number;
+    pf?: number;
+  }
+
+  // Legacy type - kept for backward compatibility
   interface SensorDataRecord {
     id: number;
     sensor_id: string;

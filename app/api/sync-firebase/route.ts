@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from "next/server";
-import { fetchSensorData } from "@/lib/firebase-sensors";
+import { fetchRoomSensor, fetchPZEMData } from "@/lib/firebase-sensors";
 import {
-  batchInsertSensorData,
+  batchInsertRoomSensorData,
+  batchInsertPZEMData,
   upsertRoom,
   testConnection,
 } from "@/lib/database";
@@ -19,50 +20,69 @@ export async function POST(request: NextRequest) {
       );
     }
 
-    const sensors = await fetchSensorData();
+    // Ensure rooms exist
+    await upsertRoom("bedroom", "Bedroom", 1, "residential");
+    await upsertRoom("living_room", "Living Room", 1, "residential");
 
-    if (!sensors?.length) {
-      return NextResponse.json(
-        { message: "No sensor data available", synced: 0 },
-        { status: 200 },
-      );
+    let syncedCount = 0;
+
+    // Fetch and store bedroom sensor data
+    const bedroomData = await fetchRoomSensor("bedroom");
+    if (bedroomData) {
+      await batchInsertRoomSensorData([
+        {
+          room_id: "bedroom",
+          temperature: bedroomData.temperature,
+          humidity: bedroomData.humidity,
+          light: bedroomData.light,
+          motion: bedroomData.motion,
+          timestamp: new Date(bedroomData.updatedAt),
+        },
+      ]);
+      syncedCount++;
     }
 
-    // Ensure "unknown" room exists for sensors without a room assignment
-    await upsertRoom("unknown", "Unknown", 0, "utility");
-
-    const roomsSet = new Set(
-      sensors
-        .map((s) => s.room)
-        .filter((room): room is string => Boolean(room)),
-    );
-
-    for (const roomId of roomsSet) {
-      const roomName = roomId
-        .split("-")
-        .map((word) => word.charAt(0).toUpperCase() + word.slice(1))
-        .join(" ");
-      await upsertRoom(roomId, roomName);
+    // Fetch and store living room sensor data
+    const livingRoomData = await fetchRoomSensor("living_room");
+    if (livingRoomData) {
+      await batchInsertRoomSensorData([
+        {
+          room_id: "living_room",
+          temperature: livingRoomData.temperature,
+          humidity: livingRoomData.humidity,
+          light: livingRoomData.light,
+          motion: livingRoomData.motion,
+          timestamp: new Date(livingRoomData.updatedAt),
+        },
+      ]);
+      syncedCount++;
     }
 
-    const records = sensors.map((sensor) => ({
-      sensor_id: sensor.id,
-      sensor_name: sensor.sensorName,
-      room_id: sensor.room || "unknown",
-      category: sensor.category || "system",
-      current_value: parseFloat(String(sensor.currentValue)) || 0,
-      unit: sensor.unit,
-      status: sensor.status,
-      description: sensor.description,
-      timestamp: sensor.lastUpdate ? new Date(sensor.lastUpdate) : new Date(),
-    }));
-
-    await batchInsertSensorData(records);
+    // Fetch and store PZEM power meter data
+    const pzemData = await fetchPZEMData();
+    if (pzemData) {
+      await batchInsertPZEMData([
+        {
+          current: pzemData.current,
+          voltage: pzemData.voltage,
+          power: pzemData.power,
+          energy: pzemData.energy,
+          frequency: pzemData.frequency,
+          pf: pzemData.pf,
+          timestamp: new Date(pzemData.updatedAt),
+        },
+      ]);
+      syncedCount++;
+    }
 
     return NextResponse.json({
       message: "Successfully synced data",
-      synced: records.length,
-      rooms: roomsSet.size,
+      synced: syncedCount,
+      details: {
+        bedroom: !!bedroomData,
+        living_room: !!livingRoomData,
+        pzem: !!pzemData,
+      },
       timestamp: new Date().toISOString(),
     });
   } catch (error) {
