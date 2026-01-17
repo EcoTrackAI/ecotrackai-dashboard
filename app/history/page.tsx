@@ -7,8 +7,6 @@ import {
   HistoricalChart,
   DataTable,
 } from "@/components/history";
-import { subscribeRoomSensor } from "@/lib/firebase-sensors";
-import { initializeFirebase } from "@/lib/firebase";
 
 export default function HistoryPage() {
   const [dateRange, setDateRange] = useState<DateRange>(() => {
@@ -23,9 +21,8 @@ export default function HistoryPage() {
     "bedroom",
     "living_room",
   ]);
-  const [bedroomData, setBedroomData] = useState<RoomSensorData | null>(null);
-  const [livingRoomData, setLivingRoomData] = useState<RoomSensorData | null>(
-    null,
+  const [historicalData, setHistoricalData] = useState<HistoricalDataPoint[]>(
+    [],
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -35,58 +32,42 @@ export default function HistoryPage() {
     "temperature" | "humidity" | "light" | "motion"
   >("temperature");
 
+  // Fetch historical data from database whenever date range or rooms change
   useEffect(() => {
-    try {
-      initializeFirebase();
-    } catch (err) {
-      console.error("Failed to initialize Firebase:", err);
-      setError("Failed to connect to Firebase");
-      setLoading(false);
-      return;
-    }
+    const fetchHistoricalData = async () => {
+      setLoading(true);
+      setError(null);
 
-    const unsubscribeBedroom = subscribeRoomSensor("bedroom", (data) => {
-      setBedroomData(data);
-      setLoading(false);
-    });
+      try {
+        const params = new URLSearchParams({
+          startDate: dateRange.start.toISOString(),
+          endDate: dateRange.end.toISOString(),
+          aggregation: "hourly",
+        });
 
-    const unsubscribeLivingRoom = subscribeRoomSensor("living_room", (data) => {
-      setLivingRoomData(data);
-      setLoading(false);
-    });
+        if (selectedRooms.length > 0) {
+          params.append("roomIds", selectedRooms.join(","));
+        }
 
-    return () => {
-      unsubscribeBedroom();
-      unsubscribeLivingRoom();
+        const response = await fetch(`/api/historical-data?${params}`);
+
+        if (!response.ok) {
+          throw new Error("Failed to fetch historical data");
+        }
+
+        const result = await response.json();
+        setHistoricalData(result.data || []);
+      } catch (err) {
+        console.error("Error fetching historical data:", err);
+        setError(err instanceof Error ? err.message : "Failed to load data");
+        setHistoricalData([]);
+      } finally {
+        setLoading(false);
+      }
     };
-  }, []);
 
-  // Convert current sensor data to historical format for display
-  const historicalData: HistoricalDataPoint[] = [];
-
-  if (selectedRooms.includes("bedroom") && bedroomData) {
-    historicalData.push({
-      timestamp: bedroomData.updatedAt,
-      roomId: "bedroom",
-      roomName: "Bedroom",
-      temperature: bedroomData.temperature,
-      humidity: bedroomData.humidity,
-      light: bedroomData.light,
-      motion: bedroomData.motion,
-    });
-  }
-
-  if (selectedRooms.includes("living_room") && livingRoomData) {
-    historicalData.push({
-      timestamp: livingRoomData.updatedAt,
-      roomId: "living_room",
-      roomName: "Living Room",
-      temperature: livingRoomData.temperature,
-      humidity: livingRoomData.humidity,
-      light: livingRoomData.light,
-      motion: livingRoomData.motion,
-    });
-  }
+    fetchHistoricalData();
+  }, [dateRange, selectedRooms]);
 
   const rooms: RoomOption[] = [
     { id: "bedroom", name: "Bedroom" },
@@ -101,7 +82,9 @@ export default function HistoryPage() {
           <h1 className="text-3xl font-bold text-[#111827] mb-2">
             Sensor History
           </h1>
-          <p className="text-[#6B7280]">View current sensor readings by room</p>
+          <p className="text-[#6B7280]">
+            View and analyze historical sensor data from the database
+          </p>
         </div>
 
         {/* Error Message */}
