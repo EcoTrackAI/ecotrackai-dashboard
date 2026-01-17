@@ -5,6 +5,9 @@ import {
   testConnection,
 } from "@/lib/database";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 60;
+
 /**
  * GET /api/pzem-data
  * Retrieve PZEM data from database
