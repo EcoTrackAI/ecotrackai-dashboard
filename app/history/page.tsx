@@ -21,6 +21,7 @@ export default function HistoryPage() {
     [],
   );
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
   const [chartType, setChartType] = useState<ChartType>("line");
   const [metric, setMetric] = useState<
@@ -52,6 +53,7 @@ export default function HistoryPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setError(null);
         const params = new URLSearchParams({
           startDate: dateRange.start.toISOString(),
           endDate: dateRange.end.toISOString(),
@@ -61,8 +63,18 @@ export default function HistoryPage() {
         if (selectedRooms.length)
           params.append("roomIds", selectedRooms.join(","));
 
+        console.log("[History] Fetching:", `/api/historical-data?${params}`);
         const response = await fetch(`/api/historical-data?${params}`);
+        console.log("[History] Response status:", response.status);
+        
         const result = await response.json();
+        console.log("[History] Result:", result);
+
+        if (!response.ok) {
+          setError(result.error || "Failed to fetch data");
+          setHistoricalData([]);
+          return;
+        }
 
         if (result.data) {
           setHistoricalData(
@@ -71,9 +83,13 @@ export default function HistoryPage() {
               timestamp: new Date(item.timestamp),
             })),
           );
+          console.log("[History] Loaded", result.data.length, "records");
+        } else {
+          setHistoricalData([]);
         }
       } catch (err) {
-        console.error("Fetch error:", err);
+        console.error("[History] Fetch error:", err);
+        setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
         setLoading(false);
       }
@@ -95,6 +111,13 @@ export default function HistoryPage() {
             Real-time data from database (updates every 10s)
           </p>
         </div>
+
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-sm font-medium text-red-800">Error: {error}</p>
+            <p className="text-xs text-red-600 mt-1">Check console for details</p>
+          </div>
+        )}
 
         {loading ? (
           <div className="flex justify-center items-center py-12">
@@ -171,7 +194,12 @@ export default function HistoryPage() {
 
             {historicalData.length === 0 && (
               <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
-                <p className="text-gray-500">No data for selected range</p>
+                <p className="text-gray-500 mb-2">No data for selected range</p>
+                <p className="text-sm text-gray-400">
+                  Make sure your external cron job is calling POST /api/sync-firebase
+                  <br />
+                  Check that Firebase has data and device status is "online"
+                </p>
               </div>
             )}
           </>
