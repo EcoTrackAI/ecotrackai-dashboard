@@ -62,9 +62,15 @@ export default function AnalyticsPage() {
     const fetchHistoricalData = async () => {
       try {
         const end = new Date();
-        // Use a date far in the past to fetch all available history
-        const start = new Date("2000-01-01T00:00:00Z");
+        // Default to last 7 days to avoid production timeout issues
+        const start = new Date();
+        start.setDate(start.getDate() - 7);
         console.log("[Analytics] Fetching PZEM data from", start, "to", end);
+
+        // Validate dates
+        if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+          throw new Error("Invalid date range");
+        }
 
         const params = new URLSearchParams({
           startDate: start.toISOString(),
@@ -77,9 +83,14 @@ export default function AnalyticsPage() {
           headers: { "Cache-Control": "no-cache" },
         });
 
+        console.log("[Analytics] API Response status:", response.status);
+
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          console.error("API Error:", errorData.error || response.status);
+          console.error(
+            "[Analytics] API Error:",
+            errorData.error || response.status,
+          );
           setPowerHistory([]);
           return;
         }
