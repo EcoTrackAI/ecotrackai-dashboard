@@ -40,6 +40,7 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
   const [powerHistory, setPowerHistory] = useState<ChartData[]>([]);
   const [latestMetrics, setLatestMetrics] = useState<PZEMData | null>(null);
 
@@ -47,6 +48,7 @@ export default function AnalyticsPage() {
   useEffect(() => {
     const fetchData = async () => {
       try {
+        setError(null);
         const end = new Date();
         const start = new Date();
         start.setDate(start.getDate() - 7);
@@ -57,8 +59,18 @@ export default function AnalyticsPage() {
           aggregation: "raw",
         });
 
+        console.log("[Analytics] Fetching:", `/api/pzem-data?${params}`);
         const response = await fetch(`/api/pzem-data?${params}`);
+        console.log("[Analytics] Response status:", response.status);
+        
         const result = await response.json();
+        console.log("[Analytics] Result:", result);
+
+        if (!response.ok) {
+          setError(result.error || "Failed to fetch data");
+          setPowerHistory([]);
+          return;
+        }
 
         if (result.data?.length) {
           const formatted = result.data.map((item: HistoricalPZEMData) => ({
@@ -73,6 +85,7 @@ export default function AnalyticsPage() {
             voltage: Number(item.voltage) || 0,
           }));
           setPowerHistory(formatted);
+          console.log("[Analytics] Loaded", formatted.length, "records");
 
           // Set latest metrics from most recent data point
           const latest = result.data[result.data.length - 1];
@@ -85,9 +98,14 @@ export default function AnalyticsPage() {
             pf: Number(latest.pf) || 0,
             updatedAt: latest.timestamp,
           });
+          console.log("[Analytics] Latest metrics:", latestMetrics);
+        } else {
+          setPowerHistory([]);
+          setLatestMetrics(null);
         }
       } catch (err) {
-        console.error("Fetch error:", err);
+        console.error("[Analytics] Fetch error:", err);
+        setError(err instanceof Error ? err.message : "Unknown error");
       } finally {
         setLoading(false);
       }
@@ -117,6 +135,13 @@ export default function AnalyticsPage() {
             Real-time data from database (updates every 10s)
           </p>
         </div>
+
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-sm font-medium text-red-800">Error: {error}</p>
+            <p className="text-xs text-red-600 mt-1">Check console for details</p>
+          </div>
+        )}
 
         {latestMetrics && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
@@ -172,7 +197,17 @@ export default function AnalyticsPage() {
           </div>
         ) : (
           <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
-            <p className="text-center text-gray-500">No data available</p>
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              Power Usage History
+            </h2>
+            <div className="text-center py-12">
+              <p className="text-gray-500 mb-2">No PZEM data available</p>
+              <p className="text-sm text-gray-400">
+                Make sure your external cron job is calling POST /api/sync-firebase
+                <br />
+                Check that Firebase has PZEM data and device status is "online"
+              </p>
+            </div>
           </div>
         )}
 
