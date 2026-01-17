@@ -57,10 +57,14 @@ export default function AnalyticsPage() {
           startDate: start.toISOString(),
           endDate: end.toISOString(),
           aggregation: "raw",
+          _t: Date.now().toString(), // Cache buster
         });
 
         console.log("[Analytics] Fetching:", `/api/pzem-data?${params}`);
-        const response = await fetch(`/api/pzem-data?${params}`);
+        const response = await fetch(`/api/pzem-data?${params}`, {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        });
         console.log("[Analytics] Response status:", response.status);
         
         const result = await response.json();

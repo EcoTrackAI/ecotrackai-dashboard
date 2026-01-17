@@ -51,6 +51,11 @@ export default function HistoryPage() {
 
   // Fetch data from database with auto-refresh every 10s
   useEffect(() => {
+    if (!selectedRooms.length) {
+      setLoading(false);
+      return;
+    }
+
     const fetchData = async () => {
       try {
         setError(null);
@@ -60,11 +65,14 @@ export default function HistoryPage() {
           aggregation: "raw",
         });
 
-        if (selectedRooms.length)
-          params.append("roomIds", selectedRooms.join(","));
+        params.append("roomIds", selectedRooms.join(","));
+        params.append("_t", Date.now().toString()); // Cache buster
 
         console.log("[History] Fetching:", `/api/historical-data?${params}`);
-        const response = await fetch(`/api/historical-data?${params}`);
+        const response = await fetch(`/api/historical-data?${params}`, {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        });
         console.log("[History] Response status:", response.status);
         
         const result = await response.json();
