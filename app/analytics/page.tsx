@@ -72,7 +72,9 @@ export default function AnalyticsPage() {
           aggregation: "raw",
         });
 
-        const response = await fetch(`/api/pzem-data?${params}`);
+        const response = await fetch(`/api/pzem-data?${params}`, {
+          cache: "no-store",
+        });
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
