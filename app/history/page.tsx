@@ -11,9 +11,10 @@ import {
 export default function HistoryPage() {
   const [dateRange, setDateRange] = useState<DateRange>(() => {
     const end = new Date();
-    // Use a date far in the past to fetch all available data
-    const start = new Date("2000-01-01T00:00:00Z");
-    return { start, end, label: "All Time" };
+    // Default to last 30 days to avoid production timeout issues
+    const start = new Date();
+    start.setDate(start.getDate() - 30);
+    return { start, end, label: "Last 30 Days" };
   });
 
   const [selectedRooms, setSelectedRooms] = useState<string[]>([]);
@@ -78,9 +79,18 @@ export default function HistoryPage() {
       setError(null);
 
       try {
+        // Ensure dates are in valid ISO format
+        const startDate = new Date(dateRange.start);
+        const endDate = new Date(dateRange.end);
+
+        // Validate dates
+        if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
+          throw new Error("Invalid date range");
+        }
+
         const params = new URLSearchParams({
-          startDate: dateRange.start.toISOString(),
-          endDate: dateRange.end.toISOString(),
+          startDate: startDate.toISOString(),
+          endDate: endDate.toISOString(),
           aggregation: "raw",
         });
 
@@ -98,8 +108,11 @@ export default function HistoryPage() {
           headers: { "Cache-Control": "no-cache" },
         });
 
+        console.log("[History] API Response status:", response.status);
+
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
+          console.error("[History] API Error:", errorData);
           throw new Error(
             errorData.error ||
               `HTTP ${response.status}: ${response.statusText}`,

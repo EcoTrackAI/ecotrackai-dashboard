@@ -14,11 +14,15 @@ export const revalidate = 0;
  *   - aggregation: "raw" or "hourly" (optional, default: "raw")
  */
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
+
   try {
     // Check database connection
+    console.log("[API] Checking database connection...");
     if (!(await testConnection())) {
+      console.error("[API] Database connection failed");
       return NextResponse.json(
-        { error: "Database unavailable" },
+        { error: "Database unavailable", success: false, data: [] },
         { status: 503 },
       );
     }
@@ -31,10 +35,21 @@ export async function GET(request: NextRequest) {
       | "raw"
       | "hourly";
 
+    console.log("[API] Request params:", {
+      startDate: startDateStr,
+      endDate: endDateStr,
+      roomIds: roomIdsStr,
+      aggregation,
+    });
+
     // Validate required parameters
     if (!startDateStr || !endDateStr) {
       return NextResponse.json(
-        { error: "Missing required parameters: startDate and endDate" },
+        {
+          error: "Missing required parameters: startDate and endDate",
+          success: false,
+          data: [],
+        },
         { status: 400 },
       );
     }
@@ -46,7 +61,11 @@ export async function GET(request: NextRequest) {
     // Validate date format
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
       return NextResponse.json(
-        { error: "Invalid date format. Use ISO 8601 format." },
+        {
+          error: "Invalid date format. Use ISO 8601 format.",
+          success: false,
+          data: [],
+        },
         { status: 400 },
       );
     }
@@ -59,12 +78,18 @@ export async function GET(request: NextRequest) {
           .filter((id) => id)
       : undefined;
 
+    console.log("[API] Fetching historical data...");
+
     // Fetch historical data
     const data = await getHistoricalRoomSensorData(
       startDate,
       endDate,
       roomIds,
       aggregation,
+    );
+
+    console.log(
+      `[API] Retrieved ${data.length} records in ${Date.now() - startTime}ms`,
     );
 
     // Format response
@@ -92,10 +117,19 @@ export async function GET(request: NextRequest) {
       },
     );
   } catch (error) {
-    console.error("Historical data fetch error:", error);
+    console.error("[API] Historical data fetch error:", error);
+    console.error(
+      "[API] Error stack:",
+      error instanceof Error ? error.stack : "N/A",
+    );
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to fetch data", details: message },
+      {
+        error: "Failed to fetch data",
+        details: message,
+        success: false,
+        data: [],
+      },
       { status: 500 },
     );
   }
