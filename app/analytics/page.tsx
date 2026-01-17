@@ -63,7 +63,9 @@ export default function AnalyticsPage() {
         if (response.ok) {
           const result = await response.json();
           const formattedData = result.data.map((item: any) => ({
-            time: new Date(item.timestamp).toLocaleTimeString("en-US", {
+            time: new Date(item.timestamp).toLocaleString("en-US", {
+              month: "short",
+              day: "numeric",
               hour: "2-digit",
               minute: "2-digit",
             }),
@@ -72,6 +74,8 @@ export default function AnalyticsPage() {
             voltage: item.voltage,
           }));
           setPowerHistory(formattedData);
+        } else {
+          console.error("Failed to fetch PZEM data:", response.statusText);
         }
       } catch (err) {
         console.error("Error fetching historical PZEM data:", err);
