@@ -60,25 +60,36 @@ export default function AnalyticsPage() {
 
         const response = await fetch(`/api/pzem-data?${params}`);
 
-        if (response.ok) {
-          const result = await response.json();
-          const formattedData = result.data.map((item: any) => ({
-            time: new Date(item.timestamp).toLocaleString("en-US", {
-              month: "short",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-            power: item.power,
-            energy: item.energy,
-            voltage: item.voltage,
-          }));
-          setPowerHistory(formattedData);
-        } else {
-          console.error("Failed to fetch PZEM data:", response.statusText);
+        if (!response.ok) {
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.error || `HTTP ${response.status}: ${response.statusText}`
+          );
         }
+
+        const result = await response.json();
+
+        if (!result.data || !Array.isArray(result.data)) {
+          console.warn("Invalid data format:", result);
+          setPowerHistory([]);
+          return;
+        }
+
+        const formattedData = result.data.map((item: any) => ({
+          time: new Date(item.timestamp).toLocaleString("en-US", {
+            month: "short",
+            day: "numeric",
+            hour: "2-digit",
+            minute: "2-digit",
+          }),
+          power: Number(item.power) || 0,
+          energy: Number(item.energy) || 0,
+          voltage: Number(item.voltage) || 0,
+        }));
+        setPowerHistory(formattedData);
       } catch (err) {
         console.error("Error fetching historical PZEM data:", err);
+        setPowerHistory([]);
       }
     };
 
