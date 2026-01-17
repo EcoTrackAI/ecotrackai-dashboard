@@ -37,7 +37,7 @@ export default function DebugUIPage() {
       // Test 1: Debug endpoint
       try {
         addLog("Fetching /api/debug...");
-        const res = await fetch("/api/debug");
+        const res = await fetch("/api/debug", { cache: "no-store" });
         const data = await res.json();
         setDbgDebug(data);
         addLog(
@@ -51,7 +51,7 @@ export default function DebugUIPage() {
       // Test 2: Rooms endpoint
       try {
         addLog("Fetching /api/rooms...");
-        const res = await fetch("/api/rooms");
+        const res = await fetch("/api/rooms", { cache: "no-store" });
         const data = await res.json();
         setDbgRooms(data);
         addLog(`✓ Rooms: Found ${data.count} rooms`);
@@ -73,7 +73,9 @@ export default function DebugUIPage() {
           aggregation: "hourly",
         });
 
-        const res = await fetch(`/api/pzem-data?${params}`);
+        const res = await fetch(`/api/pzem-data?${params}`, {
+          cache: "no-store",
+        });
         const data = await res.json();
         setDbgPzem(data);
         addLog(`✓ PZEM: Found ${data.count} readings`);
@@ -96,7 +98,9 @@ export default function DebugUIPage() {
           roomIds: "bedroom,living_room",
         });
 
-        const res = await fetch(`/api/historical-data?${params}`);
+        const res = await fetch(`/api/historical-data?${params}`, {
+          cache: "no-store",
+        });
         const data = await res.json();
         setDbgHistorical(data);
         addLog(`✓ Historical: Found ${data.count} readings`);

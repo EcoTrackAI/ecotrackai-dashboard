@@ -31,7 +31,14 @@ export async function GET() {
 
     return NextResponse.json(
       { success: true, count: formattedRooms.length, data: formattedRooms },
-      { status: 200 },
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      },
     );
   } catch (error) {
     console.error("Rooms fetch error:", error);
