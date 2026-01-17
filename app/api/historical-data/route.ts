@@ -78,7 +78,14 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       { success: true, count: formattedData.length, data: formattedData },
-      { status: 200 },
+      {
+        status: 200,
+        headers: {
+          "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      },
     );
   } catch (error) {
     console.error("Historical data fetch error:", error);
