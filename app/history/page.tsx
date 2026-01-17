@@ -52,11 +52,32 @@ export default function HistoryPage() {
         const response = await fetch(`/api/historical-data?${params}`);
 
         if (!response.ok) {
-          throw new Error("Failed to fetch historical data");
+          const errorData = await response.json().catch(() => ({}));
+          throw new Error(
+            errorData.error || `HTTP ${response.status}: ${response.statusText}`
+          );
         }
 
         const result = await response.json();
-        setHistoricalData(result.data || []);
+
+        if (!result.data || !Array.isArray(result.data)) {
+          console.warn("Invalid data format:", result);
+          setHistoricalData([]);
+          return;
+        }
+
+        // Transform timestamp strings to Date objects for compatibility with components
+        const transformedData = result.data.map((item: any) => ({
+          timestamp: new Date(item.timestamp),
+          roomId: item.roomId,
+          roomName: item.roomName,
+          temperature: item.temperature,
+          humidity: item.humidity,
+          light: item.light,
+          motion: item.motion,
+        }));
+
+        setHistoricalData(transformedData);
       } catch (err) {
         console.error("Error fetching historical data:", err);
         setError(err instanceof Error ? err.message : "Failed to load data");
