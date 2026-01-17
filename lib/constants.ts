@@ -1,15 +1,8 @@
-/**
- * Design System Constants
- * App config loaded from environment variables
- */
-
 export const APP_CONFIG = {
   name: process.env.NEXT_PUBLIC_APP_NAME || "EcoTrack AI",
-  description:
-    process.env.NEXT_PUBLIC_APP_DESCRIPTION || "Smart Home Energy Dashboard",
+  description: process.env.NEXT_PUBLIC_APP_DESCRIPTION || "Smart Home Energy Dashboard",
 } as const;
 
-// API Configuration
 export const API_CONFIG = {
   baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3001/api",
   endpoints: {
@@ -19,7 +12,6 @@ export const API_CONFIG = {
   },
 } as const;
 
-// Design System Color Palette
 export const COLORS = {
   background: "#F8FAFC",
   card: "#FFFFFF",
@@ -31,15 +23,11 @@ export const COLORS = {
   textMuted: "#6B7280",
 } as const;
 
-// Status colors mapped to Tailwind classes
 export const STATUS_COLORS = {
-  online: "#16A34A", // secondary
-  offline: "#DC2626", // error
-  warning: "#FB923C", // warning
+  online: "#16A34A",
+  offline: "#DC2626",
+  warning: "#FB923C",
 } as const;
-
-// Default Settings for Tariff and Notifications
-// Rooms and Appliances are now managed via Firebase
 
 export const DEFAULT_TARIFF: TariffSettings = {
   currency: "USD",
