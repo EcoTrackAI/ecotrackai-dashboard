@@ -41,9 +41,47 @@ export default function AnalyticsPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [powerHistory, setPowerHistory] = useState<
-    Array<{ time: string; power: number }>
+    Array<{ time: string; power: number; energy: number; voltage: number }>
   >([]);
 
+  // Fetch historical PZEM data from database
+  useEffect(() => {
+    const fetchHistoricalData = async () => {
+      try {
+        const end = new Date();
+        const start = new Date();
+        start.setHours(start.getHours() - 24); // Last 24 hours
+
+        const params = new URLSearchParams({
+          startDate: start.toISOString(),
+          endDate: end.toISOString(),
+          aggregation: "hourly",
+        });
+
+        const response = await fetch(`/api/pzem-data?${params}`);
+
+        if (response.ok) {
+          const result = await response.json();
+          const formattedData = result.data.map((item: any) => ({
+            time: new Date(item.timestamp).toLocaleTimeString("en-US", {
+              hour: "2-digit",
+              minute: "2-digit",
+            }),
+            power: item.power,
+            energy: item.energy,
+            voltage: item.voltage,
+          }));
+          setPowerHistory(formattedData);
+        }
+      } catch (err) {
+        console.error("Error fetching historical PZEM data:", err);
+      }
+    };
+
+    fetchHistoricalData();
+  }, []);
+
+  // Subscribe to real-time PZEM data from Firebase
   useEffect(() => {
     try {
       initializeFirebase();
@@ -54,20 +92,9 @@ export default function AnalyticsPage() {
       return;
     }
 
-    let historyBuffer: Array<{ time: string; power: number }> = [];
-
     const unsubscribe = subscribePZEMData((data) => {
       if (data) {
         setPzem(data);
-        // Keep last 24 entries for the chart
-        const time = new Date().toLocaleTimeString("en-US", {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-        historyBuffer = [...historyBuffer, { time, power: data.power }].slice(
-          -24,
-        );
-        setPowerHistory(historyBuffer);
       }
       setLoading(false);
       setError(null);
@@ -105,7 +132,7 @@ export default function AnalyticsPage() {
             Power Analytics
           </h1>
           <p className="text-gray-600">
-            Real-time power consumption metrics and statistics
+            Real-time power metrics and 24-hour historical trends
           </p>
         </div>
 
