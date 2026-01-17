@@ -5,7 +5,9 @@ export const APP_CONFIG = {
 } as const;
 
 export const API_CONFIG = {
-  baseUrl: process.env.NEXT_PUBLIC_API_BASE_URL || "http://localhost:3000/api",
+  baseUrl:
+    process.env.NEXT_PUBLIC_API_BASE_URL ||
+    (typeof window !== "undefined" ? `${window.location.origin}/api` : "/api"),
   endpoints: {
     powerUsage: "/analytics/power-usage",
     applianceEnergy: "/analytics/appliance-energy",
