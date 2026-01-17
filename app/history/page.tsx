@@ -33,7 +33,10 @@ export default function HistoryPage() {
   useEffect(() => {
     const fetchRooms = async () => {
       try {
-        const response = await fetch("/api/rooms");
+        const response = await fetch("/api/rooms", {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        });
         if (response.ok) {
           const result = await response.json();
           if (result.data && Array.isArray(result.data)) {
@@ -90,7 +93,10 @@ export default function HistoryPage() {
           params.toString(),
         );
 
-        const response = await fetch(`/api/historical-data?${params}`);
+        const response = await fetch(`/api/historical-data?${params}`, {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        });
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));

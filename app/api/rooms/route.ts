@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getRooms, testConnection } from "@/lib/database";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 /**
  * GET /api/rooms
  * Retrieve all rooms from database
@@ -31,7 +34,15 @@ export async function GET() {
 
     return NextResponse.json(
       { success: true, count: formattedRooms.length, data: formattedRooms },
-      { status: 200 },
+      {
+        status: 200,
+        headers: {
+          "Cache-Control":
+            "no-store, no-cache, must-revalidate, proxy-revalidate",
+          Pragma: "no-cache",
+          Expires: "0",
+        },
+      },
     );
   } catch (error) {
     console.error("Rooms fetch error:", error);
