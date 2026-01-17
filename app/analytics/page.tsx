@@ -48,6 +48,7 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
 export default function AnalyticsPage() {
   const [pzem, setPzem] = useState<PZEMData | null>(null);
   const [loadingHistorical, setLoadingHistorical] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [loadingFirebase, setLoadingFirebase] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [powerHistory, setPowerHistory] = useState<
@@ -139,6 +140,61 @@ export default function AnalyticsPage() {
     };
 
     fetchHistoricalData();
+    
+    // Set up polling to fetch new data every 10 seconds
+    const intervalId = setInterval(() => {
+      console.log("[Analytics] Polling for new PZEM data...");
+      setRefreshing(true);
+      // Update end date to current time for real-time data
+      const fetchLatestData = async () => {
+        try {
+          const end = new Date();
+          const start = new Date();
+          start.setDate(start.getDate() - 7);
+          
+          if (isNaN(start.getTime()) || isNaN(end.getTime())) {
+            return;
+          }
+          
+          const params = new URLSearchParams({
+            startDate: start.toISOString(),
+            endDate: end.toISOString(),
+            aggregation: "raw",
+          });
+          
+          const response = await fetch(`/api/pzem-data?${params}`, {
+            cache: "no-store",
+            headers: { "Cache-Control": "no-cache" },
+          });
+          
+          if (!response.ok) return;
+          
+          const result = await response.json();
+          if (result.data && Array.isArray(result.data) && result.data.length > 0) {
+            const formattedData = result.data.map((item: HistoricalPZEMData) => ({
+              time: new Date(item.timestamp).toLocaleString("en-IN", {
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+                timeZone: "Asia/Kolkata",
+              }),
+              power: Number(item.power) || 0,
+              energy: Number(item.energy) || 0,
+              voltage: Number(item.voltage) || 0,
+            }));
+            setPowerHistory(formattedData);
+          }
+        } catch (err) {
+          console.error("Error polling PZEM data:", err);
+        } finally {
+          setRefreshing(false);
+        }
+      };
+      fetchLatestData();
+    }, 10000);
+    
+    return () => clearInterval(intervalId);
   }, []);
 
   // Subscribe to real-time PZEM data from Firebase
@@ -218,12 +274,22 @@ export default function AnalyticsPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="mb-8">
-          <h1 className="text-3xl font-bold text-gray-900 mb-2">
-            Power Analytics
-          </h1>
-          <p className="text-gray-600">
-            Real-time power metrics and 24-hour historical trends
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-gray-900 mb-2">
+                Power Analytics
+              </h1>
+              <p className="text-gray-600">
+                Real-time power metrics from Firebase and database history (auto-refreshes every 10s)
+              </p>
+            </div>
+            {refreshing && (
+              <div className="flex items-center gap-2 text-sm text-blue-600">
+                <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                <span>Updating...</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Key Metrics */}
@@ -302,11 +368,9 @@ export default function AnalyticsPage() {
                 <div className="text-center">
                   <p className="text-gray-500 mb-2">No PZEM data available.</p>
                   <p className="text-sm text-gray-400">
-                    Make sure data has been synced from Firebase to the
-                    database.
+                    Data is stored in the database via external API calls.
                     <br />
-                    You can sync data by calling the POST /api/sync-firebase
-                    endpoint.
+                    Make sure your external service is writing data to the database.
                   </p>
                 </div>
               </div>

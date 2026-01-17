@@ -22,6 +22,7 @@ export default function HistoryPage() {
     [],
   );
   const [loading, setLoading] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [rooms, setRooms] = useState<RoomOption[]>([]);
 
@@ -75,7 +76,12 @@ export default function HistoryPage() {
       selectedRooms,
     );
     const fetchHistoricalData = async () => {
-      setLoading(true);
+      // Use refreshing state for subsequent fetches, loading only for initial
+      if (historicalData.length > 0) {
+        setRefreshing(true);
+      } else {
+        setLoading(true);
+      }
       setError(null);
 
       try {
@@ -163,10 +169,19 @@ export default function HistoryPage() {
       } finally {
         console.log("[History] Setting loading = false");
         setLoading(false);
+        setRefreshing(false);
       }
     };
 
     fetchHistoricalData();
+    
+    // Set up polling to fetch new data every 10 seconds
+    const intervalId = setInterval(() => {
+      console.log("[History] Polling for new data...");
+      fetchHistoricalData();
+    }, 10000);
+    
+    return () => clearInterval(intervalId);
   }, [dateRange, selectedRooms]);
 
   return (
@@ -174,12 +189,22 @@ export default function HistoryPage() {
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
         {/* Page Header */}
         <div className="mb-6">
-          <h1 className="text-3xl font-bold text-[#111827] mb-2">
-            Sensor History
-          </h1>
-          <p className="text-[#6B7280]">
-            View and analyze historical sensor data from the database
-          </p>
+          <div className="flex items-center justify-between">
+            <div>
+              <h1 className="text-3xl font-bold text-[#111827] mb-2">
+                Sensor History
+              </h1>
+              <p className="text-[#6B7280]">
+                View and analyze sensor data from the database (auto-refreshes every 10s)
+              </p>
+            </div>
+            {refreshing && (
+              <div className="flex items-center gap-2 text-sm text-blue-600">
+                <div className="animate-spin h-4 w-4 border-2 border-blue-600 border-t-transparent rounded-full"></div>
+                <span>Updating...</span>
+              </div>
+            )}
+          </div>
         </div>
 
         {/* Error Message */}
@@ -295,10 +320,9 @@ export default function HistoryPage() {
                   No sensor data available for the selected date range and rooms
                 </p>
                 <p className="text-sm text-gray-400">
-                  Make sure data has been synced from Firebase to the database.
+                  Data is stored in the database via external API calls.
                   <br />
-                  You can sync data by calling the POST /api/sync-firebase
-                  endpoint.
+                  Make sure your external service is writing data to the database.
                 </p>
               </div>
             )}
