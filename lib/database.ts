@@ -80,6 +80,7 @@ export async function initializeDatabase(): Promise<void> {
     // Insert default rooms if table is empty
     await pool.query(`
       INSERT INTO rooms (id, name, floor, type) VALUES
+        ('unknown', 'Unknown', 0, 'utility'),
         ('living-room', 'Living Room', 1, 'residential'),
         ('bedroom', 'Master Bedroom', 2, 'residential'),
         ('kitchen', 'Kitchen', 1, 'residential'),

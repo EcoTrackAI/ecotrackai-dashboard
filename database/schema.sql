@@ -34,5 +34,6 @@ CREATE INDEX IF NOT EXISTS idx_sensor_data_sensor_id ON sensor_data (sensor_id);
 INSERT INTO
   rooms (id, name, floor, type)
 VALUES
+  ('unknown', 'Unknown', 0, 'utility'),
   ('bedroom', 'Bedroom', 1, 'residential'),
   ('living_room', 'Living Room', 1, 'residential') ON CONFLICT (id) DO NOTHING;

@@ -28,6 +28,9 @@ export async function POST(request: NextRequest) {
       );
     }
 
+    // Ensure "unknown" room exists for sensors without a room assignment
+    await upsertRoom("unknown", "Unknown", 0, "utility");
+
     const roomsSet = new Set(
       sensors
         .map((s) => s.room)
