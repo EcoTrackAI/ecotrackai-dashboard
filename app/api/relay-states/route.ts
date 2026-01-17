@@ -19,7 +19,7 @@ export async function GET(request: NextRequest) {
     if (!(await testConnection())) {
       return NextResponse.json(
         { error: "Database unavailable" },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     const relayId = searchParams.get("relayId");
     const roomId = searchParams.get("roomId");
 
-    let relays: any[] = [];
+    let relays: RelayStateRecord[] = [];
 
     if (relayId) {
       // Get specific relay
@@ -55,14 +55,14 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       { success: true, count: formattedRelays.length, data: formattedRelays },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Relay states fetch error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       { error: "Failed to fetch relay states", details: message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

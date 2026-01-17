@@ -1,5 +1,3 @@
-import React from "react";
-
 export const ProfileCard: React.FC<ProfileCardProps> = ({
   title,
   children,

@@ -6,12 +6,12 @@ import { getFirebaseDatabase } from "./firebase";
  */
 export function subscribeRoomSensor(
   room: "bedroom" | "living_room",
-  callback: (data: RoomSensorData | null) => void
+  callback: (data: RoomSensorData | null) => void,
 ): () => void {
   const db = getFirebaseDatabase();
   const sensorRef = ref(db, `sensors/${room}`);
 
-  const unsubscribe = onValue(sensorRef, (snapshot) => {
+  onValue(sensorRef, (snapshot) => {
     const data = snapshot.exists() ? (snapshot.val() as RoomSensorData) : null;
     callback(data);
   });
@@ -23,7 +23,7 @@ export function subscribeRoomSensor(
  * Fetch room sensor data once
  */
 export async function fetchRoomSensor(
-  room: "bedroom" | "living_room"
+  room: "bedroom" | "living_room",
 ): Promise<RoomSensorData | null> {
   try {
     const db = getFirebaseDatabase();
@@ -39,12 +39,12 @@ export async function fetchRoomSensor(
  * Subscribe to real-time PZEM data updates
  */
 export function subscribePZEMData(
-  callback: (data: PZEMData | null) => void
+  callback: (data: PZEMData | null) => void,
 ): () => void {
   const db = getFirebaseDatabase();
   const pzemRef = ref(db, "home/pzem");
 
-  const unsubscribe = onValue(pzemRef, (snapshot) => {
+  onValue(pzemRef, (snapshot) => {
     const data = snapshot.exists() ? (snapshot.val() as PZEMData) : null;
     callback(data);
   });

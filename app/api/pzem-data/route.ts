@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { getHistoricalPZEMData, getLatestPZEMReading, testConnection } from "@/lib/database";
+import {
+  getHistoricalPZEMData,
+  getLatestPZEMReading,
+  testConnection,
+} from "@/lib/database";
 
 /**
  * GET /api/pzem-data
@@ -15,7 +19,7 @@ export async function GET(request: NextRequest) {
     if (!(await testConnection())) {
       return NextResponse.json(
         { error: "Database unavailable" },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
@@ -30,7 +34,7 @@ export async function GET(request: NextRequest) {
     if (!startDateStr || !endDateStr) {
       return NextResponse.json(
         { error: "Missing required parameters: startDate and endDate" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -42,7 +46,7 @@ export async function GET(request: NextRequest) {
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
       return NextResponse.json(
         { error: "Invalid date format. Use ISO 8601 format." },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -50,11 +54,8 @@ export async function GET(request: NextRequest) {
     const data = await getHistoricalPZEMData(startDate, endDate, aggregation);
 
     // Format response
-    const formattedData = data.map((row: any) => ({
-      timestamp:
-        typeof row.timestamp === "string"
-          ? row.timestamp
-          : row.timestamp.toISOString(),
+    const formattedData = data.map((row: HistoricalPZEMData) => ({
+      timestamp: row.timestamp,
       current: Number(row.current) || 0,
       voltage: Number(row.voltage) || 0,
       power: Number(row.power) || 0,
@@ -65,14 +66,14 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       { success: true, count: formattedData.length, data: formattedData },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("PZEM data fetch error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       { error: "Failed to fetch data", details: message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }
@@ -81,12 +82,12 @@ export async function GET(request: NextRequest) {
  * POST /api/pzem-data (optional)
  * Get latest PZEM reading in JSON body
  */
-export async function POST(request: NextRequest) {
+export async function POST() {
   try {
     if (!(await testConnection())) {
       return NextResponse.json(
         { error: "Database unavailable" },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
@@ -95,7 +96,7 @@ export async function POST(request: NextRequest) {
     if (!latest) {
       return NextResponse.json(
         { success: true, data: null, message: "No data available" },
-        { status: 200 }
+        { status: 200 },
       );
     }
 
@@ -114,14 +115,14 @@ export async function POST(request: NextRequest) {
 
     return NextResponse.json(
       { success: true, data: formatted },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Latest PZEM fetch error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       { error: "Failed to fetch data", details: message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

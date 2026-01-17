@@ -31,7 +31,7 @@ export async function POST(request: NextRequest) {
     if (!validateApiKey(request)) {
       return NextResponse.json(
         { success: false, error: "Unauthorized" },
-        { status: 401 }
+        { status: 401 },
       );
     }
 
@@ -39,7 +39,7 @@ export async function POST(request: NextRequest) {
     if (!(await testConnection())) {
       return NextResponse.json(
         { success: false, error: "Database unavailable" },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
@@ -65,14 +65,14 @@ export async function POST(request: NextRequest) {
         days,
         timestamp: new Date().toISOString(),
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Cleanup error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       { success: false, error: message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

@@ -1,5 +1,9 @@
 import { NextRequest, NextResponse } from "next/server";
-import { upsertRelayState, getRelayState, testConnection } from "@/lib/database";
+import {
+  upsertRelayState,
+  getRelayState,
+  testConnection,
+} from "@/lib/database";
 import { setRelayState } from "@/lib/firebase-relay";
 
 /**
@@ -17,7 +21,7 @@ export async function POST(request: NextRequest) {
     if (!(await testConnection())) {
       return NextResponse.json(
         { error: "Database unavailable" },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
@@ -30,7 +34,7 @@ export async function POST(request: NextRequest) {
         {
           error: "Missing required fields: relayId, roomId, type, state",
         },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -38,7 +42,7 @@ export async function POST(request: NextRequest) {
     if (typeof state !== "boolean") {
       return NextResponse.json(
         { error: "state must be a boolean" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -68,14 +72,14 @@ export async function POST(request: NextRequest) {
             }
           : null,
       },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Relay control error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       { error: "Failed to control relay", details: message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

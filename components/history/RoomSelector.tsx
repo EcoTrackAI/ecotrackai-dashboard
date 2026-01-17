@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useRef, useEffect } from "react";
+import { useState, useRef, useEffect } from "react";
 
 // RoomSelectorProps and RoomOption are globally available from types/globals.d.ts
 

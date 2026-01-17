@@ -16,7 +16,7 @@ export default function AutomationPage() {
       initializeFirebase();
     } catch (err) {
       console.error("Failed to initialize Firebase:", err);
-      setLoading(false);
+      setTimeout(() => setLoading(false), 0);
       return;
     }
 

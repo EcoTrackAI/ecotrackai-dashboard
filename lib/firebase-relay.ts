@@ -6,12 +6,12 @@ import { getFirebaseDatabase } from "./firebase";
  */
 export function subscribeRelayState(
   relayId: string,
-  callback: (state: boolean | null) => void
+  callback: (state: boolean | null) => void,
 ): () => void {
   const db = getFirebaseDatabase();
   const relayRef = ref(db, `relays/${relayId}/state`);
 
-  const unsubscribe = onValue(relayRef, (snapshot) => {
+  onValue(relayRef, (snapshot) => {
     const state = snapshot.exists() ? Boolean(snapshot.val()) : null;
     callback(state);
   });
@@ -23,7 +23,7 @@ export function subscribeRelayState(
  * Fetch relay state once
  */
 export async function fetchRelayState(
-  relayId: string
+  relayId: string,
 ): Promise<boolean | null> {
   try {
     const db = getFirebaseDatabase();
@@ -40,7 +40,7 @@ export async function fetchRelayState(
  */
 export async function setRelayState(
   relayId: string,
-  state: boolean
+  state: boolean,
 ): Promise<void> {
   try {
     const db = getFirebaseDatabase();

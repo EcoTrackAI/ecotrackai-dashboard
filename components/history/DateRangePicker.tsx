@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState } from "react";
+import { useState } from "react";
 
 // DateRangePickerProps, DateRange, and PresetOption are globally available from types/globals.d.ts
 

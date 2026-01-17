@@ -22,8 +22,10 @@ export default function Home() {
       initializeFirebase();
     } catch (err) {
       console.error("Failed to initialize Firebase:", err);
-      setError("Failed to connect to Firebase");
-      setLoading(false);
+      setTimeout(() => {
+        setError("Failed to connect to Firebase");
+        setLoading(false);
+      }, 0);
       return;
     }
 

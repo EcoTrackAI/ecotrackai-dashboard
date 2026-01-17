@@ -1,17 +1,17 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import { getRooms, testConnection } from "@/lib/database";
 
 /**
  * GET /api/rooms
  * Retrieve all rooms from database
  */
-export async function GET(request: NextRequest) {
+export async function GET() {
   try {
     // Check database connection
     if (!(await testConnection())) {
       return NextResponse.json(
         { error: "Database unavailable" },
-        { status: 503 }
+        { status: 503 },
       );
     }
 
@@ -31,14 +31,14 @@ export async function GET(request: NextRequest) {
 
     return NextResponse.json(
       { success: true, count: formattedRooms.length, data: formattedRooms },
-      { status: 200 }
+      { status: 200 },
     );
   } catch (error) {
     console.error("Rooms fetch error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       { error: "Failed to fetch rooms", details: message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

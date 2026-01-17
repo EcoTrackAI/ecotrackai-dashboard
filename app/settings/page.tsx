@@ -32,11 +32,30 @@ export default function SettingsPage() {
     const savedSettings = localStorage.getItem("systemSettings");
     if (savedSettings) {
       const parsed = JSON.parse(savedSettings);
-      setRooms(parsed.rooms || rooms);
-      setAppliances(parsed.appliances || appliances);
-      setTariff(parsed.tariff || DEFAULT_TARIFF);
-      setDataSampling(parsed.dataSampling || DEFAULT_DATA_SAMPLING);
-      setNotifications(parsed.notifications || DEFAULT_NOTIFICATIONS);
+      // Use setTimeout to avoid setState during render
+      setTimeout(() => {
+        if (parsed.rooms) {
+          setRooms(parsed.rooms);
+        }
+        if (parsed.appliances) {
+          setAppliances(parsed.appliances);
+        }
+        if (parsed.tariff) {
+          setTariff(parsed.tariff);
+        } else {
+          setTariff(DEFAULT_TARIFF);
+        }
+        if (parsed.dataSampling) {
+          setDataSampling(parsed.dataSampling);
+        } else {
+          setDataSampling(DEFAULT_DATA_SAMPLING);
+        }
+        if (parsed.notifications) {
+          setNotifications(parsed.notifications);
+        } else {
+          setNotifications(DEFAULT_NOTIFICATIONS);
+        }
+      }, 0);
     }
   }, []);
 
@@ -781,8 +800,8 @@ export default function SettingsPage() {
                         step="100"
                       />
                       <p className="text-xs text-[#6B7280] mt-1">
-                        You'll be alerted when total power usage exceeds this
-                        value
+                        You&apos;ll be alerted when total power usage exceeds
+                        this value
                       </p>
                     </div>
                   )}

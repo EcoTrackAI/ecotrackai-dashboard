@@ -1,8 +1,67 @@
 "use client";
 
-import React, { useState, useMemo } from "react";
+import { useState, useMemo } from "react";
 
 // DataTableProps and all other types are globally available from types/globals.d.ts
+
+/**
+ * SortIcon Component - Displays sorting indicator
+ */
+const SortIcon: React.FC<{
+  column: keyof HistoricalDataPoint;
+  sortConfig: TableSortConfig;
+}> = ({ column, sortConfig }) => {
+  if (sortConfig.key !== column) {
+    return (
+      <svg
+        className="w-4 h-4 text-gray-400"
+        fill="none"
+        stroke="currentColor"
+        viewBox="0 0 24 24"
+        aria-hidden="true"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={2}
+          d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
+        />
+      </svg>
+    );
+  }
+
+  return sortConfig.direction === "asc" ? (
+    <svg
+      className="w-4 h-4 text-[#6366F1]"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M5 15l7-7 7 7"
+      />
+    </svg>
+  ) : (
+    <svg
+      className="w-4 h-4 text-[#6366F1]"
+      fill="none"
+      stroke="currentColor"
+      viewBox="0 0 24 24"
+      aria-hidden="true"
+    >
+      <path
+        strokeLinecap="round"
+        strokeLinejoin="round"
+        strokeWidth={2}
+        d="M19 9l-7 7-7-7"
+      />
+    </svg>
+  );
+};
 
 /**
  * DataTable Component
@@ -21,6 +80,8 @@ export const DataTable: React.FC<DataTableProps> = ({
   const [currentPage, setCurrentPage] = useState(1);
   const itemsPerPage = 50;
 
+  const isDate = (val: unknown): val is Date => val instanceof Date;
+
   // Sort data
   const sortedData = useMemo(() => {
     const sorted = [...data];
@@ -30,16 +91,31 @@ export const DataTable: React.FC<DataTableProps> = ({
 
       if (aValue === undefined || bValue === undefined) return 0;
 
+      // Date sorting
+      if (isDate(aValue) && isDate(bValue)) {
+        const diff = aValue.getTime() - bValue.getTime();
+        return sortConfig.direction === "asc" ? diff : -diff;
+      }
+
+      // String sorting
       if (typeof aValue === "string" && typeof bValue === "string") {
         return sortConfig.direction === "asc"
           ? aValue.localeCompare(bValue)
           : bValue.localeCompare(aValue);
       }
 
+      // Number sorting
       if (typeof aValue === "number" && typeof bValue === "number") {
         return sortConfig.direction === "asc"
           ? aValue - bValue
           : bValue - aValue;
+      }
+
+      // Boolean sorting
+      if (typeof aValue === "boolean" && typeof bValue === "boolean") {
+        return sortConfig.direction === "asc"
+          ? Number(aValue) - Number(bValue)
+          : Number(bValue) - Number(aValue);
       }
 
       return 0;
@@ -68,8 +144,8 @@ export const DataTable: React.FC<DataTableProps> = ({
       (point) => {
         const date = new Date(point.timestamp);
         return {
-          Date: date.toLocaleDateString("en-US"),
-          Time: date.toLocaleTimeString("en-US"),
+          Date: date.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }),
+          Time: date.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata" }),
           Room: point.roomName,
           ...(point.temperature !== undefined && {
             "Temperature (°C)": point.temperature,
@@ -105,61 +181,6 @@ export const DataTable: React.FC<DataTableProps> = ({
     document.body.appendChild(link);
     link.click();
     document.body.removeChild(link);
-  };
-
-  const SortIcon: React.FC<{ column: keyof HistoricalDataPoint }> = ({
-    column,
-  }) => {
-    if (sortConfig.key !== column) {
-      return (
-        <svg
-          className="w-4 h-4 text-gray-400"
-          fill="none"
-          stroke="currentColor"
-          viewBox="0 0 24 24"
-          aria-hidden="true"
-        >
-          <path
-            strokeLinecap="round"
-            strokeLinejoin="round"
-            strokeWidth={2}
-            d="M7 16V4m0 0L3 8m4-4l4 4m6 0v12m0 0l4-4m-4 4l-4-4"
-          />
-        </svg>
-      );
-    }
-
-    return sortConfig.direction === "asc" ? (
-      <svg
-        className="w-4 h-4 text-[#6366F1]"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M5 15l7-7 7 7"
-        />
-      </svg>
-    ) : (
-      <svg
-        className="w-4 h-4 text-[#6366F1]"
-        fill="none"
-        stroke="currentColor"
-        viewBox="0 0 24 24"
-        aria-hidden="true"
-      >
-        <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
-          strokeWidth={2}
-          d="M19 9l-7 7-7-7"
-        />
-      </svg>
-    );
   };
 
   if (isLoading) {
@@ -256,7 +277,7 @@ export const DataTable: React.FC<DataTableProps> = ({
               >
                 <div className="flex items-center gap-1">
                   <span>Timestamp</span>
-                  <SortIcon column="timestamp" />
+                  <SortIcon column="timestamp" sortConfig={sortConfig} />
                 </div>
               </th>
               <th
@@ -265,7 +286,7 @@ export const DataTable: React.FC<DataTableProps> = ({
               >
                 <div className="flex items-center gap-1">
                   <span>Room</span>
-                  <SortIcon column="roomName" />
+                  <SortIcon column="roomName" sortConfig={sortConfig} />
                 </div>
               </th>
               <th
@@ -274,7 +295,7 @@ export const DataTable: React.FC<DataTableProps> = ({
               >
                 <div className="flex items-center justify-end gap-1">
                   <span>Temp (°C)</span>
-                  <SortIcon column="temperature" />
+                  <SortIcon column="temperature" sortConfig={sortConfig} />
                 </div>
               </th>
               <th
@@ -283,7 +304,7 @@ export const DataTable: React.FC<DataTableProps> = ({
               >
                 <div className="flex items-center justify-end gap-1">
                   <span>Humidity (%)</span>
-                  <SortIcon column="humidity" />
+                  <SortIcon column="humidity" sortConfig={sortConfig} />
                 </div>
               </th>
               <th
@@ -292,7 +313,7 @@ export const DataTable: React.FC<DataTableProps> = ({
               >
                 <div className="flex items-center justify-end gap-1">
                   <span>Lighting (lux)</span>
-                  <SortIcon column="light" />
+                  <SortIcon column="light" sortConfig={sortConfig} />
                 </div>
               </th>
               <th
@@ -301,7 +322,7 @@ export const DataTable: React.FC<DataTableProps> = ({
               >
                 <div className="flex items-center justify-end gap-1">
                   <span>Motion</span>
-                  <SortIcon column="motion" />
+                  <SortIcon column="motion" sortConfig={sortConfig} />
                 </div>
               </th>
             </tr>
@@ -313,12 +334,13 @@ export const DataTable: React.FC<DataTableProps> = ({
                 className="hover:bg-gray-50 transition-colors"
               >
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                  {new Date(row.timestamp).toLocaleString("en-US", {
+                  {new Date(row.timestamp).toLocaleString("en-IN", {
                     month: "short",
                     day: "numeric",
                     year: "numeric",
                     hour: "2-digit",
                     minute: "2-digit",
+                    timeZone: "Asia/Kolkata",
                   })}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">

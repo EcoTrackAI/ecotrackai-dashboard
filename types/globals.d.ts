@@ -61,7 +61,7 @@ declare global {
     | "power"
     | "system";
   type ChartType = "line" | "area" | "bar";
-  type MetricType = "temperature" | "humidity" | "lighting" | "motion";
+  type MetricType = "temperature" | "humidity" | "light" | "motion";
 
   interface SystemInfo {
     connectedDevices: number;
@@ -408,7 +408,7 @@ declare global {
   // ============================================================================
 
   interface RealtimeLineChartProps {
-    data: Record<string, any>[];
+    data: Record<string, string | number>[];
     dataKey: string;
     color?: string;
     unit?: string;

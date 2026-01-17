@@ -1,16 +1,13 @@
 "use client";
 
-import React, { useEffect, useState } from "react";
+import { useEffect, useState } from "react";
 import {
   LineChart,
   Line,
-  BarChart,
-  Bar,
   XAxis,
   YAxis,
   CartesianGrid,
   Tooltip,
-  Legend,
   ResponsiveContainer,
 } from "recharts";
 import { TrendingUp, Zap, Gauge } from "lucide-react";
@@ -19,12 +16,24 @@ import { subscribePZEMData } from "@/lib/firebase-sensors";
 import { initializeFirebase } from "@/lib/firebase";
 import { MetricCard } from "@/components/metrics";
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+interface TooltipPayload {
+  color: string;
+  name: string;
+  value: number | string;
+}
+
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: TooltipPayload[];
+  label?: string;
+}
+
+const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
   if (!active || !payload || !payload.length) return null;
   return (
     <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-sm">
       <p className="text-sm font-medium text-gray-900 mb-1">{label}</p>
-      {payload.map((entry: any, index: number) => (
+      {payload.map((entry, index: number) => (
         <p key={index} className="text-sm" style={{ color: entry.color }}>
           {entry.name}:{" "}
           {typeof entry.value === "number"
@@ -38,7 +47,8 @@ const CustomTooltip = ({ active, payload, label }: any) => {
 
 export default function AnalyticsPage() {
   const [pzem, setPzem] = useState<PZEMData | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loadingHistorical, setLoadingHistorical] = useState(true);
+  const [loadingFirebase, setLoadingFirebase] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [powerHistory, setPowerHistory] = useState<
     Array<{ time: string; power: number; energy: number; voltage: number }>
@@ -46,50 +56,70 @@ export default function AnalyticsPage() {
 
   // Fetch historical PZEM data from database
   useEffect(() => {
+    console.log(
+      "[Analytics] Component mounted, starting historical data fetch",
+    );
     const fetchHistoricalData = async () => {
       try {
         const end = new Date();
-        const start = new Date();
-        start.setHours(start.getHours() - 24); // Last 24 hours
+        const start = new Date(0); // fetch all available history
+        console.log("[Analytics] Fetching PZEM data from", start, "to", end);
 
         const params = new URLSearchParams({
           startDate: start.toISOString(),
           endDate: end.toISOString(),
-          aggregation: "hourly",
+          aggregation: "raw",
         });
 
         const response = await fetch(`/api/pzem-data?${params}`);
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
-          throw new Error(
-            errorData.error || `HTTP ${response.status}: ${response.statusText}`
-          );
-        }
-
-        const result = await response.json();
-
-        if (!result.data || !Array.isArray(result.data)) {
-          console.warn("Invalid data format:", result);
+          console.error("API Error:", errorData.error || response.status);
           setPowerHistory([]);
           return;
         }
 
-        const formattedData = result.data.map((item: any) => ({
-          time: new Date(item.timestamp).toLocaleString("en-US", {
+        const result = await response.json();
+        console.log("PZEM API Response:", result);
+
+        if (!result.data || !Array.isArray(result.data)) {
+          console.warn("Invalid data format from API:", result);
+          setPowerHistory([]);
+          return;
+        }
+
+        if (result.data.length === 0) {
+          console.log("No PZEM data available in database");
+          setPowerHistory([]);
+          return;
+        }
+
+        const formattedData = result.data.map((item: HistoricalPZEMData) => ({
+          time: new Date(item.timestamp).toLocaleString("en-IN", {
             month: "short",
             day: "numeric",
             hour: "2-digit",
             minute: "2-digit",
+            timeZone: "Asia/Kolkata",
           }),
           power: Number(item.power) || 0,
           energy: Number(item.energy) || 0,
           voltage: Number(item.voltage) || 0,
         }));
+        console.log("Formatted PZEM data:", formattedData);
         setPowerHistory(formattedData);
+        console.log(
+          "[Analytics] powerHistory state updated with",
+          formattedData.length,
+          "points",
+        );
       } catch (err) {
         console.error("Error fetching historical PZEM data:", err);
         setPowerHistory([]);
+      } finally {
+        console.log("[Analytics] Setting loadingHistorical = false");
+        setLoadingHistorical(false);
       }
     };
 
@@ -98,27 +128,57 @@ export default function AnalyticsPage() {
 
   // Subscribe to real-time PZEM data from Firebase
   useEffect(() => {
+    console.log("[Analytics] Starting Firebase subscription");
+
     try {
       initializeFirebase();
+      console.log("[Analytics] Firebase initialized successfully");
     } catch (err) {
       console.error("Failed to initialize Firebase:", err);
-      setError("Failed to connect to Firebase");
-      setLoading(false);
+      setError("Firebase not available - showing database data");
+      console.log("[Analytics] Setting loadingFirebase = false (init failed)");
+      setLoadingFirebase(false);
       return;
     }
 
+    // Set a timeout to stop waiting for Firebase after 3 seconds
+    const firebaseTimeout = setTimeout(() => {
+      console.log(
+        "Firebase subscription timeout - proceeding with database data",
+      );
+      setLoadingFirebase(false);
+    }, 3000);
+
     const unsubscribe = subscribePZEMData((data) => {
+      clearTimeout(firebaseTimeout);
       if (data) {
+        console.log("Received Firebase data:", data);
         setPzem(data);
       }
-      setLoading(false);
+      setLoadingFirebase(false);
       setError(null);
     });
 
-    return () => unsubscribe();
+    return () => {
+      clearTimeout(firebaseTimeout);
+      unsubscribe();
+    };
   }, []);
 
+  const loading = loadingHistorical || loadingFirebase;
+  console.log(
+    "[Analytics] Render - loadingHistorical:",
+    loadingHistorical,
+    "loadingFirebase:",
+    loadingFirebase,
+    "loading:",
+    loading,
+    "powerHistory.length:",
+    powerHistory.length,
+  );
+
   if (loading) {
+    console.log("[Analytics] Showing loading screen");
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
         <p className="text-gray-500">Loading analytics data...</p>
@@ -178,7 +238,7 @@ export default function AnalyticsPage() {
         {/* Charts */}
         <div className="space-y-6">
           {/* Power Usage History */}
-          {powerHistory.length > 0 && (
+          {powerHistory.length > 0 ? (
             <div className="bg-white rounded-lg border border-gray-200 p-6">
               <h2 className="text-lg font-semibold text-gray-900 mb-4">
                 Power Usage History
@@ -217,6 +277,18 @@ export default function AnalyticsPage() {
                   />
                 </LineChart>
               </ResponsiveContainer>
+            </div>
+          ) : (
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h2 className="text-lg font-semibold text-gray-900 mb-4">
+                Power Usage History
+              </h2>
+              <div className="h-75 flex items-center justify-center bg-gray-50 rounded">
+                <p className="text-gray-500">
+                  No data available. Make sure data has been synced to the
+                  database.
+                </p>
+              </div>
             </div>
           )}
 

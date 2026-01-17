@@ -1,6 +1,5 @@
 "use client";
 
-import React from "react";
 import {
   LineChart,
   Line,
@@ -13,10 +12,23 @@ import {
 
 // RealtimeLineChartProps is globally available from types/globals.d.ts
 
+interface CustomTooltipProps {
+  active?: boolean;
+  payload?: Array<{
+    value: number;
+    payload: { timestamp: string };
+  }>;
+  unit?: string;
+}
+
 /**
  * Custom tooltip component for the chart
  */
-const CustomTooltip: React.FC<any> = ({ active, payload, unit = "" }) => {
+const CustomTooltip: React.FC<CustomTooltipProps> = ({
+  active,
+  payload,
+  unit = "",
+}) => {
   if (!active || !payload || payload.length === 0) {
     return null;
   }

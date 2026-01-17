@@ -1,6 +1,6 @@
 "use client";
 
-import React, { useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import {
   DateRangePicker,
   RoomSelector,
@@ -11,29 +11,65 @@ import {
 export default function HistoryPage() {
   const [dateRange, setDateRange] = useState<DateRange>(() => {
     const end = new Date();
-    const start = new Date();
-    start.setDate(start.getDate() - 7);
+    const start = new Date(0);
     start.setHours(0, 0, 0, 0);
-    return { start, end, label: "Last 7 Days" };
+    return { start, end, label: "All Time" };
   });
 
-  const [selectedRooms, setSelectedRooms] = useState<string[]>([
-    "bedroom",
-    "living_room",
-  ]);
+  const [selectedRooms, setSelectedRooms] = useState<string[]>([]);
   const [historicalData, setHistoricalData] = useState<HistoricalDataPoint[]>(
     [],
   );
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [rooms, setRooms] = useState<RoomOption[]>([]);
 
   const [chartType, setChartType] = useState<ChartType>("line");
   const [metric, setMetric] = useState<
     "temperature" | "humidity" | "light" | "motion"
   >("temperature");
 
+  // Fetch rooms from database
+  useEffect(() => {
+    const fetchRooms = async () => {
+      try {
+        const response = await fetch("/api/rooms");
+        if (response.ok) {
+          const result = await response.json();
+          if (result.data && Array.isArray(result.data)) {
+            const roomOptions = result.data.map((r: DBRoom) => ({
+              id: r.id,
+              name: r.name,
+            }));
+            setRooms(roomOptions);
+            // Select all rooms by default
+            if (roomOptions.length > 0) {
+              setSelectedRooms(roomOptions.map((r: RoomOption) => r.id));
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error fetching rooms:", err);
+        // Fallback to hardcoded rooms if API fails
+        setRooms([
+          { id: "bedroom", name: "Bedroom" },
+          { id: "living_room", name: "Living Room" },
+        ]);
+        setSelectedRooms(["bedroom", "living_room"]);
+      }
+    };
+
+    fetchRooms();
+  }, []);
+
   // Fetch historical data from database whenever date range or rooms change
   useEffect(() => {
+    console.log(
+      "[History] Fetching data - dateRange:",
+      dateRange,
+      "selectedRooms:",
+      selectedRooms,
+    );
     const fetchHistoricalData = async () => {
       setLoading(true);
       setError(null);
@@ -42,23 +78,30 @@ export default function HistoryPage() {
         const params = new URLSearchParams({
           startDate: dateRange.start.toISOString(),
           endDate: dateRange.end.toISOString(),
-          aggregation: "hourly",
+          aggregation: "raw",
         });
 
         if (selectedRooms.length > 0) {
           params.append("roomIds", selectedRooms.join(","));
         }
 
+        console.log(
+          "[History] Fetching historical data with params:",
+          params.toString(),
+        );
+
         const response = await fetch(`/api/historical-data?${params}`);
 
         if (!response.ok) {
           const errorData = await response.json().catch(() => ({}));
           throw new Error(
-            errorData.error || `HTTP ${response.status}: ${response.statusText}`
+            errorData.error ||
+              `HTTP ${response.status}: ${response.statusText}`,
           );
         }
 
         const result = await response.json();
+        console.log("Historical data API response:", result);
 
         if (!result.data || !Array.isArray(result.data)) {
           console.warn("Invalid data format:", result);
@@ -66,34 +109,46 @@ export default function HistoryPage() {
           return;
         }
 
-        // Transform timestamp strings to Date objects for compatibility with components
-        const transformedData = result.data.map((item: any) => ({
-          timestamp: new Date(item.timestamp),
-          roomId: item.roomId,
-          roomName: item.roomName,
-          temperature: item.temperature,
-          humidity: item.humidity,
-          light: item.light,
-          motion: item.motion,
-        }));
+        if (result.data.length === 0) {
+          console.log("No historical data available for selected filters");
+          setHistoricalData([]);
+          return;
+        }
 
+        // Transform timestamp strings to Date objects for compatibility with components
+        const transformedData = result.data.map(
+          (item: HistoricalDataPoint) => ({
+            timestamp: new Date(item.timestamp),
+            roomId: item.roomId,
+            roomName: item.roomName,
+            temperature: item.temperature,
+            humidity: item.humidity,
+            light: item.light,
+            motion: item.motion,
+          }),
+        );
+
+        console.log("Transformed data:", transformedData);
         setHistoricalData(transformedData);
+        console.log(
+          "[History] historicalData state updated with",
+          transformedData.length,
+          "points",
+        );
       } catch (err) {
         console.error("Error fetching historical data:", err);
-        setError(err instanceof Error ? err.message : "Failed to load data");
+        const errorMsg =
+          err instanceof Error ? err.message : "Failed to load data";
+        setError(errorMsg);
         setHistoricalData([]);
       } finally {
+        console.log("[History] Setting loading = false");
         setLoading(false);
       }
     };
 
     fetchHistoricalData();
   }, [dateRange, selectedRooms]);
-
-  const rooms: RoomOption[] = [
-    { id: "bedroom", name: "Bedroom" },
-    { id: "living_room", name: "Living Room" },
-  ];
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
