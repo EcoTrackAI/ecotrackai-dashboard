@@ -8,20 +8,18 @@
 import React, { useState, useEffect } from "react";
 import { useRelayControl } from "@/lib/hooks/useRelayControl";
 
-interface LightControlCardProps {
-  appliance: Appliance;
-  onStatusChange: (id: string, status: ApplianceStatus) => void;
-  onModeChange: (id: string, mode: ControlMode) => void;
-}
-
-export default function LightControlCard({
+export const LightControlCard: React.FC<LightControlCardProps> = ({
   appliance,
   onStatusChange,
   onModeChange,
-}: LightControlCardProps) {
+}) => {
   const roomId = appliance.roomId || "unknown";
-  const relayId = `relay${appliance.id}`;
-  const { state: firebaseRelayState, setRelayState } = useRelayControl(roomId, relayId);
+  // Use just the type name for relay, not appliance.id
+  const relayId = "light";
+  const { state: firebaseRelayState, setRelayState } = useRelayControl(
+    roomId,
+    relayId,
+  );
   const [isControlling, setIsControlling] = useState(false);
 
   // Sync Firebase state with UI
@@ -49,11 +47,15 @@ export default function LightControlCard({
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <span className={`text-3xl ${appliance.status === "on" ? "text-yellow-500" : "text-gray-500"}`}>
+          <span
+            className={`text-3xl ${appliance.status === "on" ? "text-yellow-500" : "text-gray-500"}`}
+          >
             💡
           </span>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">{appliance.name}</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              {appliance.name}
+            </h3>
             <p className="text-sm text-gray-500">{appliance.room}</p>
           </div>
         </div>
@@ -105,12 +107,22 @@ export default function LightControlCard({
         <span className="text-sm font-medium text-gray-700">Power</span>
         <button
           onClick={handleToggle}
-          disabled={isControlling || appliance.controlMode === "auto" || !appliance.isOnline}
+          disabled={
+            isControlling ||
+            appliance.controlMode === "auto" ||
+            !appliance.isOnline
+          }
           className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-yellow-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
             appliance.status === "on" ? "bg-yellow-500" : "bg-gray-300"
           }`}
           aria-label={`Toggle ${appliance.name}`}
-          title={!appliance.isOnline ? "Device is offline" : appliance.controlMode === "auto" ? "Controlled by ML model in Auto mode" : ""}
+          title={
+            !appliance.isOnline
+              ? "Device is offline"
+              : appliance.controlMode === "auto"
+                ? "Controlled by ML model in Auto mode"
+                : ""
+          }
         >
           <span
             className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
@@ -121,4 +133,6 @@ export default function LightControlCard({
       </div>
     </div>
   );
-}
+};
+
+export default LightControlCard;

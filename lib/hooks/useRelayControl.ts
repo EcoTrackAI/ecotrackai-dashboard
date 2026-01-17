@@ -31,7 +31,9 @@ export function useRelayControl(roomId: string, relayId: string) {
     if (!roomId || !relayId) return;
 
     const db = getFirebaseDatabase();
-    const relayPath = `rooms/${roomId}/relays/${relayId}/state`;
+    // Construct relay ID from room and relayId (e.g., bedroom_light)
+    const fullRelayId = `${roomId}_${relayId}`;
+    const relayPath = `relays/${fullRelayId}/state`;
     const relayRef = ref(db, relayPath);
 
     // Subscribe to real-time updates
@@ -50,10 +52,12 @@ export function useRelayControl(roomId: string, relayId: string) {
   const setRelayStateValue = useCallback(
     async (newState: boolean) => {
       const db = getFirebaseDatabase();
-      const relayPath = `rooms/${roomId}/relays/${relayId}/state`;
+      // Construct relay ID from room and relayId (e.g., bedroom_light)
+      const fullRelayId = `${roomId}_${relayId}`;
+      const relayPath = `relays/${fullRelayId}/state`;
       await set(ref(db, relayPath), newState);
     },
-    [roomId, relayId]
+    [roomId, relayId],
   );
 
   return {

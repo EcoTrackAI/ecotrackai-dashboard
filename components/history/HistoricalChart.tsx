@@ -95,9 +95,11 @@ export const HistoricalChart: React.FC<HistoricalChartProps> = ({
     if (!compareRooms) {
       // Single metric view - aggregate by timestamp
       const aggregated = data.reduce((acc, point) => {
+        const key = metric as keyof HistoricalDataPoint;
         const existing = acc.find((p) => p.timestamp === point.timestamp);
         if (existing) {
-          existing[metric] = (existing[metric] || 0) + (point[metric] || 0);
+          existing[metric] =
+            (existing[metric] || 0) + ((point[key] as number) || 0);
         } else {
           acc.push({
             timestamp: new Date(point.timestamp).toLocaleString("en-US", {
@@ -106,7 +108,7 @@ export const HistoricalChart: React.FC<HistoricalChartProps> = ({
               hour: "2-digit",
               minute: "2-digit",
             }),
-            [metric]: point[metric] || 0,
+            [metric]: (point[key] as number) || 0,
           });
         }
         return acc;
@@ -115,6 +117,7 @@ export const HistoricalChart: React.FC<HistoricalChartProps> = ({
     } else {
       // Multi-room comparison
       const grouped: Record<string, any> = {};
+      const key = metric as keyof HistoricalDataPoint;
 
       data.forEach((point) => {
         const timeKey = new Date(point.timestamp).toLocaleString("en-US", {
@@ -129,7 +132,8 @@ export const HistoricalChart: React.FC<HistoricalChartProps> = ({
         }
 
         grouped[timeKey][point.roomName] =
-          (grouped[timeKey][point.roomName] || 0) + (point[metric] || 0);
+          (grouped[timeKey][point.roomName] || 0) +
+          ((point[key] as number) || 0);
       });
 
       return Object.values(grouped);

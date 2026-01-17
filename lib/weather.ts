@@ -11,7 +11,7 @@
 export async function fetchWeather(
   apiKey: string,
   lat: number,
-  lon: number
+  lon: number,
 ): Promise<WeatherData | null> {
   try {
     const url = `https://api.openweathermap.org/data/2.5/weather?lat=${lat}&lon=${lon}&appid=${apiKey}&units=metric`;

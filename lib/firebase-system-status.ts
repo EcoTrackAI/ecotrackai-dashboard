@@ -2,7 +2,7 @@ import { ref, onValue, set } from "firebase/database";
 import { getFirebaseDatabase } from "./firebase";
 
 export function subscribeSystemStatus(
-  callback: SystemStatusCallback
+  callback: SystemStatusCallback,
 ): () => void {
   try {
     const database = getFirebaseDatabase();
@@ -18,7 +18,7 @@ export function subscribeSystemStatus(
       (error) => {
         console.error("System status error:", error);
         callback("offline");
-      }
+      },
     );
   } catch (error) {
     console.error("Subscribe error:", error);

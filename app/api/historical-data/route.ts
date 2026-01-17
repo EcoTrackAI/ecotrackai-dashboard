@@ -16,7 +16,7 @@ export async function GET(request: NextRequest) {
     if (!(await testConnection())) {
       return NextResponse.json(
         { error: "Database connection failed" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -27,7 +27,7 @@ export async function GET(request: NextRequest) {
     if (!startDateStr || !endDateStr) {
       return NextResponse.json(
         { error: "Missing required parameters: startDate and endDate" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -37,7 +37,7 @@ export async function GET(request: NextRequest) {
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
       return NextResponse.json(
         { error: "Invalid date format" },
-        { status: 400 }
+        { status: 400 },
       );
     }
 
@@ -53,22 +53,20 @@ export async function GET(request: NextRequest) {
       startDate,
       endDate,
       roomIds,
-      aggregation
+      aggregation,
     );
 
-    const transformedData = data.map((record) => ({
+    const transformedData: HistoricalDataPoint[] = data.map((record: any) => ({
       timestamp:
         typeof record.timestamp === "string"
           ? record.timestamp
           : (record.timestamp as Date).toISOString(),
       roomId: record.roomId,
       roomName: record.roomName,
-      energy: Number(record.energy) || 0,
-      power: Number(record.power) || 0,
-      temperature: Number(record.temperature) || 0,
-      humidity: Number(record.humidity) || 0,
-      lighting: Number(record.lighting) || 0,
-      motion: Number(record.motion) || 0,
+      temperature: Number(record.temperature) || undefined,
+      humidity: Number(record.humidity) || undefined,
+      light: Number(record.light) || undefined,
+      motion: Boolean(record.motion),
     }));
 
     return NextResponse.json({
@@ -84,7 +82,7 @@ export async function GET(request: NextRequest) {
     console.error("Historical data error:", message);
     return NextResponse.json(
       { error: "Failed to fetch historical data", details: message },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

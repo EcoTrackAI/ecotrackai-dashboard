@@ -34,40 +34,5 @@ CREATE INDEX IF NOT EXISTS idx_sensor_data_sensor_id ON sensor_data (sensor_id);
 INSERT INTO
   rooms (id, name, floor, type)
 VALUES
-  ('living-room', 'Living Room', 1, 'residential'),
-  (
-    'bedroom-master',
-    'Master Bedroom',
-    2,
-    'residential'
-  ),
-  (
-    'bedroom-guest',
-    'Guest Bedroom',
-    2,
-    'residential'
-  ),
-  ('bedroom-1', 'Bedroom 1', 1, 'residential'),
-  ('bedroom-2', 'Bedroom 2', 2, 'residential'),
-  ('bedroom-3', 'Bedroom 3', 3, 'residential'),
-  ('kitchen', 'Kitchen', 1, 'residential'),
-  ('bathroom-1', 'Bathroom 1', 1, 'residential'),
-  ('bathroom-2', 'Bathroom 2', 2, 'residential'),
-  ('bathroom-3', 'Bathroom 3', 3, 'residential'),
-  ('dining-room', 'Dining Room', 1, 'residential'),
-  ('home-office', 'Home Office', 2, 'residential'),
-  ('garage', 'Garage', 0, 'utility'),
-  ('laundry', 'Laundry Room', 1, 'utility'),
-  ('storage', 'Storage Room', 1, 'utility'),
-  ('balcony-1', 'Balcony 1', 1, 'residential'),
-  ('balcony-2', 'Balcony 2', 2, 'residential'),
-  ('balcony-3', 'Balcony 3', 3, 'residential'),
-  ('basement', 'Basement', 0, 'utility'),
-  ('attic', 'Attic', 3, 'utility'),
-  ('playroom', 'Playroom', 1, 'residential'),
-  ('gym', 'Gym', 2, 'residential'),
-  ('library', 'Library', 2, 'residential'),
-  ('mezzanine', 'Mezzanine', 2, 'residential'),
-  ('other-1', 'Other Room 1', 1, 'other'),
-  ('other-2', 'Other Room 2', 2, 'other'),
-  ('other-3', 'Other Room 3', 3, 'other') ON CONFLICT (id) DO NOTHING;
+  ('bedroom', 'Bedroom', 1, 'residential'),
+  ('living_room', 'Living Room', 1, 'residential') ON CONFLICT (id) DO NOTHING;

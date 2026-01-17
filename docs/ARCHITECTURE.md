@@ -187,15 +187,15 @@ app/
 
 **Location**: `/components`
 
-| Category       | Components                                       | Purpose                   |
-| -------------- | ------------------------------------------------ | ------------------------- |
-| **Metrics**    | `MetricCard`                                     | Display KPIs with trends  |
-| **Sensors**    | `LiveSensorCard`                                 | Real-time sensor readings |
-| **Rooms**      | `RoomStatusCard`                                 | Room occupancy & power    |
-| **Charts**     | `RealtimeLineChart`, `HistoricalChart`           | Data visualization        |
-| **Automation** | `ApplianceControlCard`, `AutomationControlPanel` | Device control            |
-| **Navigation** | `Sidebar`, `Navigation`, `AppShell`              | App navigation            |
-| **Providers**  | `DataSyncProvider`                               | Context & subscriptions   |
+| Category       | Components                                     | Purpose                   |
+| -------------- | ---------------------------------------------- | ------------------------- |
+| **Metrics**    | `MetricCard`                                   | Display KPIs with values  |
+| **Sensors**    | `LiveSensorCard`                               | Real-time sensor readings |
+| **Rooms**      | `RoomStatusCard`                               | Room sensor data display  |
+| **Charts**     | `RealtimeLineChart`, `HistoricalChart`         | Data visualization        |
+| **Automation** | `ApplianceControlCard`, `LightControlCard`     | Device control & relay    |
+| **History**    | `DateRangePicker`, `RoomSelector`, `DataTable` | Historical data tools     |
+| **Navigation** | `Sidebar`, `Navigation`, `AppShell`            | App navigation & layout   |
 
 #### 3. API Layer (Serverless Functions)
 
@@ -299,28 +299,40 @@ REFRESH MATERIALIZED VIEW sensor_data_hourly;
 
 ```json
 {
-  "sensors": {
-    "living-room": {
-      "temperature": 22.5,
-      "humidity": 65,
-      "power": 850,
-      "energy": 12.5,
-      "lighting": 80,
-      "motion": 1,
-      "lastUpdate": "2025-12-26T10:30:00.000Z"
-    },
-    "bedroom": {
-      /* ... */
-    },
-    "kitchen": {
-      /* ... */
+  "home": {
+    "pzem": {
+      "current": 12.5,
+      "energy": 245.8,
+      "frequency": 50,
+      "pf": 0.98,
+      "power": 1250,
+      "updatedAt": "2025-12-26T10:30:00.000Z",
+      "voltage": 230
     }
   },
-  "system-status": {
-    "online": true,
-    "lastSync": "2025-12-26T10:29:00.000Z",
-    "activeDevices": 15,
-    "errorCount": 0
+  "relays": {
+    "bedroom_light": {
+      "state": true
+    },
+    "living_room_light": {
+      "state": false
+    }
+  },
+  "sensors": {
+    "bedroom": {
+      "humidity": 65,
+      "light": 450,
+      "motion": true,
+      "temperature": 22.5,
+      "updatedAt": "2025-12-26T10:30:00.000Z"
+    },
+    "living_room": {
+      "humidity": 55,
+      "light": 800,
+      "motion": false,
+      "temperature": 23.0,
+      "updatedAt": "2025-12-26T10:29:00.000Z"
+    }
   }
 }
 ```

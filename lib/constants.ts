@@ -38,68 +38,8 @@ export const STATUS_COLORS = {
   warning: "#FB923C", // warning
 } as const;
 
-// Default Settings
-export const DEFAULT_ROOMS: Room[] = [
-  { id: "living-room", name: "Living Room", isEnabled: true },
-  { id: "kitchen", name: "Kitchen", isEnabled: true },
-  { id: "bedroom", name: "Bedroom", isEnabled: true },
-  { id: "bathroom", name: "Bathroom", isEnabled: true },
-];
-
-export const DEFAULT_APPLIANCES: Appliance[] = [
-  {
-    id: "ac-1",
-    name: "Air Conditioner",
-    roomId: "living-room",
-    powerRating: 1500,
-    isEnabled: true,
-    type: "air_conditioner",
-    room: "living-room",
-    status: "off",
-    controlMode: "manual",
-    powerConsumption: 0,
-    isOnline: true,
-  },
-  {
-    id: "tv-1",
-    name: "Television",
-    roomId: "living-room",
-    powerRating: 150,
-    isEnabled: true,
-    type: "other",
-    room: "living-room",
-    status: "off",
-    controlMode: "manual",
-    powerConsumption: 0,
-    isOnline: true,
-  },
-  {
-    id: "fridge-1",
-    name: "Refrigerator",
-    roomId: "kitchen",
-    powerRating: 150,
-    isEnabled: true,
-    type: "other",
-    room: "kitchen",
-    status: "on",
-    controlMode: "auto",
-    powerConsumption: 150,
-    isOnline: true,
-  },
-  {
-    id: "light-1",
-    name: "LED Lights",
-    roomId: "bedroom",
-    powerRating: 20,
-    isEnabled: true,
-    type: "light",
-    room: "bedroom",
-    status: "off",
-    controlMode: "manual",
-    powerConsumption: 0,
-    isOnline: true,
-  },
-];
+// Default Settings for Tariff and Notifications
+// Rooms and Appliances are now managed via Firebase
 
 export const DEFAULT_TARIFF: TariffSettings = {
   currency: "USD",

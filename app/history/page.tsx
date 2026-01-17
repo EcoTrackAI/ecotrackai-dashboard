@@ -7,7 +7,8 @@ import {
   HistoricalChart,
   DataTable,
 } from "@/components/history";
-import { fetchHistoricalData, fetchRooms } from "@/lib/api";
+import { subscribeRoomSensor } from "@/lib/firebase-sensors";
+import { initializeFirebase } from "@/lib/firebase";
 
 export default function HistoryPage() {
   const [dateRange, setDateRange] = useState<DateRange>(() => {
@@ -18,64 +19,79 @@ export default function HistoryPage() {
     return { start, end, label: "Last 7 Days" };
   });
 
-  const [rooms, setRooms] = useState<RoomOption[]>([]);
-  const [selectedRoomIds, setSelectedRoomIds] = useState<string[]>([]);
-  const [historicalData, setHistoricalData] = useState<HistoricalDataPoint[]>(
-    []
+  const [selectedRooms, setSelectedRooms] = useState<string[]>([
+    "bedroom",
+    "living_room",
+  ]);
+  const [bedroomData, setBedroomData] = useState<RoomSensorData | null>(null);
+  const [livingRoomData, setLivingRoomData] = useState<RoomSensorData | null>(
+    null,
   );
-  const [isLoading, setIsLoading] = useState({ rooms: false, data: false });
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   const [chartType, setChartType] = useState<ChartType>("line");
-  const [metric, setMetric] = useState<MetricType>("temperature");
-  const [compareRooms, setCompareRooms] = useState(false);
+  const [metric, setMetric] = useState<
+    "temperature" | "humidity" | "light" | "motion"
+  >("temperature");
 
   useEffect(() => {
-    loadRooms();
+    try {
+      initializeFirebase();
+    } catch (err) {
+      console.error("Failed to initialize Firebase:", err);
+      setError("Failed to connect to Firebase");
+      setLoading(false);
+      return;
+    }
+
+    const unsubscribeBedroom = subscribeRoomSensor("bedroom", (data) => {
+      setBedroomData(data);
+      setLoading(false);
+    });
+
+    const unsubscribeLivingRoom = subscribeRoomSensor("living_room", (data) => {
+      setLivingRoomData(data);
+      setLoading(false);
+    });
+
+    return () => {
+      unsubscribeBedroom();
+      unsubscribeLivingRoom();
+    };
   }, []);
 
-  useEffect(() => {
-    if (selectedRoomIds.length > 0) {
-      loadHistoricalData();
-    } else {
-      setHistoricalData([]);
-    }
-  }, [dateRange, selectedRoomIds]);
+  // Convert current sensor data to historical format for display
+  const historicalData: HistoricalDataPoint[] = [];
 
-  const loadRooms = async () => {
-    setIsLoading((prev) => ({ ...prev, rooms: true }));
-    setError(null);
-    try {
-      const roomsData = await fetchRooms();
-      setRooms(roomsData);
-      setSelectedRoomIds(roomsData.map((r) => r.id));
-    } catch (err) {
-      setError("Failed to load rooms. Please check API connection.");
-      console.error(err);
-      setRooms([]);
-    } finally {
-      setIsLoading((prev) => ({ ...prev, rooms: false }));
-    }
-  };
+  if (selectedRooms.includes("bedroom") && bedroomData) {
+    historicalData.push({
+      timestamp: bedroomData.updatedAt,
+      roomId: "bedroom",
+      roomName: "Bedroom",
+      temperature: bedroomData.temperature,
+      humidity: bedroomData.humidity,
+      light: bedroomData.light,
+      motion: bedroomData.motion,
+    });
+  }
 
-  const loadHistoricalData = async () => {
-    setIsLoading((prev) => ({ ...prev, data: true }));
-    setError(null);
-    try {
-      const data = await fetchHistoricalData(
-        dateRange.start,
-        dateRange.end,
-        selectedRoomIds
-      );
-      setHistoricalData(data);
-    } catch (err) {
-      setError("Failed to load historical data. Please check API connection.");
-      console.error(err);
-      setHistoricalData([]);
-    } finally {
-      setIsLoading((prev) => ({ ...prev, data: false }));
-    }
-  };
+  if (selectedRooms.includes("living_room") && livingRoomData) {
+    historicalData.push({
+      timestamp: livingRoomData.updatedAt,
+      roomId: "living_room",
+      roomName: "Living Room",
+      temperature: livingRoomData.temperature,
+      humidity: livingRoomData.humidity,
+      light: livingRoomData.light,
+      motion: livingRoomData.motion,
+    });
+  }
+
+  const rooms: RoomOption[] = [
+    { id: "bedroom", name: "Bedroom" },
+    { id: "living_room", name: "Living Room" },
+  ];
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
@@ -83,12 +99,9 @@ export default function HistoryPage() {
         {/* Page Header */}
         <div className="mb-6">
           <h1 className="text-3xl font-bold text-[#111827] mb-2">
-            History & Comparison
+            Sensor History
           </h1>
-          <p className="text-[#6B7280]">
-            View and analyze historical energy consumption data across different
-            time periods and rooms.
-          </p>
+          <p className="text-[#6B7280]">View current sensor readings by room</p>
         </div>
 
         {/* Error Message */}
@@ -98,184 +111,115 @@ export default function HistoryPage() {
             role="alert"
           >
             <div className="flex items-start gap-3">
-              <svg
-                className="w-5 h-5 text-[#DC2626] shrink-0 mt-0.5"
-                fill="none"
-                stroke="currentColor"
-                viewBox="0 0 24 24"
-                aria-hidden="true"
-              >
-                <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
-                  strokeWidth={2}
-                  d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
-                />
-              </svg>
-              <div>
-                <h3 className="text-sm font-medium text-[#DC2626]">Error</h3>
+              <div className="flex-1 min-w-0">
+                <h3 className="text-sm font-medium text-red-800">
+                  Connection Error
+                </h3>
                 <p className="text-sm text-red-700 mt-1">{error}</p>
               </div>
             </div>
           </div>
         )}
 
-        {/* Filters Section */}
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-6 mb-6">
-          {/* Date Range Picker */}
-          <div className="lg:col-span-2">
-            <DateRangePicker value={dateRange} onChange={setDateRange} />
+        {loading && (
+          <div className="flex justify-center items-center py-12">
+            <p className="text-gray-500">Loading sensor data...</p>
           </div>
+        )}
 
-          {/* Room Selector */}
-          <div>
-            <div className="bg-white rounded-lg border border-gray-200 p-4">
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Select Rooms
-              </label>
-              <RoomSelector
-                rooms={rooms}
-                selectedRoomIds={selectedRoomIds}
-                onChange={setSelectedRoomIds}
-                isLoading={isLoading.rooms}
-              />
-              <div className="mt-4">
-                <button
-                  onClick={loadHistoricalData}
-                  disabled={isLoading.data || selectedRoomIds.length === 0}
-                  className="w-full flex items-center justify-center gap-2 px-4 py-2 text-sm font-medium text-white bg-[#6366F1] rounded-md hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-[#6366F1] focus:ring-offset-2 disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors"
-                  aria-label="Refresh data"
-                >
-                  {isLoading.data ? (
-                    <>
-                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-white"></div>
-                      <span>Loading...</span>
-                    </>
-                  ) : (
-                    <>
-                      <svg
-                        className="w-4 h-4"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                        aria-hidden="true"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15"
-                        />
-                      </svg>
-                      <span>Refresh Data</span>
-                    </>
-                  )}
-                </button>
+        {!loading && (
+          <>
+            {/* Controls */}
+            <div className="mb-6 grid grid-cols-1 md:grid-cols-3 gap-4">
+              {/* Date Range Picker */}
+              <div>
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Date Range
+                </label>
+                <DateRangePicker value={dateRange} onChange={setDateRange} />
               </div>
-            </div>
-          </div>
-        </div>
 
-        {/* Chart Controls */}
-        <div className="bg-white rounded-lg border border-gray-200 p-4 mb-6">
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Chart Type */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Chart Type
-              </label>
-              <div className="flex gap-2">
-                {(["line", "area", "bar"] as ChartType[]).map((type) => (
-                  <button
-                    key={type}
-                    onClick={() => setChartType(type)}
-                    className={`flex-1 px-3 py-2 text-sm font-medium rounded-md border transition-colors focus:outline-none focus:ring-2 focus:ring-[#6366F1] focus:ring-offset-2 ${
-                      chartType === type
-                        ? "bg-[#6366F1] text-white border-[#6366F1]"
-                        : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                    }`}
-                    aria-label={`${type} chart`}
-                    aria-pressed={chartType === type}
-                  >
-                    {type.charAt(0).toUpperCase() + type.slice(1)}
-                  </button>
-                ))}
+              {/* Room Selector */}
+              <div className="md:col-span-2">
+                <label className="text-sm font-medium text-gray-700 mb-2 block">
+                  Rooms
+                </label>
+                <RoomSelector
+                  rooms={rooms}
+                  selectedRoomIds={selectedRooms}
+                  onChange={setSelectedRooms}
+                  multiple={true}
+                />
               </div>
             </div>
 
-            {/* Metric */}
-            <div>
-              <label
-                htmlFor="metric-select"
-                className="block text-sm font-medium text-gray-700 mb-2"
-              >
-                Metric
-              </label>
-              <select
-                id="metric-select"
-                value={metric}
-                onChange={(e) => setMetric(e.target.value as MetricType)}
-                className="w-full px-3 py-2 text-sm border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-[#6366F1] focus:border-transparent"
-              >
-                <option value="temperature">Temperature (°C)</option>
-                <option value="humidity">Humidity (%)</option>
-                <option value="lighting">Lighting (%)</option>
-                <option value="motion">Motion/Occupancy</option>
-              </select>
-            </div>
+            {/* Chart */}
+            {historicalData.length > 0 && (
+              <div className="mb-8 bg-white rounded-lg border border-gray-200 p-6">
+                <div className="mb-4 flex flex-col sm:flex-row gap-4 items-start sm:items-center">
+                  <div className="flex-1">
+                    <h2 className="text-lg font-semibold text-gray-900">
+                      Sensor Readings
+                    </h2>
+                  </div>
+                  <div className="flex gap-2">
+                    <select
+                      value={chartType}
+                      onChange={(e) =>
+                        setChartType(e.target.value as ChartType)
+                      }
+                      className="px-3 py-2 text-sm border border-gray-300 rounded-lg"
+                    >
+                      <option value="line">Line</option>
+                      <option value="area">Area</option>
+                      <option value="bar">Bar</option>
+                    </select>
+                    <select
+                      value={metric}
+                      onChange={(e) =>
+                        setMetric(
+                          e.target.value as
+                            | "temperature"
+                            | "humidity"
+                            | "light"
+                            | "motion",
+                        )
+                      }
+                      className="px-3 py-2 text-sm border border-gray-300 rounded-lg"
+                    >
+                      <option value="temperature">Temperature</option>
+                      <option value="humidity">Humidity</option>
+                      <option value="light">Light</option>
+                      <option value="motion">Motion</option>
+                    </select>
+                  </div>
+                </div>
+                <HistoricalChart
+                  data={historicalData}
+                  chartType={chartType}
+                  metric={metric}
+                  height={300}
+                  compareRooms={selectedRooms.length > 1}
+                />
+              </div>
+            )}
 
-            {/* Compare Rooms */}
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Options
-              </label>
-              <button
-                onClick={() => setCompareRooms(!compareRooms)}
-                disabled={selectedRoomIds.length < 2}
-                className={`w-full flex items-center justify-center gap-2 px-3 py-2 text-sm font-medium rounded-md border transition-colors focus:outline-none focus:ring-2 focus:ring-[#6366F1] focus:ring-offset-2 disabled:bg-gray-100 disabled:cursor-not-allowed ${
-                  compareRooms
-                    ? "bg-[#6366F1] text-white border-[#6366F1]"
-                    : "bg-white text-gray-700 border-gray-300 hover:bg-gray-50"
-                }`}
-                aria-label="Compare rooms"
-                aria-pressed={compareRooms}
-              >
-                <svg
-                  className="w-4 h-4"
-                  fill="none"
-                  stroke="currentColor"
-                  viewBox="0 0 24 24"
-                  aria-hidden="true"
-                >
-                  <path
-                    strokeLinecap="round"
-                    strokeLinejoin="round"
-                    strokeWidth={2}
-                    d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                  />
-                </svg>
-                Compare Rooms
-              </button>
-            </div>
-          </div>
-        </div>
+            {/* Data Table */}
+            {historicalData.length > 0 && (
+              <div className="bg-white rounded-lg border border-gray-200 overflow-hidden">
+                <DataTable data={historicalData} />
+              </div>
+            )}
 
-        {/* Charts */}
-        <div className="mb-6">
-          <HistoricalChart
-            data={historicalData}
-            chartType={chartType}
-            metric={metric}
-            compareRooms={compareRooms}
-            title={`${
-              metric.charAt(0).toUpperCase() + metric.slice(1)
-            } Over Time`}
-            height={400}
-          />
-        </div>
-
-        {/* Data Table */}
-        <DataTable data={historicalData} isLoading={isLoading.data} />
+            {historicalData.length === 0 && !loading && (
+              <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
+                <p className="text-gray-500">
+                  No data available for selected rooms
+                </p>
+              </div>
+            )}
+          </>
+        )}
       </div>
     </div>
   );

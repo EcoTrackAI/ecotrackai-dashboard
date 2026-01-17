@@ -101,14 +101,14 @@ export const MLRecommendationCard: React.FC<MLRecommendationCardProps> = ({
         {/* Confidence Badge */}
         <div
           className={`${getConfidenceBackground(
-            confidenceLevel
+            confidenceLevel,
           )} px-3 py-1 rounded-full flex items-center gap-1.5`}
           role="status"
           aria-label={`Confidence score: ${confidencePercentage}%`}
         >
           <span
             className={`text-sm font-semibold ${getConfidenceColor(
-              confidenceLevel
+              confidenceLevel,
             )}`}
           >
             {confidencePercentage}%

@@ -12,7 +12,7 @@ export async function GET(request: NextRequest) {
     if (!isConnected) {
       return NextResponse.json(
         { error: "Database connection failed" },
-        { status: 500 }
+        { status: 500 },
       );
     }
 
@@ -38,7 +38,7 @@ export async function GET(request: NextRequest) {
         error: "Failed to fetch rooms",
         details: error instanceof Error ? error.message : "Unknown error",
       },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

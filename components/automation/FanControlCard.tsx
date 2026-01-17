@@ -8,13 +8,6 @@
 import React, { useState, useEffect } from "react";
 import { useRelayControl } from "@/lib/hooks/useRelayControl";
 
-interface FanControlCardProps {
-  appliance: Appliance;
-  onStatusChange: (id: string, status: ApplianceStatus) => void;
-  onFanSpeedChange: (id: string, speed: number) => void;
-  onModeChange: (id: string, mode: ControlMode) => void;
-}
-
 export default function FanControlCard({
   appliance,
   onStatusChange,
@@ -22,8 +15,12 @@ export default function FanControlCard({
   onModeChange,
 }: FanControlCardProps) {
   const roomId = appliance.roomId || "unknown";
-  const relayId = `relay${appliance.id}`;
-  const { state: firebaseRelayState, setRelayState } = useRelayControl(roomId, relayId);
+  // Use just the type name for relay, not appliance.id
+  const relayId = "fan";
+  const { state: firebaseRelayState, setRelayState } = useRelayControl(
+    roomId,
+    relayId,
+  );
   const [isControlling, setIsControlling] = useState(false);
   const [fanSpeed, setFanSpeed] = useState(appliance.settings?.fan?.speed || 3);
 
@@ -58,11 +55,15 @@ export default function FanControlCard({
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <span className={`text-3xl ${appliance.status === "on" ? "text-blue-500" : "text-gray-500"}`}>
+          <span
+            className={`text-3xl ${appliance.status === "on" ? "text-blue-500" : "text-gray-500"}`}
+          >
             🌀
           </span>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">{appliance.name}</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              {appliance.name}
+            </h3>
             <p className="text-sm text-gray-500">{appliance.room}</p>
           </div>
         </div>
@@ -114,12 +115,22 @@ export default function FanControlCard({
         <span className="text-sm font-medium text-gray-700">Power</span>
         <button
           onClick={handleToggle}
-          disabled={isControlling || appliance.controlMode === "auto" || !appliance.isOnline}
+          disabled={
+            isControlling ||
+            appliance.controlMode === "auto" ||
+            !appliance.isOnline
+          }
           className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-blue-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
             appliance.status === "on" ? "bg-blue-500" : "bg-gray-300"
           }`}
           aria-label={`Toggle ${appliance.name}`}
-          title={!appliance.isOnline ? "Device is offline" : appliance.controlMode === "auto" ? "Controlled by ML model in Auto mode" : ""}
+          title={
+            !appliance.isOnline
+              ? "Device is offline"
+              : appliance.controlMode === "auto"
+                ? "Controlled by ML model in Auto mode"
+                : ""
+          }
         >
           <span
             className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${

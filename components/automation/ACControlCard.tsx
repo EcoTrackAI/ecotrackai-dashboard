@@ -8,13 +8,6 @@
 import React, { useState, useEffect } from "react";
 import { useRelayControl } from "@/lib/hooks/useRelayControl";
 
-interface ACControlCardProps {
-  appliance: Appliance;
-  onStatusChange: (id: string, status: ApplianceStatus) => void;
-  onACTemperatureChange: (id: string, temperature: number) => void;
-  onModeChange: (id: string, mode: ControlMode) => void;
-}
-
 export default function ACControlCard({
   appliance,
   onStatusChange,
@@ -22,10 +15,16 @@ export default function ACControlCard({
   onModeChange,
 }: ACControlCardProps) {
   const roomId = appliance.roomId || "unknown";
-  const relayId = `relay${appliance.id}`;
-  const { state: firebaseRelayState, setRelayState } = useRelayControl(roomId, relayId);
+  // Use just the type name for relay, not appliance.id
+  const relayId = "ac";
+  const { state: firebaseRelayState, setRelayState } = useRelayControl(
+    roomId,
+    relayId,
+  );
   const [isControlling, setIsControlling] = useState(false);
-  const [temperature, setTemperature] = useState(appliance.settings?.ac?.temperature || 24);
+  const [temperature, setTemperature] = useState(
+    appliance.settings?.ac?.temperature || 24,
+  );
 
   // Sync Firebase state with UI
   useEffect(() => {
@@ -60,11 +59,15 @@ export default function ACControlCard({
       {/* Header */}
       <div className="flex items-center justify-between mb-4">
         <div className="flex items-center gap-3">
-          <span className={`text-3xl ${appliance.status === "on" ? "text-cyan-500" : "text-gray-500"}`}>
+          <span
+            className={`text-3xl ${appliance.status === "on" ? "text-cyan-500" : "text-gray-500"}`}
+          >
             ❄️
           </span>
           <div>
-            <h3 className="text-lg font-semibold text-gray-900">{appliance.name}</h3>
+            <h3 className="text-lg font-semibold text-gray-900">
+              {appliance.name}
+            </h3>
             <p className="text-sm text-gray-500">{appliance.room}</p>
           </div>
         </div>
@@ -116,12 +119,22 @@ export default function ACControlCard({
         <span className="text-sm font-medium text-gray-700">Power</span>
         <button
           onClick={handleToggle}
-          disabled={isControlling || appliance.controlMode === "auto" || !appliance.isOnline}
+          disabled={
+            isControlling ||
+            appliance.controlMode === "auto" ||
+            !appliance.isOnline
+          }
           className={`relative inline-flex h-7 w-12 items-center rounded-full transition-colors focus:outline-none focus:ring-2 focus:ring-cyan-500 focus:ring-offset-2 disabled:opacity-50 disabled:cursor-not-allowed ${
             appliance.status === "on" ? "bg-cyan-500" : "bg-gray-300"
           }`}
           aria-label={`Toggle ${appliance.name}`}
-          title={!appliance.isOnline ? "Device is offline" : appliance.controlMode === "auto" ? "Controlled by ML model in Auto mode" : ""}
+          title={
+            !appliance.isOnline
+              ? "Device is offline"
+              : appliance.controlMode === "auto"
+                ? "Controlled by ML model in Auto mode"
+                : ""
+          }
         >
           <span
             className={`inline-block h-5 w-5 rounded-full bg-white shadow-sm transition-transform ${
@@ -140,19 +153,29 @@ export default function ACControlCard({
           <div className="flex items-center justify-center gap-4">
             <button
               onClick={() => handleTempChange(false)}
-              disabled={temperature <= 16 || appliance.controlMode === "auto" || !appliance.isOnline}
+              disabled={
+                temperature <= 16 ||
+                appliance.controlMode === "auto" ||
+                !appliance.isOnline
+              }
               className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Decrease temperature"
             >
               −
             </button>
             <div className="text-center">
-              <div className="text-3xl font-bold text-cyan-600">{temperature}°</div>
+              <div className="text-3xl font-bold text-cyan-600">
+                {temperature}°
+              </div>
               <div className="text-xs text-gray-500 mt-1">Celsius</div>
             </div>
             <button
               onClick={() => handleTempChange(true)}
-              disabled={temperature >= 30 || appliance.controlMode === "auto" || !appliance.isOnline}
+              disabled={
+                temperature >= 30 ||
+                appliance.controlMode === "auto" ||
+                !appliance.isOnline
+              }
               className="w-10 h-10 rounded-full bg-gray-100 hover:bg-gray-200 text-gray-700 font-semibold transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
               aria-label="Increase temperature"
             >

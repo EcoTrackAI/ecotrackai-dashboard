@@ -2,22 +2,23 @@
 
 import { useState, useEffect } from "react";
 import {
-  DEFAULT_ROOMS,
-  DEFAULT_APPLIANCES,
   DEFAULT_TARIFF,
   DEFAULT_DATA_SAMPLING,
   DEFAULT_NOTIFICATIONS,
 } from "@/lib/constants";
 
 export default function SettingsPage() {
-  const [rooms, setRooms] = useState<Room[]>(DEFAULT_ROOMS);
-  const [appliances, setAppliances] = useState<Appliance[]>(DEFAULT_APPLIANCES);
+  const [rooms, setRooms] = useState<Room[]>([
+    { id: "bedroom", name: "Bedroom", isEnabled: true },
+    { id: "living_room", name: "Living Room", isEnabled: true },
+  ]);
+  const [appliances, setAppliances] = useState<Appliance[]>([]);
   const [tariff, setTariff] = useState<TariffSettings>(DEFAULT_TARIFF);
   const [dataSampling, setDataSampling] = useState<DataSamplingSettings>(
-    DEFAULT_DATA_SAMPLING
+    DEFAULT_DATA_SAMPLING,
   );
   const [notifications, setNotifications] = useState<NotificationSettings>(
-    DEFAULT_NOTIFICATIONS
+    DEFAULT_NOTIFICATIONS,
   );
   const [activeTab, setActiveTab] = useState<
     "rooms" | "appliances" | "tariff" | "sampling" | "notifications"
@@ -31,8 +32,8 @@ export default function SettingsPage() {
     const savedSettings = localStorage.getItem("systemSettings");
     if (savedSettings) {
       const parsed = JSON.parse(savedSettings);
-      setRooms(parsed.rooms || DEFAULT_ROOMS);
-      setAppliances(parsed.appliances || DEFAULT_APPLIANCES);
+      setRooms(parsed.rooms || rooms);
+      setAppliances(parsed.appliances || appliances);
       setTariff(parsed.tariff || DEFAULT_TARIFF);
       setDataSampling(parsed.dataSampling || DEFAULT_DATA_SAMPLING);
       setNotifications(parsed.notifications || DEFAULT_NOTIFICATIONS);
@@ -71,7 +72,7 @@ export default function SettingsPage() {
 
   const updateRoom = (id: string, updates: Partial<Room>) => {
     setRooms(
-      rooms.map((room) => (room.id === id ? { ...room, ...updates } : room))
+      rooms.map((room) => (room.id === id ? { ...room, ...updates } : room)),
     );
   };
 
@@ -90,7 +91,6 @@ export default function SettingsPage() {
       roomId: rooms[0]?.id || "",
       status: "off",
       controlMode: "manual",
-      powerConsumption: 0,
       powerRating: 100,
       isEnabled: true,
       isOnline: true,
@@ -100,7 +100,7 @@ export default function SettingsPage() {
 
   const updateAppliance = (id: string, updates: Partial<Appliance>) => {
     setAppliances(
-      appliances.map((app) => (app.id === id ? { ...app, ...updates } : app))
+      appliances.map((app) => (app.id === id ? { ...app, ...updates } : app)),
     );
   };
 
@@ -231,7 +231,8 @@ export default function SettingsPage() {
                     Appliance Power Ratings
                   </h2>
                   <p className="text-sm text-[#6B7280] mt-1">
-                    Configure appliances and their power consumption
+                    Configure appliances and their estimated power ratings
+                    (actual consumption measured by PZEM sensor)
                   </p>
                 </div>
                 <button

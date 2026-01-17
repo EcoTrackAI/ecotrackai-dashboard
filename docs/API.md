@@ -499,7 +499,7 @@ export class EcoTrackAPI {
   async getHistoricalData(
     startDate: string,
     endDate: string,
-    roomIds?: string[]
+    roomIds?: string[],
   ): Promise<HistoricalDataPoint[]> {
     const params = new URLSearchParams({
       startDate,
@@ -508,7 +508,7 @@ export class EcoTrackAPI {
     });
 
     const response = await fetch(
-      `${this.baseURL}/api/historical-data?${params}`
+      `${this.baseURL}/api/historical-data?${params}`,
     );
     const { data } = await response.json();
     return data;

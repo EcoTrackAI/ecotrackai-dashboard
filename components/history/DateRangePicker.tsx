@@ -83,10 +83,10 @@ export const DateRangePicker: React.FC<DateRangePickerProps> = ({
 }) => {
   const [showCustom, setShowCustom] = useState(false);
   const [customStart, setCustomStart] = useState(
-    value.start.toISOString().split("T")[0]
+    value.start.toISOString().split("T")[0],
   );
   const [customEnd, setCustomEnd] = useState(
-    value.end.toISOString().split("T")[0]
+    value.end.toISOString().split("T")[0],
   );
 
   const handlePresetClick = (preset: PresetOption) => {

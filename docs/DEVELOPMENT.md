@@ -109,7 +109,6 @@ npm run dev -- --hostname 0.0.0.0
    ```
 
 3. **Make changes**
-
    - Edit files in `app/`, `components/`, or `lib/`
    - Hot reload automatically updates browser
 
@@ -371,14 +370,12 @@ git commit -m "chore: update dependencies"
 ### Pull Request Process
 
 1. **Create descriptive PR**
-
    - Clear title
    - Detailed description
    - Screenshots for UI changes
    - Link related issues
 
 2. **Request review**
-
    - At least one approver
    - Address feedback
    - Keep PR focused
@@ -451,7 +448,7 @@ export async function GET(request: NextRequest) {
     console.error("API error:", error);
     return NextResponse.json(
       { error: "Internal server error" },
-      { status: 500 }
+      { status: 500 },
     );
   }
 }

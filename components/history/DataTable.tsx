@@ -64,26 +64,28 @@ export const DataTable: React.FC<DataTableProps> = ({
 
   const exportToCSV = () => {
     // Prepare data for export
-    const exportData: ExportDataRow[] = sortedData.map((point) => {
-      const date = new Date(point.timestamp);
-      return {
-        Date: date.toLocaleDateString("en-US"),
-        Time: date.toLocaleTimeString("en-US"),
-        Room: point.roomName,
-        ...(point.temperature !== undefined && {
-          "Temperature (°C)": point.temperature,
-        }),
-        ...(point.humidity !== undefined && {
-          "Humidity (%)": point.humidity,
-        }),
-        ...(point.lighting !== undefined && {
-          "Lighting (%)": point.lighting,
-        }),
-        ...(point.motion !== undefined && {
-          Motion: point.motion === 1 ? "Detected" : "Not detected",
-        }),
-      };
-    });
+    const exportData: Record<string, string | number>[] = sortedData.map(
+      (point) => {
+        const date = new Date(point.timestamp);
+        return {
+          Date: date.toLocaleDateString("en-US"),
+          Time: date.toLocaleTimeString("en-US"),
+          Room: point.roomName,
+          ...(point.temperature !== undefined && {
+            "Temperature (°C)": point.temperature,
+          }),
+          ...(point.humidity !== undefined && {
+            "Humidity (%)": point.humidity,
+          }),
+          ...(point.light !== undefined && {
+            "Light (lux)": point.light,
+          }),
+          ...(point.motion !== undefined && {
+            Motion: point.motion ? "Detected" : "Not detected",
+          }),
+        };
+      },
+    );
 
     // Convert to CSV
     const headers = Object.keys(exportData[0]).join(",");
@@ -97,7 +99,7 @@ export const DataTable: React.FC<DataTableProps> = ({
     link.setAttribute("href", url);
     link.setAttribute(
       "download",
-      `energy-history-${new Date().toISOString().split("T")[0]}.csv`
+      `energy-history-${new Date().toISOString().split("T")[0]}.csv`,
     );
     link.style.visibility = "hidden";
     document.body.appendChild(link);
@@ -286,11 +288,11 @@ export const DataTable: React.FC<DataTableProps> = ({
               </th>
               <th
                 className="px-4 py-3 text-right text-xs font-medium text-gray-700 uppercase tracking-wider cursor-pointer hover:bg-gray-100 transition-colors"
-                onClick={() => handleSort("lighting")}
+                onClick={() => handleSort("light")}
               >
                 <div className="flex items-center justify-end gap-1">
-                  <span>Lighting (%)</span>
-                  <SortIcon column="lighting" />
+                  <span>Lighting (lux)</span>
+                  <SortIcon column="light" />
                 </div>
               </th>
               <th
@@ -323,7 +325,6 @@ export const DataTable: React.FC<DataTableProps> = ({
                   {row.roomName}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 text-right">
-
                   {row.temperature !== undefined
                     ? row.temperature.toFixed(1)
                     : "-"}
@@ -332,11 +333,11 @@ export const DataTable: React.FC<DataTableProps> = ({
                   {row.humidity !== undefined ? row.humidity.toFixed(0) : "-"}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 text-right">
-                  {row.lighting !== undefined ? row.lighting.toFixed(0) : "-"}
+                  {row.light !== undefined ? row.light.toFixed(0) : "-"}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-600 text-right">
                   {row.motion !== undefined
-                    ? row.motion === 1
+                    ? row.motion
                       ? "✓ Detected"
                       : "— None"
                     : "-"}

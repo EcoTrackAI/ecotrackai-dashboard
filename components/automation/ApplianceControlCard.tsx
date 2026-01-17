@@ -1,50 +1,86 @@
-/**
- * ApplianceControlCard Component
- * Router component that selects the appropriate card based on appliance type
- */
-
 "use client";
 
-import React from "react";
+import React, { useState, useCallback } from "react";
 import LightControlCard from "./LightControlCard";
 import FanControlCard from "./FanControlCard";
 import ACControlCard from "./ACControlCard";
 
-// ApplianceControlCardProps and all types are globally available from types/globals.d.ts
-
 export default function ApplianceControlCard({
-  appliance,
-  onStatusChange,
-  onModeChange,
-  onFanSpeedChange,
-  onACTemperatureChange,
+  name,
+  type,
+  room,
 }: ApplianceControlCardProps) {
+  const [status, setStatus] = useState<ApplianceStatus>("off");
+  const [controlMode, setControlMode] = useState<ControlMode>("manual");
+  const [fanSpeed, setFanSpeed] = useState(3);
+  const [acTemp, setAcTemp] = useState(22);
+  const [acMode, setAcMode] = useState<"cool" | "heat" | "fan" | "dry">("cool");
+
+  // Create appliance object from props
+  const appliance: Appliance = {
+    id: `${room}_${type}`,
+    name,
+    type: type === "ac" ? "air_conditioner" : type,
+    room: room === "bedroom" ? "Bedroom" : "Living Room",
+    roomId: room,
+    status,
+    controlMode,
+    powerRating: 100,
+    isOnline: true,
+    settings: {
+      fan: { speed: fanSpeed },
+      ac: { temperature: acTemp, mode: acMode },
+    },
+  };
+
+  const handleStatusChange = useCallback(
+    (id: string, newStatus: ApplianceStatus) => {
+      setStatus(newStatus);
+    },
+    [],
+  );
+
+  const handleModeChange = useCallback((id: string, newMode: ControlMode) => {
+    setControlMode(newMode);
+  }, []);
+
+  const handleFanSpeedChange = useCallback((id: string, speed: number) => {
+    setFanSpeed(speed);
+  }, []);
+
+  const handleACTemperatureChange = useCallback(
+    (id: string, temperature: number) => {
+      setAcTemp(temperature);
+    },
+    [],
+  );
+
   // Route to appropriate card based on appliance type
-  switch (appliance.type) {
+  switch (type) {
     case "light":
       return (
         <LightControlCard
           appliance={appliance}
-          onStatusChange={onStatusChange}
-          onModeChange={onModeChange}
+          onStatusChange={handleStatusChange}
+          onModeChange={handleModeChange}
         />
       );
     case "fan":
       return (
         <FanControlCard
           appliance={appliance}
-          onStatusChange={onStatusChange}
-          onFanSpeedChange={onFanSpeedChange}
-          onModeChange={onModeChange}
+          onStatusChange={handleStatusChange}
+          onFanSpeedChange={handleFanSpeedChange}
+          onModeChange={handleModeChange}
         />
       );
-    case "air_conditioner":
+    case "ac":
       return (
         <ACControlCard
           appliance={appliance}
-          onStatusChange={onStatusChange}
-          onACTemperatureChange={onACTemperatureChange}
-          onModeChange={onModeChange}
+          onStatusChange={handleStatusChange}
+          onACTemperatureChange={handleACTemperatureChange}
+          onModeChange={handleModeChange}
         />
       );
     default:
@@ -52,8 +88,8 @@ export default function ApplianceControlCard({
       return (
         <LightControlCard
           appliance={appliance}
-          onStatusChange={onStatusChange}
-          onModeChange={onModeChange}
+          onStatusChange={handleStatusChange}
+          onModeChange={handleModeChange}
         />
       );
   }

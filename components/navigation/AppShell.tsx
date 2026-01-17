@@ -61,7 +61,7 @@ export function AppShell({ children }: AppShellProps) {
             condition: "not-available",
             location: "Not Available",
           });
-        }
+        },
       );
     };
 

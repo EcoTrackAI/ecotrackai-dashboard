@@ -1,11 +1,54 @@
 /**
  * Global Type Definitions
- * All types are available throughout the application without importing
+ * All types and interfaces centralized in one place
  */
 
 declare global {
   // ============================================================================
-  // System & Navigation Types
+  // Firebase & Sensor Data Types
+  // ============================================================================
+
+  type SensorStatus = "normal" | "warning" | "critical" | "offline";
+
+  interface RoomSensorData {
+    temperature: number;
+    humidity: number;
+    light: number;
+    motion: boolean;
+    updatedAt: string;
+  }
+
+  interface PZEMData {
+    current: number;
+    energy: number;
+    frequency: number;
+    pf: number;
+    power: number;
+    voltage: number;
+    updatedAt: string;
+  }
+
+  interface RelayState {
+    state: boolean;
+    updatedAt?: string;
+  }
+
+  interface FirebaseSensorData {
+    id: string;
+    sensorName: string;
+    currentValue: number | string;
+    unit: string;
+    status: SensorStatus;
+    description?: string;
+    lastUpdate?: string;
+    category?: string;
+    room?: string;
+  }
+
+  type SensorDataCallback = (sensors: FirebaseSensorData[]) => void;
+
+  // ============================================================================
+  // System & Status Types
   // ============================================================================
 
   type SystemStatus = "online" | "offline" | "warning";
@@ -18,11 +61,95 @@ declare global {
     | "power"
     | "system";
   type ChartType = "line" | "area" | "bar";
-  type MetricType =
-    | "temperature"
-    | "humidity"
-    | "lighting"
-    | "motion";
+  type MetricType = "temperature" | "humidity" | "lighting" | "motion";
+
+  interface SystemInfo {
+    connectedDevices: number;
+    activeRooms: number;
+    lastLogin: Date | string;
+  }
+
+  // ============================================================================
+  // User & Profile Types
+  // ============================================================================
+
+  interface UserProfile {
+    id: string;
+    name: string;
+    email: string;
+    role: "Admin" | "User";
+    avatarUrl?: string;
+    avatarInitials?: string;
+    avatar?: string;
+  }
+
+  interface UserPreferences {
+    theme: "light" | "dark";
+    notificationsEnabled: boolean;
+    automationMode: boolean;
+  }
+
+  interface ProfileData {
+    user: UserProfile;
+    systemInfo: SystemInfo;
+    preferences: UserPreferences;
+  }
+
+  // ============================================================================
+  // Navigation & Layout Types
+  // ============================================================================
+
+  interface NotificationItem {
+    id: string;
+    title: string;
+    message: string;
+    type: "info" | "warning" | "error" | "success";
+    timestamp: Date;
+    read: boolean;
+  }
+
+  interface NavigationItem {
+    name: string;
+    href: string;
+    icon: React.ComponentType<{ className?: string }>;
+    description: string;
+    badge?: number;
+    disabled?: boolean;
+  }
+
+  // ============================================================================
+  // Component Props Types
+  // ============================================================================
+
+  interface AppShellProps {
+    children: React.ReactNode;
+  }
+
+  interface SidebarProps {
+    className?: string;
+    navigationItems?: NavigationItem[];
+    onNavigate?: (href: string) => void;
+    defaultCollapsed?: boolean;
+    systemStatus?: SystemStatus;
+  }
+
+  interface NotificationIconProps {
+    notifications: NotificationItem[];
+    onNotificationClick?: (notification: NotificationItem) => void;
+    className?: string;
+  }
+
+  interface NavigationProps {
+    currentPath?: string;
+    onNavigate?: (path: string) => void;
+    systemStatus?: SystemStatus;
+    weather?: WeatherData;
+    user?: UserProfile;
+    notifications?: NotificationItem[];
+    onNotificationClick?: (notification: NotificationItem) => void;
+    onSignOut?: () => void;
+    className?: string;
+  }
 
   interface WeatherData {
     temperature: number;
@@ -46,95 +173,47 @@ declare global {
     name: string;
   }
 
-  interface NotificationItem {
-    id: string;
-    title: string;
-    message: string;
-    type: "info" | "warning" | "error" | "success";
-    timestamp: Date;
-    read: boolean;
-  }
-
-  interface NotificationIconProps {
-    notifications: NotificationItem[];
-    onNotificationClick?: (notification: NotificationItem) => void;
+  interface WeatherSummaryProps {
+    weather: WeatherData;
     className?: string;
   }
 
-  interface NavigationItem {
-    name: string;
-    href: string;
-    icon: React.ComponentType<{ className?: string }>;
-    description: string;
-    badge?: number;
-    disabled?: boolean;
-  }
-
-  interface SidebarProps {
-    className?: string;
-    navigationItems?: NavigationItem[];
-    onNavigate?: (href: string) => void;
-    defaultCollapsed?: boolean;
-    systemStatus?: SystemStatus;
-  }
-
-  interface AppShellProps {
-    children: React.ReactNode;
-  }
-
-  // ============================================================================
-  // User Profile Types
-  // ============================================================================
-
-  interface UserProfile {
-    id: string;
-    name: string;
-    email: string;
-    role: "Admin" | "User";
-    avatarUrl?: string;
-    avatarInitials?: string;
-    avatar?: string;
-  }
-
-  interface SystemInfo {
-    connectedDevices: number;
-    activeRooms: number;
-    lastLogin: Date | string;
-  }
-
-  interface UserPreferences {
-    theme: "light" | "dark";
-    notificationsEnabled: boolean;
-    automationMode: boolean;
-  }
-
-  interface ProfileData {
+  interface UserProfileDropdownProps {
     user: UserProfile;
-    systemInfo: SystemInfo;
-    preferences: UserPreferences;
+    onSignOut?: () => void;
+    className?: string;
+  }
+
+  interface SystemStatusIndicatorProps {
+    status: SystemStatus;
+    className?: string;
   }
 
   // ============================================================================
-  // Analytics Types
+  // Metrics & Analytics Types
   // ============================================================================
+
+  interface MetricCardProps {
+    title: string;
+    value: string | number;
+    unit: string;
+    icon: React.ReactNode;
+    trend?: {
+      direction: "up" | "down";
+      value: number;
+      isPositive?: boolean;
+    };
+    className?: string;
+  }
 
   interface PowerUsageDataPoint {
     timestamp: string;
     power: number;
-    date?: string;
   }
 
   interface ApplianceEnergyData {
     appliance: string;
     energy: number;
-    percentage?: number;
-  }
-
-  interface AutomationComparisonData {
-    month: string;
-    before: number;
-    after: number;
-    savings?: number;
   }
 
   interface AnalyticsApiResponse<T> {
@@ -149,21 +228,8 @@ declare global {
     end: Date;
   }
 
-  interface MetricCardProps {
-    title: string;
-    value: string | number;
-    unit: string;
-    icon: React.ReactNode;
-    trend?: {
-      direction: "up" | "down";
-      value: number;
-      isPositive?: boolean; // Explicitly mark if trend is good or bad
-    };
-    className?: string;
-  }
-
   // ============================================================================
-  // Automation Types
+  // Automation & Relay Types
   // ============================================================================
 
   type ApplianceType =
@@ -172,6 +238,7 @@ declare global {
     | "light"
     | "heater"
     | "dehumidifier"
+    | "relay"
     | "other";
   type ControlMode = "auto" | "manual";
   type ApplianceStatus = "on" | "off";
@@ -197,12 +264,19 @@ declare global {
     room: string;
     status: ApplianceStatus;
     controlMode: ControlMode;
-    powerConsumption: number;
     settings?: ApplianceSettings;
     isOnline: boolean;
     roomId?: string;
     powerRating?: number;
     isEnabled?: boolean;
+  }
+
+  interface RelayControl {
+    id: string;
+    name: string;
+    room: string;
+    state: boolean;
+    isOnline: boolean;
   }
 
   interface AutomationRule {
@@ -213,41 +287,44 @@ declare global {
     enabled: boolean;
   }
 
-  interface AutomationActivityItemProps {
-    title: string;
-    description: string;
-    timestamp: string; // e.g., "2 minutes ago" or ISO string
-    status: "success" | "warning" | "error" | "info";
-    icon?: React.ReactNode;
-    className?: string;
+  interface ApplianceControlCardProps {
+    name: string;
+    type: "light" | "fan" | "ac" | "other";
+    room: "bedroom" | "living_room";
   }
 
-  interface ApplianceControlCardProps {
+  interface LightControlCardProps {
     appliance: Appliance;
     onStatusChange: (id: string, status: ApplianceStatus) => void;
     onModeChange: (id: string, mode: ControlMode) => void;
-    onFanSpeedChange: (id: string, speed: number) => void;
-    onACTemperatureChange: (id: string, temperature: number) => void;
   }
 
-  interface AutomationControlPanelProps {
-    initialAppliances?: Appliance[];
+  interface FanControlCardProps {
+    appliance: Appliance;
+    onStatusChange: (id: string, status: ApplianceStatus) => void;
+    onFanSpeedChange: (id: string, speed: number) => void;
+    onModeChange: (id: string, mode: ControlMode) => void;
+  }
+
+  interface ACControlCardProps {
+    appliance: Appliance;
+    onStatusChange: (id: string, status: ApplianceStatus) => void;
+    onACTemperatureChange: (id: string, temperature: number) => void;
+    onModeChange: (id: string, mode: ControlMode) => void;
   }
 
   // ============================================================================
-  // History & Comparison Types
+  // History & Sensor Display Types
   // ============================================================================
 
   interface HistoricalDataPoint {
     timestamp: string;
     roomId: string;
     roomName: string;
-    power: number;
-    energy: number;
     temperature?: number;
     humidity?: number;
-    lighting?: number;
-    motion?: number;
+    light?: number;
+    motion?: boolean;
   }
 
   interface DateRange {
@@ -259,48 +336,6 @@ declare global {
   interface RoomOption {
     id: string;
     name: string;
-    type: string;
-  }
-
-  interface ComparisonData {
-    roomId: string;
-    roomName: string;
-    currentPeriod: {
-      energy: number;
-      avgPower: number;
-      peakPower: number;
-    };
-    previousPeriod: {
-      energy: number;
-      avgPower: number;
-      peakPower: number;
-    };
-    change: {
-      energy: number;
-      avgPower: number;
-      peakPower: number;
-    };
-  }
-
-  interface HistoricalDataApiResponse {
-    success: boolean;
-    data: HistoricalDataPoint[];
-    count: number;
-    dateRange: {
-      start: string;
-      end: string;
-    };
-    error?: string;
-  }
-
-  interface ExportDataRow {
-    Date: string;
-    Time: string;
-    Room: string;
-    "Temperature (°C)"?: number;
-    "Humidity (%)"?: number;
-    "Lighting (%)"?: number;
-    Motion?: string;
   }
 
   type SortDirection = "asc" | "desc";
@@ -340,13 +375,7 @@ declare global {
   interface HistoricalChartProps {
     data: HistoricalDataPoint[];
     chartType?: "line" | "area" | "bar";
-    metric?:
-      | "power"
-      | "energy"
-      | "temperature"
-      | "humidity"
-      | "lighting"
-      | "motion";
+    metric?: "temperature" | "humidity" | "light" | "motion";
     title?: string;
     height?: number;
     compareRooms?: boolean;
@@ -354,8 +383,28 @@ declare global {
     className?: string;
   }
 
+  interface LiveSensorCardProps {
+    sensorName: string;
+    currentValue: number | string;
+    unit: string;
+    status: SensorStatus;
+    description?: string;
+    lastUpdate?: Date | string;
+    onClick?: () => void;
+    className?: string;
+  }
+
+  interface RoomStatusCardProps {
+    roomName: string;
+    temperature?: number;
+    humidity?: number;
+    light?: number;
+    motion?: boolean;
+    className?: string;
+  }
+
   // ============================================================================
-  // Charts Types
+  // Chart Types
   // ============================================================================
 
   interface RealtimeLineChartProps {
@@ -372,69 +421,8 @@ declare global {
   }
 
   // ============================================================================
-  // Recommendations Types
+  // Profile & Settings Components
   // ============================================================================
-
-  // Sensor Types
-  type SensorStatus = "normal" | "warning" | "critical" | "offline";
-  type SensorDataCallback = (sensors: FirebaseSensorData[]) => void;
-
-  interface FirebaseSensorData {
-    id: string;
-    sensorName: string;
-    currentValue: number | string;
-    unit: string;
-    status: SensorStatus;
-    description?: string;
-    lastUpdate?: string;
-    category?: string;
-    room?: string;
-  }
-
-  interface LiveSensorCardProps {
-    sensorName: string;
-    currentValue: number | string;
-    unit: string;
-    status: SensorStatus;
-    description?: string;
-    lastUpdate?: Date | string;
-    onClick?: () => void;
-    className?: string;
-  }
-
-  // Database Types
-  interface DBRoom {
-    id: string;
-    name: string;
-    floor: number;
-    type: string;
-    created_at: Date;
-    updated_at: Date;
-  }
-
-  interface SensorDataRecord {
-    id: number;
-    sensor_id: string;
-    sensor_name: string;
-    room_id: string;
-    category: string;
-    current_value: number;
-    unit: string;
-    status: string;
-    description?: string;
-    timestamp: Date;
-    created_at: Date;
-  }
-
-  interface RoomStatusCardProps {
-    roomName: string;
-    isOccupied: boolean;
-    activeDevices: number;
-    totalDevices: number;
-    currentPower: number;
-    temperature?: number;
-    className?: string;
-  }
 
   interface ProfileCardProps {
     title: string;
@@ -454,41 +442,6 @@ declare global {
     enabled?: boolean;
     onChange?: (checked: boolean) => void;
     icon?: React.ReactNode;
-  }
-
-  interface MLRecommendationCardProps {
-    recommendation: MLRecommendation;
-    onApply?: (id: string) => void;
-    onIgnore?: (id: string) => void;
-    className?: string;
-  }
-
-  interface WeatherSummaryProps {
-    weather: WeatherData;
-    className?: string;
-  }
-
-  interface UserProfileDropdownProps {
-    user: UserProfile;
-    onSignOut?: () => void;
-    className?: string;
-  }
-
-  interface SystemStatusIndicatorProps {
-    status: SystemStatus;
-    className?: string;
-  }
-
-  interface NavigationProps {
-    currentPath?: string;
-    onNavigate?: (path: string) => void;
-    systemStatus?: SystemStatus;
-    weather?: WeatherData;
-    user?: UserProfile;
-    notifications?: NotificationItem[];
-    onNotificationClick?: (notification: NotificationItem) => void;
-    onSignOut?: () => void;
-    className?: string;
   }
 
   // ============================================================================
@@ -541,8 +494,42 @@ declare global {
 
   type ConfidenceLevel = "low" | "medium" | "high" | "very-high";
 
+  interface MLRecommendationCardProps {
+    recommendation: MLRecommendation;
+    onApply?: (id: string) => void;
+    onIgnore?: (id: string) => void;
+    className?: string;
+  }
+
   // ============================================================================
-  // Settings Types
+  // Database Types
+  // ============================================================================
+
+  interface DBRoom {
+    id: string;
+    name: string;
+    floor: number;
+    type: string;
+    created_at: Date;
+    updated_at: Date;
+  }
+
+  interface SensorDataRecord {
+    id: number;
+    sensor_id: string;
+    sensor_name: string;
+    room_id: string;
+    category: string;
+    current_value: number;
+    unit: string;
+    status: string;
+    description?: string;
+    timestamp: Date;
+    created_at: Date;
+  }
+
+  // ============================================================================
+  // API & Fetch Types
   // ============================================================================
 
   interface FetchOptions {
@@ -550,6 +537,41 @@ declare global {
     headers?: Record<string, string>;
     body?: string;
   }
+
+  interface HistoricalDataApiResponse {
+    success: boolean;
+    data: HistoricalDataPoint[];
+    count: number;
+    dateRange: {
+      start: string;
+      end: string;
+    };
+    error?: string;
+  }
+
+  interface ComparisonData {
+    roomId: string;
+    roomName: string;
+    currentPeriod: {
+      energy: number;
+      avgPower: number;
+      peakPower: number;
+    };
+    previousPeriod: {
+      energy: number;
+      avgPower: number;
+      peakPower: number;
+    };
+    change: {
+      energy: number;
+      avgPower: number;
+      peakPower: number;
+    };
+  }
+
+  // ============================================================================
+  // Settings Types
+  // ============================================================================
 
   interface Room {
     id: string;

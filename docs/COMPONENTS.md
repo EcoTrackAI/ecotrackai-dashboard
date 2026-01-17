@@ -1,8 +1,8 @@
 # Component Library Reference
 
-**Version**: 1.1  
+**Version**: 1.2 (Cleaned)  
 **Last Updated**: December 26, 2025  
-**Status**: Production Ready
+**Status**: Production Ready - Unused components removed
 
 ## Overview
 
@@ -288,9 +288,11 @@ interface Appliance {
   room: string;
   status: "on" | "off";
   controlMode: "auto" | "manual";
-  powerConsumption: number;
+  powerRating?: number; // Estimated power rating in watts
   settings?: ApplianceSettings;
   isOnline: boolean;
+  roomId?: string;
+  isEnabled?: boolean;
 }
 ```
 
@@ -311,41 +313,10 @@ import { ApplianceControlCard } from "@/components/automation";
 - On/off toggle
 - Auto/manual mode switch
 - Device settings control
-- Power consumption display
+- Power rating display (estimated watts)
 - Online/offline status
 - Type-specific controls (temp for AC, speed for fan)
-
----
-
-### AutomationActivityItem
-
-Display automation activity log entry.
-
-**Location**: `components/automation/AutomationActivityItem.tsx`
-
-**Props:**
-
-```typescript
-interface AutomationActivityItemProps {
-  title: string;
-  description: string;
-  timestamp: string;
-  status: "success" | "warning" | "error" | "info";
-}
-```
-
-**Usage:**
-
-```tsx
-import { AutomationActivityItem } from "@/components/automation";
-
-<AutomationActivityItem
-  title="AC turned off in bedroom"
-  description="No occupancy detected for 15 minutes"
-  timestamp="2 min ago"
-  status="success"
-/>;
-```
+- Actual power consumption measured globally by PZEM sensor
 
 ---
 

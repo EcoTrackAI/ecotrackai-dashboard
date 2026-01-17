@@ -12,14 +12,12 @@ Welcome to the EcoTrack AI Dashboard documentation! This index will help you nav
 Start with these documents if you're new to the project:
 
 1. **[Getting Started Guide](GETTING-STARTED.md)** ⭐ **Start Here!**
-
    - Complete setup guide (15-20 minutes)
    - Step-by-step installation instructions
    - Troubleshooting common issues
    - **Perfect for**: First-time setup, new developers
 
 2. **[Project Summary](PROJECT-SUMMARY.md)**
-
    - Executive overview
    - Project goals and vision
    - Tech stack summary
@@ -37,7 +35,6 @@ Start with these documents if you're new to the project:
 Essential resources for developers working on the codebase:
 
 4. **[Architecture Guide](ARCHITECTURE.md)**
-
    - System architecture diagrams
    - Data flow patterns
    - Component hierarchy
@@ -46,14 +43,12 @@ Essential resources for developers working on the codebase:
    - **Perfect for**: Understanding system design
 
 5. **[Component Library](COMPONENTS.md)**
-
    - All reusable React components
    - TypeScript interfaces and props
    - Usage examples and best practices
    - **Perfect for**: Building UI features
 
 6. **[API Reference](API.md)**
-
    - Complete API endpoint documentation
    - Request/response formats
    - Error handling
