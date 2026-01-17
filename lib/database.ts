@@ -14,16 +14,34 @@ export function getPool(): Pool {
       throw new Error("DATABASE_URL or POSTGRES_URL must be set");
     }
 
+    // Configure SSL based on environment
+    const isProduction = process.env.NODE_ENV === "production";
+    const sslConfig = connectionString.includes("sslmode=require")
+      ? { rejectUnauthorized: false }
+      : isProduction
+        ? { rejectUnauthorized: false }
+        : false;
+
     pool = new Pool({
       connectionString,
-      ssl: { rejectUnauthorized: false },
+      ssl: sslConfig,
       max: 20,
       idleTimeoutMillis: 30000,
-      connectionTimeoutMillis: 5000,
+      connectionTimeoutMillis: 10000,
+      statement_timeout: 30000,
     });
 
-    pool.on("error", () => {
-      pool = null;
+    pool.on("error", (err) => {
+      console.error("Unexpected database pool error:", err);
+      // Don't set pool to null on every error - let it recover
+      // Only reset on critical errors
+      if (
+        err.message?.includes("Connection terminated") ||
+        err.message?.includes("ECONNREFUSED")
+      ) {
+        console.warn("Resetting database pool due to critical error");
+        pool = null;
+      }
     });
   }
 
@@ -130,9 +148,12 @@ export async function initializeDatabase(): Promise<void> {
  */
 export async function testConnection(): Promise<boolean> {
   try {
-    await getPool().query("SELECT 1");
+    const client = await getPool().connect();
+    await client.query("SELECT 1");
+    client.release();
     return true;
-  } catch {
+  } catch (error) {
+    console.error("Database connection test failed:", error);
     return false;
   }
 }

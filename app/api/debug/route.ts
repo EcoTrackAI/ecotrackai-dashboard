@@ -10,10 +10,24 @@ import {
 
 /**
  * GET /api/debug
- * Debug endpoint to check database content
+ * Debug endpoint to check database content and environment configuration
  */
 export async function GET() {
   try {
+    // Check environment configuration (don't expose sensitive values)
+    const envCheck = {
+      NODE_ENV: process.env.NODE_ENV,
+      hasDatabaseUrl: !!process.env.DATABASE_URL,
+      hasPostgresUrl: !!process.env.POSTGRES_URL,
+      hasFirebaseConfig: !!(
+        process.env.NEXT_PUBLIC_FIREBASE_API_KEY &&
+        process.env.NEXT_PUBLIC_FIREBASE_DATABASE_URL
+      ),
+      databaseUrlPattern: process.env.DATABASE_URL
+        ? process.env.DATABASE_URL.substring(0, 30) + "..."
+        : "Not set",
+    };
+
     const isConnected = await testConnection();
 
     if (!isConnected) {
@@ -21,6 +35,15 @@ export async function GET() {
         {
           status: "error",
           message: "Database not connected",
+          environment: envCheck,
+          troubleshooting: {
+            suggestions: [
+              "Verify DATABASE_URL or POSTGRES_URL is set in environment variables",
+              "Check if database accepts connections from your hosting IP",
+              "Ensure connection string includes sslmode=require for cloud databases",
+              "Check database server is running and accessible",
+            ],
+          },
         },
         { status: 503 },
       );
@@ -39,6 +62,7 @@ export async function GET() {
     return NextResponse.json(
       {
         status: "connected",
+        environment: envCheck,
         database: {
           rooms: {
             count: rooms.length,
@@ -71,6 +95,10 @@ export async function GET() {
       {
         status: "error",
         message: error instanceof Error ? error.message : "Unknown error",
+        stack:
+          process.env.NODE_ENV === "development" && error instanceof Error
+            ? error.stack
+            : undefined,
       },
       { status: 500 },
     );
