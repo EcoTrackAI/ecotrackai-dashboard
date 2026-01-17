@@ -14,21 +14,21 @@ export function getPool(): Pool {
       throw new Error("DATABASE_URL or POSTGRES_URL must be set");
     }
 
-    // Configure SSL based on environment
+    // Configure SSL for production environments
     const isProduction = process.env.NODE_ENV === "production";
-    const sslConfig = connectionString.includes("sslmode=require")
-      ? { rejectUnauthorized: false }
-      : isProduction
-        ? { rejectUnauthorized: false }
-        : false;
+    const isVercel = process.env.VERCEL === "1";
+
+    // Always enable SSL in production/Vercel with proper configuration
+    const sslConfig =
+      isProduction || isVercel ? { rejectUnauthorized: false } : false;
 
     pool = new Pool({
       connectionString,
       ssl: sslConfig,
-      max: 20,
+      max: isProduction ? 10 : 20, // Reduce connections in production
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 10000,
-      statement_timeout: 30000,
+      statement_timeout: 60000, // Increase timeout for production queries
     });
 
     pool.on("error", (err) => {
@@ -347,7 +347,7 @@ export async function getHistoricalRoomSensorData(
     query += ` GROUP BY ${timeField}, rs.room_id, r.name`;
   }
 
-  query += ` ORDER BY timestamp ASC`;
+  query += ` ORDER BY timestamp ASC LIMIT 10000`;
 
   console.log("[DB] Fetching room sensor data:", {
     startDate: startDate.toISOString(),
@@ -408,7 +408,7 @@ export async function getHistoricalPZEMData(
     query += ` GROUP BY ${timeField}`;
   }
 
-  query += ` ORDER BY timestamp ASC`;
+  query += ` ORDER BY timestamp ASC LIMIT 10000`;
 
   console.log("[DB] Fetching PZEM data:", {
     startDate: startDate.toISOString(),
