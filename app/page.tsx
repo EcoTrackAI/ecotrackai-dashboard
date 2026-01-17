@@ -1,407 +1,256 @@
 "use client";
 
-import { useEffect, useState, useRef } from "react";
-import { ref, onValue } from "firebase/database";
-import { db } from "@/lib/firebase";
-import Header from "@/components/Header";
-import SensorStatusCard from "@/components/SensorStatusCard";
-import EnvironmentSummary from "@/components/EnvironmentSummary";
-import AIRecommendation from "@/components/AIRecommendation";
-import Charts from "@/components/Charts";
-import ControlPanel from "@/components/ControlPanel";
-import Footer from "@/components/Footer";
+import { useEffect, useState } from "react";
+import { MetricCard } from "@/components/metrics";
+import { RoomStatusCard } from "@/components/rooms";
+import { LiveSensorCard } from "@/components/sensors";
+import { Zap, Flame, Gauge } from "lucide-react";
+import { subscribePZEMData, subscribeRoomSensor } from "@/lib/firebase-sensors";
+import { initializeFirebase } from "@/lib/firebase";
 
 export default function Home() {
-  const [data, setData] = useState<SensorData | null>(null);
-  const [sensors, setSensors] = useState<SensorReading[]>([]);
-  const [isOnline, setIsOnline] = useState(false);
-  const [lastUpdated, setLastUpdated] = useState<number | null>(null);
-  const [historicalTemp, setHistoricalTemp] = useState<HistoricalDataPoint[]>(
-    []
+  const [pzem, setPzem] = useState<PZEMData | null>(null);
+  const [bedroomData, setBedroomData] = useState<RoomSensorData | null>(null);
+  const [livingRoomData, setLivingRoomData] = useState<RoomSensorData | null>(
+    null,
   );
-  const [historicalHumidity, setHistoricalHumidity] = useState<
-    HistoricalDataPoint[]
-  >([]);
-  const [historicalLight, setHistoricalLight] = useState<HistoricalDataPoint[]>(
-    []
-  );
-  const lastDataHash = useRef<string>("");
-  const connectionTimeoutRef = useRef<NodeJS.Timeout | undefined>(undefined);
-  const lastUpdateTimeRef = useRef<number>(0);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    const liveRef = ref(db, "sensors");
+    try {
+      initializeFirebase();
+    } catch (err) {
+      console.error("Failed to initialize Firebase:", err);
+      setTimeout(() => {
+        setError("Failed to connect to Firebase");
+        setLoading(false);
+      }, 0);
+      return;
+    }
 
-    const unsubscribe = onValue(
-      liveRef,
-      (snapshot) => {
-        const val = snapshot.val();
-        const rawSensors = val?.sensors ?? val;
+    const unsubscribePZEM = subscribePZEMData((data) => {
+      setPzem(data);
+      setLoading(false);
+    });
 
-        if (rawSensors) {
-          const sensorList: SensorReading[] = Object.entries(rawSensors).map(
-            ([id, sensor]) => ({ id, ...(sensor as Omit<SensorReading, "id">) })
-          );
+    const unsubscribeBedroom = subscribeRoomSensor("bedroom", (data) => {
+      setBedroomData(data);
+      setLoading(false);
+    });
 
-          const findByCategory = (category: string) =>
-            sensorList.find((item) => item.category === category);
-
-          const tempSensor = findByCategory("temperature");
-          const humiditySensor = findByCategory("humidity");
-          const lightSensor = findByCategory("lighting");
-          const occupancySensor = findByCategory("occupancy");
-
-          const newData: SensorData = {
-            temperature: Number(tempSensor?.currentValue ?? 0),
-            humidity: Number(humiditySensor?.currentValue ?? 0),
-            light: Number(lightSensor?.currentValue ?? 0),
-            motion: Boolean(
-              typeof occupancySensor?.currentValue === "boolean"
-                ? occupancySensor.currentValue
-                : Number(occupancySensor?.currentValue ?? 0) > 0
-            ),
-            timestamp: Date.now(),
-          };
-
-          setSensors(sensorList);
-
-          // Round values to avoid floating point comparison issues
-          const dataHash = JSON.stringify({
-            temp: Math.round(newData.temperature * 10) / 10,
-            hum: Math.round(newData.humidity * 10) / 10,
-            light: Math.round(newData.light),
-            motion: newData.motion,
-          });
-
-          // Only update if data changed AND at least 2 seconds have passed (debounce)
-          const now = Date.now();
-          if (
-            dataHash !== lastDataHash.current &&
-            now - lastUpdateTimeRef.current > 2000
-          ) {
-            lastDataHash.current = dataHash;
-            lastUpdateTimeRef.current = now;
-            setIsOnline(true);
-            const newestUpdate = sensorList.reduce((acc, sensor) => {
-              const ts = Date.parse(sensor.lastUpdate);
-              return Number.isNaN(ts) ? acc : Math.max(acc, ts);
-            }, now);
-            setLastUpdated(newestUpdate);
-
-            // Add to historical data only when data changes
-            setHistoricalTemp((prev) => {
-              const updated = [
-                ...prev,
-                { timestamp: now, value: newData.temperature },
-              ];
-              return updated.slice(-100);
-            });
-            setHistoricalHumidity((prev) => {
-              const updated = [
-                ...prev,
-                { timestamp: now, value: newData.humidity },
-              ];
-              return updated.slice(-100);
-            });
-            setHistoricalLight((prev) => {
-              const updated = [
-                ...prev,
-                { timestamp: now, value: newData.light },
-              ];
-              return updated.slice(-100);
-            });
-
-            // Reset connection timeout - mark offline after 10 seconds of no changes
-            if (connectionTimeoutRef.current) {
-              clearTimeout(connectionTimeoutRef.current);
-            }
-            connectionTimeoutRef.current = setTimeout(() => {
-              setIsOnline(false);
-            }, 10000);
-          }
-
-          setData(newData);
-        }
-      },
-      (error) => {
-        console.error("Firebase error:", error);
-        setIsOnline(false);
-      }
-    );
+    const unsubscribeLivingRoom = subscribeRoomSensor("living_room", (data) => {
+      setLivingRoomData(data);
+      setLoading(false);
+    });
 
     return () => {
-      unsubscribe();
-      if (connectionTimeoutRef.current) {
-        clearTimeout(connectionTimeoutRef.current);
-      }
+      unsubscribePZEM();
+      unsubscribeBedroom();
+      unsubscribeLivingRoom();
     };
   }, []);
 
-  const getTemperatureStatus = (
-    temp: number
-  ): "normal" | "warning" | "critical" => {
-    if (temp < 15 || temp > 30) return "critical";
-    if (temp < 18 || temp > 28) return "warning";
-    return "normal";
-  };
-
-  const getHumidityStatus = (
-    humidity: number
-  ): "normal" | "warning" | "critical" => {
-    if (humidity < 20 || humidity > 80) return "critical";
-    if (humidity < 30 || humidity > 70) return "warning";
-    return "normal";
-  };
-
-  const getLightStatus = (light: number): "normal" | "warning" | "critical" => {
-    if (light > 90) return "critical";
-    if (light > 80) return "warning";
-    return "normal";
-  };
-
-  const renderSensorTable = () => {
-    if (!sensors.length) return null;
-
-    const statusBadge = (status: string) => {
-      const normalized = status.toLowerCase();
-      const colorClasses =
-        normalized === "critical"
-          ? "bg-rose-50 text-rose-700 border-rose-200"
-          : normalized === "warning"
-          ? "bg-amber-50 text-amber-700 border-amber-200"
-          : "bg-emerald-50 text-emerald-700 border-emerald-200";
-
-      return (
-        <span
-          className={`px-2 py-1 text-xs font-semibold rounded-full border ${colorClasses}`}
-        >
-          {status}
-        </span>
-      );
-    };
-
-    const formatValue = (sensor: SensorReading) => {
-      if (sensor.unit === "boolean") {
-        return sensor.currentValue ? "Active" : "Idle";
-      }
-      const numeric = Number(sensor.currentValue);
-      return Number.isFinite(numeric)
-        ? numeric.toFixed(1)
-        : String(sensor.currentValue);
-    };
-
-    return (
-      <div className="bg-white border border-gray-200 rounded-lg p-4 sm:p-6 shadow-sm">
-        <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between mb-4">
-          <div className="flex items-center gap-2">
-            <span className="w-1 h-7 bg-emerald-600 rounded-full"></span>
-            <h3 className="text-lg font-semibold text-gray-900">
-              Sensor Table
-            </h3>
-          </div>
-          <p className="text-sm text-gray-600">
-            Live readings from all sensors
+  return (
+    <div className="min-h-screen bg-[#F8FAFC]">
+      <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
+        {/* Page Header */}
+        <div className="mb-8">
+          <h1 className="text-3xl font-bold text-[#111827] mb-2">
+            Overview Dashboard
+          </h1>
+          <p className="text-gray-600">
+            Real-time energy monitoring and home automation
           </p>
         </div>
-        <div className="overflow-x-auto">
-          <table className="w-full min-w-160 text-sm text-left">
-            <thead className="bg-gray-50 text-gray-700 font-semibold">
-              <tr>
-                <th className="px-3 py-2 rounded-tl-lg">Name</th>
-                <th className="px-3 py-2">Category</th>
-                <th className="px-3 py-2">Room</th>
-                <th className="px-3 py-2">Value</th>
-                <th className="px-3 py-2">Status</th>
-                <th className="px-3 py-2 rounded-tr-lg">Updated</th>
-              </tr>
-            </thead>
-            <tbody className="divide-y divide-gray-100">
-              {sensors.map((sensor) => (
-                <tr key={sensor.id} className="hover:bg-gray-50">
-                  <td className="px-3 py-2 font-semibold text-gray-900 whitespace-nowrap">
-                    {sensor.sensorName}
-                  </td>
-                  <td className="px-3 py-2 capitalize text-gray-700 whitespace-nowrap">
-                    {sensor.category}
-                  </td>
-                  <td className="px-3 py-2 text-gray-700 whitespace-nowrap">
-                    {sensor.room.replace(/-/g, " ")}
-                  </td>
-                  <td className="px-3 py-2 text-gray-900 whitespace-nowrap">
-                    {formatValue(sensor)}{" "}
-                    {sensor.unit !== "boolean" ? sensor.unit : ""}
-                  </td>
-                  <td className="px-3 py-2 whitespace-nowrap">
-                    {statusBadge(sensor.status)}
-                  </td>
-                  <td className="px-3 py-2 text-gray-600 whitespace-nowrap">
-                    {new Date(sensor.lastUpdate).toLocaleTimeString([], {
-                      hour: "2-digit",
-                      minute: "2-digit",
-                    })}
-                  </td>
-                </tr>
-              ))}
-            </tbody>
-          </table>
-        </div>
+
+        {/* Error State */}
+        {error && (
+          <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
+            <p className="text-sm text-red-700">{error}</p>
+          </div>
+        )}
+
+        {/* Key Metrics Section */}
+        <section className="mb-8">
+          <h2 className="text-lg font-semibold text-[#111827] mb-4">
+            Power Metrics
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {loading || !pzem ? (
+              <>
+                {[1, 2, 3].map((i) => (
+                  <div
+                    key={i}
+                    className="bg-white rounded-lg border border-gray-200 p-6 animate-pulse"
+                  >
+                    <div className="flex items-center gap-3 mb-3">
+                      <div className="w-5 h-5 bg-gray-200 rounded"></div>
+                      <span className="text-sm text-gray-600 bg-gray-200 rounded w-24 h-4"></span>
+                    </div>
+                    <div className="h-8 bg-gray-200 rounded w-24"></div>
+                    <p className="text-xs text-gray-500 mt-2">Loading...</p>
+                  </div>
+                ))}
+              </>
+            ) : (
+              <>
+                <MetricCard
+                  title="Current Power"
+                  value={pzem.power.toFixed(1)}
+                  unit="W"
+                  icon={<Zap className="w-6 h-6" />}
+                />
+                <MetricCard
+                  title="Total Energy"
+                  value={pzem.energy.toFixed(2)}
+                  unit="kWh"
+                  icon={<Flame className="w-6 h-6" />}
+                />
+                <MetricCard
+                  title="Voltage"
+                  value={pzem.voltage.toFixed(1)}
+                  unit="V"
+                  icon={<Gauge className="w-6 h-6" />}
+                />
+              </>
+            )}
+          </div>
+        </section>
+
+        {/* Room Status Section */}
+        <section className="mb-8">
+          <h2 className="text-lg font-semibold text-[#111827] mb-4">
+            Room Status
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            {loading ? (
+              <>
+                {[1, 2].map((i) => (
+                  <div
+                    key={i}
+                    className="bg-white rounded-lg border border-gray-200 p-6 animate-pulse"
+                  >
+                    <div className="h-6 bg-gray-200 rounded w-32 mb-4"></div>
+                    <div className="space-y-3">
+                      <div className="h-4 bg-gray-200 rounded"></div>
+                      <div className="h-4 bg-gray-200 rounded w-5/6"></div>
+                      <div className="h-4 bg-gray-200 rounded w-4/6"></div>
+                    </div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              <>
+                {bedroomData && (
+                  <RoomStatusCard
+                    roomName="Bedroom"
+                    temperature={bedroomData.temperature}
+                    humidity={bedroomData.humidity}
+                    light={bedroomData.light}
+                    motion={bedroomData.motion}
+                  />
+                )}
+                {livingRoomData && (
+                  <RoomStatusCard
+                    roomName="Living Room"
+                    temperature={livingRoomData.temperature}
+                    humidity={livingRoomData.humidity}
+                    light={livingRoomData.light}
+                    motion={livingRoomData.motion}
+                  />
+                )}
+              </>
+            )}
+          </div>
+        </section>
+
+        {/* Live Sensors Section */}
+        <section>
+          <h2 className="text-lg font-semibold text-[#111827] mb-4">
+            Live Sensors
+          </h2>
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+            {loading ? (
+              <>
+                {[1, 2, 3, 4].map((i) => (
+                  <div
+                    key={i}
+                    className="bg-white rounded-lg border border-gray-200 p-4 animate-pulse"
+                  >
+                    <div className="h-5 bg-gray-200 rounded w-3/4 mb-2"></div>
+                    <div className="h-8 bg-gray-200 rounded w-1/2 mb-2"></div>
+                    <div className="h-3 bg-gray-200 rounded w-2/3"></div>
+                  </div>
+                ))}
+              </>
+            ) : (
+              <>
+                {bedroomData && (
+                  <>
+                    <LiveSensorCard
+                      sensorName="Temperature"
+                      currentValue={bedroomData.temperature.toFixed(1)}
+                      unit="°C"
+                      status={
+                        bedroomData.temperature > 28 ? "warning" : "normal"
+                      }
+                      description="Bedroom temperature"
+                      lastUpdate={bedroomData.updatedAt}
+                    />
+                    <LiveSensorCard
+                      sensorName="Humidity"
+                      currentValue={bedroomData.humidity.toFixed(0)}
+                      unit="%"
+                      status="normal"
+                      description="Bedroom humidity"
+                      lastUpdate={bedroomData.updatedAt}
+                    />
+                    <LiveSensorCard
+                      sensorName="Light"
+                      currentValue={bedroomData.light.toFixed(0)}
+                      unit="lux"
+                      status="normal"
+                      description="Bedroom light"
+                      lastUpdate={bedroomData.updatedAt}
+                    />
+                    <LiveSensorCard
+                      sensorName="Motion"
+                      currentValue={bedroomData.motion ? "Detected" : "None"}
+                      unit=""
+                      status={bedroomData.motion ? "warning" : "normal"}
+                      description="Bedroom motion"
+                      lastUpdate={bedroomData.updatedAt}
+                    />
+                  </>
+                )}
+                {livingRoomData && (
+                  <>
+                    <LiveSensorCard
+                      sensorName="Temperature"
+                      currentValue={livingRoomData.temperature.toFixed(1)}
+                      unit="°C"
+                      status={
+                        livingRoomData.temperature > 28 ? "warning" : "normal"
+                      }
+                      description="Living room temperature"
+                      lastUpdate={livingRoomData.updatedAt}
+                    />
+                    <LiveSensorCard
+                      sensorName="Humidity"
+                      currentValue={livingRoomData.humidity.toFixed(0)}
+                      unit="%"
+                      status="normal"
+                      description="Living room humidity"
+                      lastUpdate={livingRoomData.updatedAt}
+                    />
+                  </>
+                )}
+              </>
+            )}
+          </div>
+        </section>
       </div>
-    );
-  };
-
-  return (
-    <>
-      <Header isOnline={isOnline} />
-
-      <main className="min-h-screen bg-gray-50 pt-16 pb-6">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-          {!data ? (
-            <div className="flex items-center justify-center h-[60vh] animate-fadeIn">
-              <div className="text-center">
-                <div className="inline-block rounded-full h-12 w-12 border-3 border-gray-200 border-t-blue-600 mb-4 animate-spin"></div>
-                <p className="text-gray-700 text-base font-medium">
-                  Connecting to sensors...
-                </p>
-                <p className="text-gray-500 text-sm mt-1">Please wait</p>
-              </div>
-            </div>
-          ) : (
-            <div className="space-y-6">
-              {/* Live Sensor Status Cards */}
-              <section className="animate-fadeIn">
-                <div className="flex items-center justify-between mb-4">
-                  <h2 className="text-xl sm:text-2xl font-semibold text-gray-900 flex items-center gap-2">
-                    <span className="w-1 h-7 bg-blue-600 rounded-full"></span>
-                    <span className="truncate">Live Sensor Data</span>
-                  </h2>
-                  <div className="flex items-center gap-2 text-xs text-gray-600">
-                    <div className="w-2 h-2 bg-emerald-500 rounded-full animate-pulse-subtle"></div>
-                    <span className="hidden xs:inline whitespace-nowrap font-medium">
-                      Real-time
-                    </span>
-                  </div>
-                </div>
-                <div className="grid grid-cols-2 lg:grid-cols-4 gap-4">
-                  <SensorStatusCard
-                    title="Temperature"
-                    value={data.temperature}
-                    unit="°C"
-                    status={getTemperatureStatus(data.temperature)}
-                    icon={
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M9 19v-6a2 2 0 00-2-2H5a2 2 0 00-2 2v6a2 2 0 002 2h2a2 2 0 002-2zm0 0V9a2 2 0 012-2h2a2 2 0 012 2v10m-6 0a2 2 0 002 2h2a2 2 0 002-2m0 0V5a2 2 0 012-2h2a2 2 0 012 2v14a2 2 0 01-2 2h-2a2 2 0 01-2-2z"
-                        />
-                      </svg>
-                    }
-                  />
-                  <SensorStatusCard
-                    title="Humidity"
-                    value={data.humidity}
-                    unit="%"
-                    status={getHumidityStatus(data.humidity)}
-                    icon={
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M3 15a4 4 0 004 4h9a5 5 0 10-.1-9.999 5.002 5.002 0 10-9.78 2.096A4.001 4.001 0 003 15z"
-                        />
-                      </svg>
-                    }
-                  />
-                  <SensorStatusCard
-                    title="Light Level"
-                    value={data.light}
-                    unit="%"
-                    status={getLightStatus(data.light)}
-                    icon={
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M12 3v1m0 16v1m9-9h-1M4 12H3m15.364 6.364l-.707-.707M6.343 6.343l-.707-.707m12.728 0l-.707.707M6.343 17.657l-.707.707M16 12a4 4 0 11-8 0 4 4 0 018 0z"
-                        />
-                      </svg>
-                    }
-                  />
-                  <SensorStatusCard
-                    title="Occupancy"
-                    value={data.motion ? "Detected" : "Idle"}
-                    unit=""
-                    status={data.motion ? "normal" : "warning"}
-                    icon={
-                      <svg
-                        className="w-5 h-5"
-                        fill="none"
-                        stroke="currentColor"
-                        viewBox="0 0 24 24"
-                      >
-                        <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
-                          strokeWidth={2}
-                          d="M16 7a4 4 0 11-8 0 4 4 0 018 0zM12 14a7 7 0 00-7 7h14a7 7 0 00-7-7z"
-                        />
-                      </svg>
-                    }
-                  />
-                </div>
-              </section>
-
-              {/* Insights Section */}
-              <section className="grid grid-cols-1 md:grid-cols-2 gap-5 animate-fadeIn">
-                <AIRecommendation data={data} />
-                <EnvironmentSummary data={data} />
-              </section>
-
-              {/* Sensor Table */}
-              <section className="animate-fadeIn">
-                {renderSensorTable()}
-              </section>
-
-              {/* Main Dashboard Grid */}
-              <section className="grid grid-cols-1 xl:grid-cols-3 gap-5 animate-fadeIn">
-                <div className="xl:col-span-2">
-                  <Charts
-                    temperatureData={historicalTemp}
-                    humidityData={historicalHumidity}
-                    lightData={historicalLight}
-                  />
-                </div>
-                <div className="xl:col-span-1">
-                  <div className="xl:sticky xl:top-24">
-                    <ControlPanel />
-                  </div>
-                </div>
-              </section>
-            </div>
-          )}
-        </div>
-      </main>
-
-      {/* Footer */}
-      <Footer lastUpdated={lastUpdated} isConnected={isOnline} />
-    </>
+    </div>
   );
 }
