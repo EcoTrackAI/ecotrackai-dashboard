@@ -3,15 +3,26 @@
 import { useState, useEffect } from "react";
 import { LiveSensorCard } from "@/components/sensors";
 import { subscribeRoomSensor } from "@/lib/firebase-sensors";
+import { subscribeSystemStatus } from "@/lib/firebase-system-status";
 import { initializeFirebase } from "@/lib/firebase";
 
-const STALE_THRESHOLD = 30000; // 30 seconds
+const STALE_THRESHOLD = 30000; // 30 seconds - sensor is stale if not updated within this time
 
+/**
+ * Determine if sensor data is stale based on lastUpdate timestamp
+ */
 const isSensorStale = (lastUpdate: string | undefined): boolean => {
   if (!lastUpdate) return true;
-  return Date.now() - new Date(lastUpdate).getTime() >= STALE_THRESHOLD;
+
+  const lastUpdateTime = new Date(lastUpdate).getTime();
+  if (isNaN(lastUpdateTime)) return true;
+
+  return Date.now() - lastUpdateTime >= STALE_THRESHOLD;
 };
 
+/**
+ * Format timestamp as relative time (e.g., "5m ago")
+ */
 const formatTimestamp = (timestamp: string): string => {
   const date = new Date(timestamp);
   if (isNaN(date.getTime())) return "Unknown";
@@ -31,45 +42,65 @@ export default function LiveMonitoringPage() {
   const [livingRoomData, setLivingRoomData] = useState<RoomSensorData | null>(
     null,
   );
+  const [deviceStatus, setDeviceStatus] = useState<SystemStatus>("offline");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let unsubscribeBedroom: (() => void) | undefined;
+    let unsubscribeLivingRoom: (() => void) | undefined;
+    let unsubscribeStatus: (() => void) | undefined;
+
     try {
       initializeFirebase();
-    } catch (err) {
-      console.error("Failed to initialize Firebase:", err);
-      setTimeout(() => {
-        setError("Failed to connect to Firebase");
+
+      // Subscribe to device online/offline status
+      unsubscribeStatus = subscribeSystemStatus((status) => {
+        setDeviceStatus(status);
+        setError(null);
+      });
+
+      // Subscribe to real-time bedroom sensor data
+      unsubscribeBedroom = subscribeRoomSensor("bedroom", (data) => {
+        if (data) {
+          setBedroomData(data);
+        }
         setLoading(false);
-      }, 0);
-      return;
+      });
+
+      // Subscribe to real-time living room sensor data
+      unsubscribeLivingRoom = subscribeRoomSensor("living_room", (data) => {
+        if (data) {
+          setLivingRoomData(data);
+        }
+        setLoading(false);
+      });
+    } catch (err) {
+      console.error("[LiveMonitoring] Initialization error:", err);
+      setError("Failed to connect to Firebase. Please refresh the page.");
+      setLoading(false);
     }
 
-    const unsubscribeBedroom = subscribeRoomSensor("bedroom", (data) => {
-      setBedroomData(data);
-      setLoading(false);
-      setError(null);
-    });
-
-    const unsubscribeLivingRoom = subscribeRoomSensor("living_room", (data) => {
-      setLivingRoomData(data);
-      setLoading(false);
-      setError(null);
-    });
-
     return () => {
-      unsubscribeBedroom();
-      unsubscribeLivingRoom();
+      unsubscribeBedroom?.();
+      unsubscribeLivingRoom?.();
+      unsubscribeStatus?.();
     };
   }, []);
 
-  const bedroomStatus =
-    bedroomData && isSensorStale(bedroomData.updatedAt) ? "offline" : "normal";
-  const livingRoomStatus =
-    livingRoomData && isSensorStale(livingRoomData.updatedAt)
-      ? "offline"
-      : "normal";
+  // Determine sensor status: offline if device is offline or sensor data is stale
+  const getBedroomStatus = (): SensorStatus => {
+    if (deviceStatus === "offline") return "offline";
+    if (!bedroomData || isSensorStale(bedroomData.updatedAt)) return "offline";
+    return "normal";
+  };
+
+  const getLivingRoomStatus = (): SensorStatus => {
+    if (deviceStatus === "offline") return "offline";
+    if (!livingRoomData || isSensorStale(livingRoomData.updatedAt))
+      return "offline";
+    return "normal";
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
@@ -79,23 +110,29 @@ export default function LiveMonitoringPage() {
           <h1 className="text-3xl font-bold text-[#111827] mb-2">
             Live Monitoring
           </h1>
-          <p className="text-gray-600">Real-time sensor data from all rooms</p>
+          <p className="text-gray-600">
+            Real-time sensor data from all rooms
+            {deviceStatus === "offline" && (
+              <span className="block text-yellow-600 font-semibold mt-1">
+                ⚠️ Device is currently offline - data may be stale
+              </span>
+            )}
+          </p>
         </div>
 
         {/* Error Message */}
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-700 text-sm">{error}</p>
+            <p className="text-red-700 text-sm font-semibold">Error</p>
+            <p className="text-red-600 text-sm">{error}</p>
           </div>
         )}
 
-        {loading && (
+        {loading ? (
           <div className="flex justify-center items-center py-12">
             <p className="text-gray-500">Connecting to sensors...</p>
           </div>
-        )}
-
-        {!loading && (
+        ) : (
           <div className="grid grid-cols-1 md:grid-cols-2 gap-8">
             {/* Bedroom Sensors */}
             <section className="space-y-4">
@@ -104,33 +141,39 @@ export default function LiveMonitoringPage() {
                 <div className="grid gap-4">
                   <LiveSensorCard
                     sensorName="Temperature"
-                    currentValue={bedroomData.temperature.toFixed(1)}
+                    currentValue={bedroomData.temperature?.toFixed(1) ?? "N/A"}
                     unit="°C"
-                    status={bedroomStatus as SensorStatus}
+                    status={getBedroomStatus()}
                     description="Room temperature"
                     lastUpdate={bedroomData.updatedAt}
                   />
                   <LiveSensorCard
                     sensorName="Humidity"
-                    currentValue={bedroomData.humidity.toFixed(1)}
+                    currentValue={bedroomData.humidity?.toFixed(1) ?? "N/A"}
                     unit="%"
-                    status={bedroomStatus as SensorStatus}
+                    status={getBedroomStatus()}
                     description="Room humidity level"
                     lastUpdate={bedroomData.updatedAt}
                   />
                   <LiveSensorCard
                     sensorName="Light"
-                    currentValue={bedroomData.light.toFixed(0)}
+                    currentValue={bedroomData.light?.toFixed(0) ?? "N/A"}
                     unit="lux"
-                    status={bedroomStatus as SensorStatus}
+                    status={getBedroomStatus()}
                     description="Light intensity"
                     lastUpdate={bedroomData.updatedAt}
                   />
                   <LiveSensorCard
                     sensorName="Motion"
-                    currentValue={bedroomData.motion ? "Detected" : "No Motion"}
+                    currentValue={
+                      bedroomData.motion !== undefined
+                        ? bedroomData.motion
+                          ? "Detected"
+                          : "No Motion"
+                        : "N/A"
+                    }
                     unit=""
-                    status={bedroomStatus as SensorStatus}
+                    status={getBedroomStatus()}
                     description="Motion sensor"
                     lastUpdate={bedroomData.updatedAt}
                   />
@@ -139,8 +182,12 @@ export default function LiveMonitoringPage() {
                   </p>
                 </div>
               ) : (
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="text-gray-500 text-sm">No data available</p>
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-gray-500 text-sm">
+                    {deviceStatus === "offline"
+                      ? "Device is offline - no data available"
+                      : "Waiting for sensor data..."}
+                  </p>
                 </div>
               )}
             </section>
@@ -154,35 +201,41 @@ export default function LiveMonitoringPage() {
                 <div className="grid gap-4">
                   <LiveSensorCard
                     sensorName="Temperature"
-                    currentValue={livingRoomData.temperature.toFixed(1)}
+                    currentValue={
+                      livingRoomData.temperature?.toFixed(1) ?? "N/A"
+                    }
                     unit="°C"
-                    status={livingRoomStatus as SensorStatus}
+                    status={getLivingRoomStatus()}
                     description="Room temperature"
                     lastUpdate={livingRoomData.updatedAt}
                   />
                   <LiveSensorCard
                     sensorName="Humidity"
-                    currentValue={livingRoomData.humidity.toFixed(1)}
+                    currentValue={livingRoomData.humidity?.toFixed(1) ?? "N/A"}
                     unit="%"
-                    status={livingRoomStatus as SensorStatus}
+                    status={getLivingRoomStatus()}
                     description="Room humidity level"
                     lastUpdate={livingRoomData.updatedAt}
                   />
                   <LiveSensorCard
                     sensorName="Light"
-                    currentValue={livingRoomData.light.toFixed(0)}
+                    currentValue={livingRoomData.light?.toFixed(0) ?? "N/A"}
                     unit="lux"
-                    status={livingRoomStatus as SensorStatus}
+                    status={getLivingRoomStatus()}
                     description="Light intensity"
                     lastUpdate={livingRoomData.updatedAt}
                   />
                   <LiveSensorCard
                     sensorName="Motion"
                     currentValue={
-                      livingRoomData.motion ? "Detected" : "No Motion"
+                      livingRoomData.motion !== undefined
+                        ? livingRoomData.motion
+                          ? "Detected"
+                          : "No Motion"
+                        : "N/A"
                     }
                     unit=""
-                    status={livingRoomStatus as SensorStatus}
+                    status={getLivingRoomStatus()}
                     description="Motion sensor"
                     lastUpdate={livingRoomData.updatedAt}
                   />
@@ -191,8 +244,12 @@ export default function LiveMonitoringPage() {
                   </p>
                 </div>
               ) : (
-                <div className="p-4 bg-gray-50 rounded-lg">
-                  <p className="text-gray-500 text-sm">No data available</p>
+                <div className="p-4 bg-gray-50 rounded-lg border border-gray-200">
+                  <p className="text-gray-500 text-sm">
+                    {deviceStatus === "offline"
+                      ? "Device is offline - no data available"
+                      : "Waiting for sensor data..."}
+                  </p>
                 </div>
               )}
             </section>

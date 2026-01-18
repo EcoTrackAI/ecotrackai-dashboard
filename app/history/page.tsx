@@ -68,42 +68,59 @@ export default function HistoryPage() {
         params.append("roomIds", selectedRooms.join(","));
         params.append("_t", Date.now().toString()); // Cache buster
 
-        console.log("[History] Fetching:", `/api/historical-data?${params}`);
+        console.log(
+          "[History] Fetching from database:",
+          `/api/historical-data?${params}`,
+        );
         const response = await fetch(`/api/historical-data?${params}`, {
           cache: "no-store",
           headers: { "Cache-Control": "no-cache" },
         });
         console.log("[History] Response status:", response.status);
-        
+
         const result = await response.json();
-        console.log("[History] Result:", result);
+        console.log("[History] Result count:", result.data?.length || 0);
 
         if (!response.ok) {
-          setError(result.error || "Failed to fetch data");
+          setError(result.error || "Failed to fetch data from database");
           setHistoricalData([]);
           return;
         }
 
-        if (result.data) {
-          setHistoricalData(
-            result.data.map((item: HistoricalDataPoint) => ({
+        if (result.data && Array.isArray(result.data)) {
+          // Validate and transform data
+          const validData = result.data
+            .filter((item: any) => {
+              // Ensure timestamp is valid
+              const ts = new Date(item.timestamp).getTime();
+              return !isNaN(ts) && item.roomId;
+            })
+            .map((item: HistoricalDataPoint) => ({
               ...item,
               timestamp: new Date(item.timestamp),
-            })),
-          );
-          console.log("[History] Loaded", result.data.length, "records");
+            }));
+
+          setHistoricalData(validData);
+          console.log("[History] Loaded", validData.length, "valid records");
         } else {
           setHistoricalData([]);
+          console.log("[History] No data available from database");
         }
       } catch (err) {
         console.error("[History] Fetch error:", err);
-        setError(err instanceof Error ? err.message : "Unknown error");
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unknown error while fetching data",
+        );
+        setHistoricalData([]);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
+    // Refresh every 10 seconds
     const interval = setInterval(fetchData, 10000);
     return () => clearInterval(interval);
   }, [dateRange, selectedRooms]);
@@ -123,7 +140,9 @@ export default function HistoryPage() {
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
             <p className="text-sm font-medium text-red-800">Error: {error}</p>
-            <p className="text-xs text-red-600 mt-1">Check console for details</p>
+            <p className="text-xs text-red-600 mt-1">
+              Check console for details
+            </p>
           </div>
         )}
 
@@ -204,7 +223,8 @@ export default function HistoryPage() {
               <div className="text-center py-12 bg-white rounded-lg border border-gray-200">
                 <p className="text-gray-500 mb-2">No data for selected range</p>
                 <p className="text-sm text-gray-400">
-                  Make sure your external cron job is calling POST /api/sync-firebase
+                  Make sure your external cron job is calling POST
+                  /api/sync-firebase
                   <br />
                   Check that Firebase has data and device status is "online"
                 </p>
