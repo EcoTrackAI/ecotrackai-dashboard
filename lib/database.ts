@@ -297,6 +297,7 @@ export async function batchInsertPZEMData(
 
 /**
  * Get historical room sensor data with optional aggregation
+ * Only returns data from the last 90 days (stale data threshold)
  */
 export async function getHistoricalRoomSensorData(
   startDate: Date,
@@ -305,6 +306,13 @@ export async function getHistoricalRoomSensorData(
   aggregation: "raw" | "hourly" = "raw",
 ): Promise<HistoricalRoomSensorData[]> {
   await initializeDatabase();
+
+  // Calculate 90-day threshold to filter stale data
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+  // Use the later of: requested startDate or 90 days ago
+  const effectiveStartDate = startDate > ninetyDaysAgo ? startDate : ninetyDaysAgo;
 
   const isAggregated = aggregation === "hourly";
   const timeField = isAggregated
@@ -336,7 +344,7 @@ export async function getHistoricalRoomSensorData(
     WHERE rs.timestamp >= $1 AND rs.timestamp <= $2
   `;
 
-  const params: (Date | string[])[] = [startDate, endDate];
+  const params: (Date | string[])[] = [effectiveStartDate, endDate];
 
   if (roomIds?.length) {
     query += ` AND rs.room_id = ANY($3)`;
@@ -350,7 +358,8 @@ export async function getHistoricalRoomSensorData(
   query += ` ORDER BY timestamp ASC LIMIT 10000`;
 
   console.log("[DB] Fetching room sensor data:", {
-    startDate: startDate.toISOString(),
+    requestedStartDate: startDate.toISOString(),
+    effectiveStartDate: effectiveStartDate.toISOString(),
     endDate: endDate.toISOString(),
     roomIds,
     aggregation,
@@ -365,6 +374,7 @@ export async function getHistoricalRoomSensorData(
 
 /**
  * Get historical PZEM data with optional aggregation
+ * Only returns data from the last 90 days (stale data threshold)
  */
 export async function getHistoricalPZEMData(
   startDate: Date,
@@ -372,6 +382,13 @@ export async function getHistoricalPZEMData(
   aggregation: "raw" | "hourly" = "raw",
 ): Promise<HistoricalPZEMData[]> {
   await initializeDatabase();
+
+  // Calculate 90-day threshold to filter stale data
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+  // Use the later of: requested startDate or 90 days ago
+  const effectiveStartDate = startDate > ninetyDaysAgo ? startDate : ninetyDaysAgo;
 
   const isAggregated = aggregation === "hourly";
   const timeField = isAggregated
@@ -404,6 +421,8 @@ export async function getHistoricalPZEMData(
     WHERE pz.timestamp >= $1 AND pz.timestamp <= $2
   `;
 
+  const params: Date[] = [effectiveStartDate, endDate];
+
   if (isAggregated) {
     query += ` GROUP BY ${timeField}`;
   }
@@ -411,7 +430,8 @@ export async function getHistoricalPZEMData(
   query += ` ORDER BY timestamp ASC LIMIT 10000`;
 
   console.log("[DB] Fetching PZEM data:", {
-    startDate: startDate.toISOString(),
+    requestedStartDate: startDate.toISOString(),
+    effectiveStartDate: effectiveStartDate.toISOString(),
     endDate: endDate.toISOString(),
     aggregation,
   });
