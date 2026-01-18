@@ -90,6 +90,7 @@ export function getTimestampMs(timestamp: string | Date): number {
 
 /**
  * Format IST timestamp for display
+ * Always displays in IST timezone regardless of browser timezone
  */
 export function formatTimestamp(
   timestamp: string | Date,
@@ -102,6 +103,7 @@ export function formatTimestamp(
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
+    timeZone: "Asia/Kolkata", // Force IST timezone
     ...options,
   };
   return date.toLocaleString(locale, defaultOptions);
