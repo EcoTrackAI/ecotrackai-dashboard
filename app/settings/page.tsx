@@ -27,12 +27,10 @@ export default function SettingsPage() {
     "idle" | "saving" | "saved" | "error"
   >("idle");
 
-  // Load settings from localStorage on mount
   useEffect(() => {
     const savedSettings = localStorage.getItem("systemSettings");
     if (savedSettings) {
       const parsed = JSON.parse(savedSettings);
-      // Use setTimeout to avoid setState during render
       setTimeout(() => {
         if (parsed.rooms) {
           setRooms(parsed.rooms);
@@ -72,14 +70,12 @@ export default function SettingsPage() {
       localStorage.setItem("systemSettings", JSON.stringify(settings));
       setSaveStatus("saved");
       setTimeout(() => setSaveStatus("idle"), 2000);
-    } catch (error) {
-      console.error("Error saving settings:", error);
+    } catch {
       setSaveStatus("error");
       setTimeout(() => setSaveStatus("idle"), 2000);
     }
   };
 
-  // Room management functions
   const addRoom = () => {
     const newRoom: Room = {
       id: `room-${Date.now()}`,
@@ -100,7 +96,6 @@ export default function SettingsPage() {
     setAppliances(appliances.filter((app) => app.roomId !== id));
   };
 
-  // Appliance management functions
   const addAppliance = () => {
     const newAppliance: Appliance = {
       id: `appliance-${Date.now()}`,

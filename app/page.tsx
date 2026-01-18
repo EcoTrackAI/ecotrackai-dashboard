@@ -9,25 +9,13 @@ import { subscribePZEMData, subscribeRoomSensor } from "@/lib/firebase-sensors";
 import { subscribeSystemStatus } from "@/lib/firebase-system-status";
 import { initializeFirebase } from "@/lib/firebase";
 
-const STALE_THRESHOLD = 30000; // 30 seconds - sensor is stale if not updated within this time
+const STALE_THRESHOLD = 30000;
 
-/**
- * Determine if sensor data is stale based on lastUpdate timestamp
- */
 const isSensorStale = (lastUpdate: string | undefined): boolean => {
   if (!lastUpdate) return true;
-
   const lastUpdateTime = new Date(lastUpdate).getTime();
   if (isNaN(lastUpdateTime)) return true;
-
   return Date.now() - lastUpdateTime >= STALE_THRESHOLD;
-};
-
-/**
- * Determine if PZEM data is stale
- */
-const isPZEMStale = (lastUpdate: string | undefined): boolean => {
-  return isSensorStale(lastUpdate);
 };
 
 export default function Home() {
@@ -78,8 +66,8 @@ export default function Home() {
         }
         setLoading(false);
       });
-    } catch (err) {
-      console.error("[Home] Initialization error:", err);
+    } catch {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setError("Failed to connect to Firebase. Please refresh the page.");
       setLoading(false);
     }
@@ -91,13 +79,6 @@ export default function Home() {
       unsubscribeStatus?.();
     };
   }, []);
-
-  // Determine sensor status based on device and data freshness
-  const getPZEMStatus = (): SensorStatus => {
-    if (deviceStatus === "offline") return "offline";
-    if (!pzem || isPZEMStale(pzem.updatedAt)) return "offline";
-    return "normal";
-  };
 
   const getBedroomStatus = (): SensorStatus => {
     if (deviceStatus === "offline") return "offline";

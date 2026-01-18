@@ -1,10 +1,6 @@
 import { ref, onValue, get } from "firebase/database";
 import { getFirebaseDatabase } from "./firebase";
 
-/**
- * Subscribe to device online/offline status from Firebase
- * Reads from /devices/esp32-main/online which is the source of truth
- */
 export function subscribeSystemStatus(
   callback: SystemStatusCallback,
 ): () => void {
@@ -26,30 +22,21 @@ export function subscribeSystemStatus(
         // Device is online if online === true
         const isOnline = device.online === true;
         const status: SystemStatus = isOnline ? "online" : "offline";
-
-        console.log("[SystemStatus] Device status:", {
-          online: device.online,
-          lastSeen: device.lastSeen,
-          status,
-        });
-
         callback(status);
       },
-      (error) => {
-        console.error("System status error:", error);
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+      (_error) => {
         callback("offline");
       },
     );
-  } catch (error) {
-    console.error("Subscribe error:", error);
+  } 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  catch (error) {
     callback("offline");
     return () => {};
   }
 }
 
-/**
- * Fetch device status once
- */
 export async function getDeviceStatus(): Promise<SystemStatus> {
   try {
     const database = getFirebaseDatabase();
@@ -61,8 +48,9 @@ export async function getDeviceStatus(): Promise<SystemStatus> {
     }
 
     return "online";
-  } catch (error) {
-    console.error("Get device status error:", error);
+  } 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  catch (error) {
     return "offline";
   }
 }

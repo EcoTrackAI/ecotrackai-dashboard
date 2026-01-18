@@ -8,10 +8,6 @@ import { fetchWeather } from "@/lib/weather";
 
 // AppShellProps is globally available from types/globals.d.ts
 
-/**
- * App Shell component that wraps the entire application
- * Manages Firebase connection and passes system status to Navigation and Sidebar
- */
 export function AppShell({ children }: AppShellProps) {
   const [systemStatus, setSystemStatus] = useState<SystemStatus>("offline");
   const [isInitialized, setIsInitialized] = useState(false);
@@ -41,7 +37,6 @@ export function AppShell({ children }: AppShellProps) {
     const loadWeather = async () => {
       const apiKey = process.env.NEXT_PUBLIC_OPENWEATHER_API_KEY;
       if (!apiKey) {
-        console.warn("OpenWeather API key not configured");
         return;
       }
 
@@ -49,7 +44,6 @@ export function AppShell({ children }: AppShellProps) {
         async (position) => {
           const { latitude, longitude } = position.coords;
           const weatherData = await fetchWeather(apiKey, latitude, longitude);
-          console.log("Fetched weather data:", weatherData);
           if (weatherData) {
             setWeather(weatherData);
           }

@@ -164,25 +164,24 @@
 ```
 ecotrackai-dashboard/
 ├── app/                      # Next.js App Router pages
-│   ├── api/                  # API routes
+│   ├── api/                  # API routes (serverless functions)
 │   │   ├── cleanup/          # Data cleanup endpoint
-│   │   ├── debug/            # Debug information
 │   │   ├── historical-data/  # Historical sensor data
 │   │   ├── pzem-data/        # Power meter data
 │   │   ├── relay-control/    # Device control
 │   │   ├── relay-states/     # Relay status
 │   │   ├── relay-sync/       # Firebase sync
 │   │   ├── rooms/            # Room management
-│   │   └── sync-firebase/    # Background sync
+│   │   └── sync-firebase/    # Firebase to PostgreSQL sync
 │   ├── analytics/            # Analytics dashboard
-│   ├── automation/           # Automation controls
-│   ├── debug-ui/             # Debug interface
+│   ├── automation/           # Automation & device controls
 │   ├── history/              # Historical data viewer
+│   ├── insights/             # AI recommendations
 │   ├── live-monitoring/      # Real-time monitoring
 │   ├── profile/              # User profile
 │   ├── settings/             # System settings
 │   ├── layout.tsx            # Root layout
-│   └── page.tsx              # Home page
+│   └── page.tsx              # Dashboard home
 ├── components/               # React components
 │   ├── automation/           # Automation controls
 │   ├── charts/               # Chart components
@@ -218,25 +217,28 @@ ecotrackai-dashboard/
 
 ### Pages
 
-- **Home** (`/`) - Dashboard overview with live metrics
-- **Live Monitoring** (`/live-monitoring`) - Real-time sensor data
-- **Analytics** (`/analytics`) - Power consumption charts
-- **History** (`/history`) - Historical data viewer with date range picker
-- **Automation** (`/automation`) - Device control interface
-- **Settings** (`/settings`) - System configuration
+- **Dashboard** (`/`) - Overview with live metrics and system status
+- **Live Monitoring** (`/live-monitoring`) - Real-time sensor data visualization
+- **Analytics** (`/analytics`) - Power consumption trends and charts
+- **History** (`/history`) - Historical data viewer with filtering
+- **Insights** (`/insights`) - AI-powered recommendations
+- **Automation** (`/automation`) - Smart device control interface
+- **Profile** (`/profile`) - User information and preferences
+- **Settings** (`/settings`) - System configuration and preferences
 
 ### API Endpoints
 
-| Endpoint               | Method | Description                 |
-| ---------------------- | ------ | --------------------------- |
-| `/api/pzem-data`       | GET    | Power meter historical data |
-| `/api/historical-data` | GET    | Sensor historical data      |
-| `/api/rooms`           | GET    | Available rooms             |
-| `/api/relay-states`    | GET    | Current relay states        |
-| `/api/relay-control`   | POST   | Control devices             |
-| `/api/relay-sync`      | POST   | Sync Firebase to database   |
-| `/api/cleanup`         | POST   | Remove old data             |
-| `/api/debug`           | GET    | System debug information    |
+| Endpoint               | Method | Description                      |
+| ---------------------- | ------ | -------------------------------- |
+| `/api/rooms`           | GET    | Retrieve all rooms               |
+| `/api/historical-data` | GET    | Query historical sensor data     |
+| `/api/pzem-data`       | GET    | Get power meter readings         |
+| `/api/pzem-data`       | POST   | Get latest PZEM reading          |
+| `/api/relay-states`    | GET    | Current relay/device states      |
+| `/api/relay-control`   | POST   | Control devices (on/off)         |
+| `/api/relay-sync`      | POST   | Sync relay states from Firebase  |
+| `/api/sync-firebase`   | POST   | Sync Firebase data to PostgreSQL |
+| `/api/cleanup`         | POST   | Clean up old historical data     |
 
 ---
 
@@ -246,9 +248,8 @@ ecotrackai-dashboard/
 
 Configure via the Settings page (`/settings`):
 
-- **Rooms**: Add/remove/configure rooms
-- **Appliances**: Manage devices and their properties
-- **Tariff**: Set electricity pricing
+- **Rooms**: Manage rooms and their properties
+- **Appliances**: Configure smart devices
 - **Data Sampling**: Configure data collection intervals
 - **Notifications**: Alert preferences
 

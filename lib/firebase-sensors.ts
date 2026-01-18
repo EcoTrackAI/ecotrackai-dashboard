@@ -1,9 +1,6 @@
 import { ref, onValue, off, get } from "firebase/database";
 import { getFirebaseDatabase } from "./firebase";
 
-/**
- * Subscribe to real-time room sensor updates
- */
 export function subscribeRoomSensor(
   room: "bedroom" | "living_room",
   callback: (data: RoomSensorData | null) => void,
@@ -19,9 +16,6 @@ export function subscribeRoomSensor(
   return () => off(sensorRef, "value");
 }
 
-/**
- * Fetch room sensor data once
- */
 export async function fetchRoomSensor(
   room: "bedroom" | "living_room",
 ): Promise<RoomSensorData | null> {
@@ -29,15 +23,13 @@ export async function fetchRoomSensor(
     const db = getFirebaseDatabase();
     const snapshot = await get(ref(db, `sensors/${room}`));
     return snapshot.exists() ? (snapshot.val() as RoomSensorData) : null;
-  } catch (error) {
-    console.error(`Error fetching ${room} sensor:`, error);
+  } 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  catch (_error) {
     return null;
   }
 }
 
-/**
- * Subscribe to real-time PZEM data updates
- */
 export function subscribePZEMData(
   callback: (data: PZEMData | null) => void,
 ): () => void {
@@ -52,16 +44,14 @@ export function subscribePZEMData(
   return () => off(pzemRef, "value");
 }
 
-/**
- * Fetch PZEM data once
- */
 export async function fetchPZEMData(): Promise<PZEMData | null> {
   try {
     const db = getFirebaseDatabase();
     const snapshot = await get(ref(db, "home/pzem"));
     return snapshot.exists() ? (snapshot.val() as PZEMData) : null;
-  } catch (error) {
-    console.error("Error fetching PZEM data:", error);
+  } 
+  // eslint-disable-next-line @typescript-eslint/no-unused-vars
+  catch (_error) {
     return null;
   }
 }

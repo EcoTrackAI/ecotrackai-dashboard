@@ -1,13 +1,4 @@
-/**
- * Global Type Definitions
- * All types and interfaces centralized in one place
- */
-
 declare global {
-  // ============================================================================
-  // Firebase & Sensor Data Types
-  // ============================================================================
-
   type SensorStatus = "normal" | "warning" | "critical" | "offline";
 
   interface RoomSensorData {
@@ -47,10 +38,6 @@ declare global {
 
   type SensorDataCallback = (sensors: FirebaseSensorData[]) => void;
 
-  // ============================================================================
-  // System & Status Types
-  // ============================================================================
-
   type SystemStatus = "online" | "offline" | "warning";
   type SystemStatusCallback = (status: SystemStatus) => void;
   type SensorCategory =
@@ -68,10 +55,6 @@ declare global {
     activeRooms: number;
     lastLogin: Date | string;
   }
-
-  // ============================================================================
-  // User & Profile Types
-  // ============================================================================
 
   interface UserProfile {
     id: string;
@@ -95,10 +78,6 @@ declare global {
     preferences: UserPreferences;
   }
 
-  // ============================================================================
-  // Navigation & Layout Types
-  // ============================================================================
-
   interface NotificationItem {
     id: string;
     title: string;
@@ -116,10 +95,6 @@ declare global {
     badge?: number;
     disabled?: boolean;
   }
-
-  // ============================================================================
-  // Component Props Types
-  // ============================================================================
 
   interface AppShellProps {
     children: React.ReactNode;
@@ -189,10 +164,6 @@ declare global {
     className?: string;
   }
 
-  // ============================================================================
-  // Metrics & Analytics Types
-  // ============================================================================
-
   interface MetricCardProps {
     title: string;
     value: string | number;
@@ -227,10 +198,6 @@ declare global {
     start: Date;
     end: Date;
   }
-
-  // ============================================================================
-  // Automation & Relay Types
-  // ============================================================================
 
   type ApplianceType =
     | "air_conditioner"
@@ -312,10 +279,6 @@ declare global {
     onACTemperatureChange: (id: string, temperature: number) => void;
     onModeChange: (id: string, mode: ControlMode) => void;
   }
-
-  // ============================================================================
-  // History & Sensor Display Types
-  // ============================================================================
 
   interface HistoricalDataPoint {
     timestamp: string;
@@ -403,10 +366,6 @@ declare global {
     className?: string;
   }
 
-  // ============================================================================
-  // Chart Types
-  // ============================================================================
-
   interface RealtimeLineChartProps {
     data: Record<string, string | number>[];
     dataKey: string;
@@ -419,10 +378,6 @@ declare global {
     animate?: boolean;
     className?: string;
   }
-
-  // ============================================================================
-  // Profile & Settings Components
-  // ============================================================================
 
   interface ProfileCardProps {
     title: string;
@@ -443,10 +398,6 @@ declare global {
     onChange?: (checked: boolean) => void;
     icon?: React.ReactNode;
   }
-
-  // ============================================================================
-  // Recommendations Types
-  // ============================================================================
 
   interface MLRecommendation {
     id: string;
@@ -500,10 +451,6 @@ declare global {
     onIgnore?: (id: string) => void;
     className?: string;
   }
-
-  // ============================================================================
-  // Database Types
-  // ============================================================================
 
   interface DBRoom {
     id: string;
@@ -568,25 +515,6 @@ declare global {
     pf?: number;
   }
 
-  // Legacy type - kept for backward compatibility
-  interface SensorDataRecord {
-    id: number;
-    sensor_id: string;
-    sensor_name: string;
-    room_id: string;
-    category: string;
-    current_value: number;
-    unit: string;
-    status: string;
-    description?: string;
-    timestamp: Date;
-    created_at: Date;
-  }
-
-  // ============================================================================
-  // API & Fetch Types
-  // ============================================================================
-
   interface FetchOptions {
     method?: string;
     headers?: Record<string, string>;
@@ -603,30 +531,6 @@ declare global {
     };
     error?: string;
   }
-
-  interface ComparisonData {
-    roomId: string;
-    roomName: string;
-    currentPeriod: {
-      energy: number;
-      avgPower: number;
-      peakPower: number;
-    };
-    previousPeriod: {
-      energy: number;
-      avgPower: number;
-      peakPower: number;
-    };
-    change: {
-      energy: number;
-      avgPower: number;
-      peakPower: number;
-    };
-  }
-
-  // ============================================================================
-  // Settings Types
-  // ============================================================================
 
   interface Room {
     id: string;
@@ -667,7 +571,6 @@ declare global {
     notifications: NotificationSettings;
   }
 
-  // Default configurations
   const DEFAULT_ROOMS: Room[];
   const DEFAULT_APPLIANCES: Appliance[];
   const DEFAULT_TARIFF: TariffSettings;

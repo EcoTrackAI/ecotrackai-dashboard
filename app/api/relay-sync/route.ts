@@ -2,10 +2,6 @@ import { NextResponse } from "next/server";
 import { fetchRelayState } from "@/lib/firebase-relay";
 import { upsertRelayState, testConnection } from "@/lib/database";
 
-/**
- * Relay configuration
- * Maps relay IDs to room IDs and types
- */
 const RELAYS = [
   { id: "bedroom_light", roomId: "bedroom", type: "light" },
   { id: "bedroom_fan", roomId: "bedroom", type: "fan" },
@@ -15,11 +11,6 @@ const RELAYS = [
   { id: "living_room_ac", roomId: "living_room", type: "ac" },
 ];
 
-/**
- * POST /api/relay-sync
- * Sync relay states from Firebase to database
- * Expected to be called by external cron jobs
- */
 export async function POST() {
   try {
     // Check database connection
@@ -44,7 +35,6 @@ export async function POST() {
             synced: state !== null,
           };
         } catch (error) {
-          console.error(`Error syncing relay ${relay.id}:`, error);
           return {
             relay: relay.id,
             state: null,
@@ -66,7 +56,6 @@ export async function POST() {
       { status: 200 },
     );
   } catch (error) {
-    console.error("Relay sync error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       { error: "Failed to sync relays", details: message },

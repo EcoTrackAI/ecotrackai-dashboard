@@ -14,7 +14,6 @@ import { TrendingUp, Zap, Gauge } from "lucide-react";
 import { COLORS } from "@/lib/constants";
 import { MetricCard } from "@/components/metrics";
 import {
-  parseISTTimestamp,
   isValidTimestamp,
   getTimestampMs,
   formatTimestamp,
@@ -25,14 +24,23 @@ interface ChartData {
   power: number;
   energy: number;
   voltage: number;
+  timestamp?: string;
 }
 
-const CustomTooltip = ({ active, payload, label }: any) => {
+const CustomTooltip = ({
+  active,
+  payload,
+  label,
+}: {
+  active?: boolean;
+  payload?: Array<{ color: string; name: string; value: number }>;
+  label?: string;
+}) => {
   if (!active || !payload?.length) return null;
   return (
     <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-sm">
       <p className="text-sm font-medium text-gray-900 mb-1">{label}</p>
-      {payload.map((entry: any, index: number) => (
+      {payload.map((entry, index: number) => (
         <p key={index} className="text-sm" style={{ color: entry.color }}>
           {entry.name}:{" "}
           {typeof entry.value === "number"
@@ -57,21 +65,15 @@ export default function AnalyticsPage() {
         setError(null);
 
         const params = new URLSearchParams({
-          _t: Date.now().toString(), // Cache buster
+          _t: Date.now().toString(),
         });
 
-        console.log(
-          "[Analytics] Fetching from database:",
-          `/api/pzem-data?${params}`,
-        );
         const response = await fetch(`/api/pzem-data?${params}`, {
           cache: "no-store",
           headers: { "Cache-Control": "no-cache" },
         });
-        console.log("[Analytics] Response status:", response.status);
 
         const result = await response.json();
-        console.log("[Analytics] Result count:", result.data?.length || 0);
 
         if (!response.ok) {
           setError(result.error || "Failed to fetch data from database");
@@ -81,15 +83,9 @@ export default function AnalyticsPage() {
         }
 
         if (result.data?.length > 0) {
-          console.log("[Analytics] Total records from API:", result.data.length);
-          console.log("[Analytics] Sample data:", result.data.slice(0, 2));
-
-          // Validate timestamps and format
           const formatted = result.data
-            .filter((item: any) => {
-              // Ensure timestamp is valid - handle IST format
+            .filter((item: { timestamp: string }) => {
               if (!isValidTimestamp(item.timestamp)) {
-                console.log("[Analytics] Invalid timestamp:", item.timestamp);
                 return false;
               }
               return true;
@@ -104,16 +100,14 @@ export default function AnalyticsPage() {
               power: Number(item.power) || 0,
               energy: Number(item.energy) || 0,
               voltage: Number(item.voltage) || 0,
-              timestamp: item.timestamp, // Keep original for filtering
+              timestamp: item.timestamp,
             }));
 
-          console.log("[Analytics] Formatted to", formatted.length, "records");
           setPowerHistory(formatted);
-          console.log("[Analytics] Loaded", formatted.length, "valid records");
 
-          // Set latest metrics from most recent valid data point
           const latestData = result.data.find(
-            (item: any) => !isNaN(new Date(item.timestamp).getTime()),
+            (item: { timestamp: string }) =>
+              !isNaN(new Date(item.timestamp).getTime()),
           );
 
           if (latestData && latestData.timestamp) {
@@ -126,20 +120,14 @@ export default function AnalyticsPage() {
               pf: Number(latestData.pf) || 0,
               updatedAt: latestData.timestamp,
             });
-            console.log(
-              "[Analytics] Latest metrics timestamp:",
-              latestData.timestamp,
-            );
           } else {
             setLatestMetrics(null);
           }
         } else {
-          console.log("[Analytics] No data available from database");
           setPowerHistory([]);
           setLatestMetrics(null);
         }
       } catch (err) {
-        console.error("[Analytics] Fetch error:", err);
         setError(
           err instanceof Error
             ? err.message
@@ -158,8 +146,6 @@ export default function AnalyticsPage() {
     return () => clearInterval(interval);
   }, []);
 
-  // Apply 7-day filter to analytics data
-  // Note: This effect is optional - set to comment out if you want to show all data
   useEffect(() => {
     if (powerHistory.length === 0) return;
 
@@ -170,27 +156,16 @@ export default function AnalyticsPage() {
     const startMs = start.getTime();
     const endMs = end.getTime();
 
-    console.log("[Analytics] Applying 7-day filter:", {
-      start: start.toISOString(),
-      end: end.toISOString(),
-    });
-
-    const filteredBy7Days = powerHistory.filter((item: any) => {
-      const ts = getTimestampMs(item.timestamp);
+    const filteredBy7Days = powerHistory.filter((item: ChartData) => {
+      const ts = getTimestampMs(item.timestamp || "");
       return ts >= startMs && ts <= endMs;
     });
 
-    console.log(
-      "[Analytics] Filtered to 7 days:",
-      filteredBy7Days.length,
-      "records",
-    );
-
-    // Only update if significant change
     if (filteredBy7Days.length !== powerHistory.length) {
       setPowerHistory(filteredBy7Days);
     }
-  }, []); // Empty dependency - runs once to apply 7-day filter
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
 
   if (loading) {
     return (
@@ -215,9 +190,6 @@ export default function AnalyticsPage() {
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
             <p className="text-sm font-medium text-red-800">Error: {error}</p>
-            <p className="text-xs text-red-600 mt-1">
-              Check console for details
-            </p>
           </div>
         )}
 
@@ -284,7 +256,8 @@ export default function AnalyticsPage() {
                 Make sure your external cron job is calling POST
                 /api/sync-firebase
                 <br />
-                Check that Firebase has PZEM data and device status is "online"
+                Check that Firebase has PZEM data and device status is
+                &quot;online&quot;
               </p>
             </div>
           </div>

@@ -146,23 +146,25 @@ Timer (60s) → Fetch Firebase Data → Transform → Batch Insert PostgreSQL �
 
 ```
 app/
-├── (pages)                    # Route groups
-│   ├── page.tsx              # Dashboard - Server Component
-│   ├── live-monitoring/      # Real-time page - Client Components
-│   ├── history/              # Historical analysis - Hybrid
-│   ├── analytics/            # Charts & stats - Client Components
-│   ├── automation/           # Controls - Client Components
-│   ├── insights/             # AI recommendations - Server Component
-│   ├── profile/              # User profile - Hybrid
-│   └── settings/             # Settings - Client Component
-│
-├── api/                      # API Routes (Serverless Functions)
-│   ├── rooms/route.ts        # Room management
-│   ├── historical-data/      # Time-series queries
-│   └── sync-firebase/        # Data sync endpoint
-│
+├── page.tsx                  # Dashboard - Main overview
 ├── layout.tsx                # Root layout with providers
-└── globals.css               # Global styles
+├── live-monitoring/          # Real-time page - Client Components
+├── history/                  # Historical analysis - Hybrid
+├── analytics/                # Charts & stats - Client Components
+├── automation/               # Controls - Client Components
+├── insights/                 # AI recommendations - Server Component
+├── profile/                  # User profile - Hybrid
+├── settings/                 # Settings - Client Component
+│
+└── api/                      # API Routes (Serverless Functions)
+    ├── rooms/route.ts        # Room management
+    ├── historical-data/      # Time-series queries
+    ├── pzem-data/            # Power meter data
+    ├── relay-states/         # Device states
+    ├── relay-control/        # Device control
+    ├── relay-sync/           # Firebase sync
+    ├── cleanup/              # Data cleanup
+    └── sync-firebase/        # Data sync endpoint
 ```
 
 ### Component Categories
