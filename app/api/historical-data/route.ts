@@ -33,16 +33,31 @@ export async function GET(request: NextRequest) {
     );
 
     // Format response - database already filters to last 90 days
-    const formattedData = data.map((row: HistoricalRoomSensorData) => ({
-      timestamp: row.timestamp,
-      roomId: row.roomId,
-      roomName: row.roomName,
-      temperature:
-        row.temperature !== undefined ? Number(row.temperature) : undefined,
-      humidity: row.humidity !== undefined ? Number(row.humidity) : undefined,
-      light: row.light !== undefined ? Number(row.light) : undefined,
-      motion: Boolean(row.motion),
-    }));
+    // Convert timestamps to ISO strings for consistent serialization
+    const formattedData = data.map((row: HistoricalRoomSensorData) => {
+      let timestampStr: string;
+      const timestamp: any = row.timestamp;
+      if (timestamp instanceof Date) {
+        timestampStr = timestamp.toISOString();
+      } else if (typeof timestamp === "string") {
+        // If it's already a string, keep it as is
+        timestampStr = timestamp;
+      } else {
+        timestampStr = String(timestamp);
+      }
+
+      return {
+        timestamp: timestampStr,
+        roomId: row.roomId,
+        roomName: row.roomName,
+        temperature:
+          row.temperature !== undefined ? Number(row.temperature) : undefined,
+        humidity:
+          row.humidity !== undefined ? Number(row.humidity) : undefined,
+        light: row.light !== undefined ? Number(row.light) : undefined,
+        motion: Boolean(row.motion),
+      };
+    });
 
     return NextResponse.json(
       { success: true, count: formattedData.length, data: formattedData },

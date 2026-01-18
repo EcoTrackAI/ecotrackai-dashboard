@@ -29,6 +29,15 @@ export function parseISTTimestamp(timestamp: string | Date): Date {
       }
     }
 
+    // Handle ISO 8601 format (from API serialization)
+    // e.g., "2026-01-18T12:28:56.000Z" or "2026-01-18T17:58:56+05:30"
+    if (timestamp.includes("T")) {
+      const date = new Date(timestamp);
+      if (!isNaN(date.getTime())) {
+        return date;
+      }
+    }
+
     // Remove " IST" suffix if present and try parsing
     const cleanTimestamp = timestamp.replace(" IST", "").trim();
 

@@ -37,15 +37,29 @@ export async function GET(request: NextRequest) {
     );
 
     // Format response - database already filters to last 90 days
-    const formattedData = data.map((row: HistoricalPZEMData) => ({
-      timestamp: row.timestamp,
-      current: Number(row.current) || 0,
-      voltage: Number(row.voltage) || 0,
-      power: Number(row.power) || 0,
-      energy: Number(row.energy) || 0,
-      frequency: Number(row.frequency) || 0,
-      pf: Number(row.pf) || 0,
-    }));
+    // Convert timestamps to ISO strings for consistent serialization
+    const formattedData = data.map((row: HistoricalPZEMData) => {
+      let timestampStr: string;
+      const timestamp: any = row.timestamp;
+      if (timestamp instanceof Date) {
+        timestampStr = timestamp.toISOString();
+      } else if (typeof timestamp === "string") {
+        // If it's already a string, keep it as is
+        timestampStr = timestamp;
+      } else {
+        timestampStr = String(timestamp);
+      }
+
+      return {
+        timestamp: timestampStr,
+        current: Number(row.current) || 0,
+        voltage: Number(row.voltage) || 0,
+        power: Number(row.power) || 0,
+        energy: Number(row.energy) || 0,
+        frequency: Number(row.frequency) || 0,
+        pf: Number(row.pf) || 0,
+      };
+    });
 
     return NextResponse.json(
       { success: true, count: formattedData.length, data: formattedData },
