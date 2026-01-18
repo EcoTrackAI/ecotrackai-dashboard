@@ -92,17 +92,32 @@ export async function GET(request: NextRequest) {
       `[API] Retrieved ${data.length} records in ${Date.now() - startTime}ms`,
     );
 
-    // Format response
-    const formattedData = data.map((row: HistoricalRoomSensorData) => ({
-      timestamp: row.timestamp,
-      roomId: row.roomId,
-      roomName: row.roomName,
-      temperature:
-        row.temperature !== undefined ? Number(row.temperature) : undefined,
-      humidity: row.humidity !== undefined ? Number(row.humidity) : undefined,
-      light: row.light !== undefined ? Number(row.light) : undefined,
-      motion: Boolean(row.motion),
-    }));
+    // Format and filter response - only include valid data within date range
+    // This prevents stale/archived data from before validation was implemented
+    const formattedData = data
+      .map((row: HistoricalRoomSensorData) => ({
+        timestamp: row.timestamp,
+        roomId: row.roomId,
+        roomName: row.roomName,
+        temperature:
+          row.temperature !== undefined ? Number(row.temperature) : undefined,
+        humidity: row.humidity !== undefined ? Number(row.humidity) : undefined,
+        light: row.light !== undefined ? Number(row.light) : undefined,
+        motion: Boolean(row.motion),
+      }))
+      .filter((item) => {
+        // Ensure timestamp is valid
+        const ts = new Date(item.timestamp).getTime();
+        if (isNaN(ts)) return false;
+
+        // Only include data within the requested date range
+        // Double-check that records are not too old/archived
+        return ts >= startDate.getTime() && ts <= endDate.getTime();
+      });
+
+    console.log(
+      `[API] Filtered to ${formattedData.length} valid records within date range`,
+    );
 
     return NextResponse.json(
       { success: true, count: formattedData.length, data: formattedData },

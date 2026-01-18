@@ -80,16 +80,35 @@ export async function GET(request: NextRequest) {
       `[API PZEM] Retrieved ${data.length} records in ${Date.now() - startTime}ms`,
     );
 
-    // Format response
-    const formattedData = data.map((row: HistoricalPZEMData) => ({
-      timestamp: row.timestamp,
-      current: Number(row.current) || 0,
-      voltage: Number(row.voltage) || 0,
-      power: Number(row.power) || 0,
-      energy: Number(row.energy) || 0,
-      frequency: Number(row.frequency) || 0,
-      pf: Number(row.pf) || 0,
-    }));
+    // Format and filter response - only include recent valid data
+    // This prevents stale data that was saved before validation was implemented
+    const sevenDaysAgo = new Date();
+    sevenDaysAgo.setDate(sevenDaysAgo.getDate() - 7);
+    const sevenDaysAgoMs = sevenDaysAgo.getTime();
+
+    const formattedData = data
+      .map((row: HistoricalPZEMData) => ({
+        timestamp: row.timestamp,
+        current: Number(row.current) || 0,
+        voltage: Number(row.voltage) || 0,
+        power: Number(row.power) || 0,
+        energy: Number(row.energy) || 0,
+        frequency: Number(row.frequency) || 0,
+        pf: Number(row.pf) || 0,
+      }))
+      .filter((item) => {
+        // Ensure timestamp is valid
+        const ts = new Date(item.timestamp).getTime();
+        if (isNaN(ts)) return false;
+
+        // Only include data from the last 7 days
+        // Filter out stale/archived data from before validation
+        return ts >= sevenDaysAgoMs;
+      });
+
+    console.log(
+      `[API PZEM] Filtered to ${formattedData.length} recent valid records`,
+    );
 
     return NextResponse.json(
       { success: true, count: formattedData.length, data: formattedData },

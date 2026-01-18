@@ -6,7 +6,29 @@ import { RoomStatusCard } from "@/components/rooms";
 import { LiveSensorCard } from "@/components/sensors";
 import { Zap, Flame, Gauge } from "lucide-react";
 import { subscribePZEMData, subscribeRoomSensor } from "@/lib/firebase-sensors";
+import { subscribeSystemStatus } from "@/lib/firebase-system-status";
 import { initializeFirebase } from "@/lib/firebase";
+
+const STALE_THRESHOLD = 30000; // 30 seconds - sensor is stale if not updated within this time
+
+/**
+ * Determine if sensor data is stale based on lastUpdate timestamp
+ */
+const isSensorStale = (lastUpdate: string | undefined): boolean => {
+  if (!lastUpdate) return true;
+
+  const lastUpdateTime = new Date(lastUpdate).getTime();
+  if (isNaN(lastUpdateTime)) return true;
+
+  return Date.now() - lastUpdateTime >= STALE_THRESHOLD;
+};
+
+/**
+ * Determine if PZEM data is stale
+ */
+const isPZEMStale = (lastUpdate: string | undefined): boolean => {
+  return isSensorStale(lastUpdate);
+};
 
 export default function Home() {
   const [pzem, setPzem] = useState<PZEMData | null>(null);
@@ -14,42 +36,81 @@ export default function Home() {
   const [livingRoomData, setLivingRoomData] = useState<RoomSensorData | null>(
     null,
   );
+  const [deviceStatus, setDeviceStatus] = useState<SystemStatus>("offline");
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
+    let unsubscribePZEM: (() => void) | undefined;
+    let unsubscribeBedroom: (() => void) | undefined;
+    let unsubscribeLivingRoom: (() => void) | undefined;
+    let unsubscribeStatus: (() => void) | undefined;
+
     try {
       initializeFirebase();
-    } catch (err) {
-      console.error("Failed to initialize Firebase:", err);
-      setTimeout(() => {
-        setError("Failed to connect to Firebase");
+
+      // Subscribe to device online/offline status
+      unsubscribeStatus = subscribeSystemStatus((status) => {
+        setDeviceStatus(status);
+        setError(null);
+      });
+
+      // Subscribe to real-time PZEM data
+      unsubscribePZEM = subscribePZEMData((data) => {
+        if (data) {
+          setPzem(data);
+        }
         setLoading(false);
-      }, 0);
-      return;
+      });
+
+      // Subscribe to real-time bedroom sensor data
+      unsubscribeBedroom = subscribeRoomSensor("bedroom", (data) => {
+        if (data) {
+          setBedroomData(data);
+        }
+        setLoading(false);
+      });
+
+      // Subscribe to real-time living room sensor data
+      unsubscribeLivingRoom = subscribeRoomSensor("living_room", (data) => {
+        if (data) {
+          setLivingRoomData(data);
+        }
+        setLoading(false);
+      });
+    } catch (err) {
+      console.error("[Home] Initialization error:", err);
+      setError("Failed to connect to Firebase. Please refresh the page.");
+      setLoading(false);
     }
 
-    const unsubscribePZEM = subscribePZEMData((data) => {
-      setPzem(data);
-      setLoading(false);
-    });
-
-    const unsubscribeBedroom = subscribeRoomSensor("bedroom", (data) => {
-      setBedroomData(data);
-      setLoading(false);
-    });
-
-    const unsubscribeLivingRoom = subscribeRoomSensor("living_room", (data) => {
-      setLivingRoomData(data);
-      setLoading(false);
-    });
-
     return () => {
-      unsubscribePZEM();
-      unsubscribeBedroom();
-      unsubscribeLivingRoom();
+      unsubscribePZEM?.();
+      unsubscribeBedroom?.();
+      unsubscribeLivingRoom?.();
+      unsubscribeStatus?.();
     };
   }, []);
+
+  // Determine sensor status based on device and data freshness
+  const getPZEMStatus = (): SensorStatus => {
+    if (deviceStatus === "offline") return "offline";
+    if (!pzem || isPZEMStale(pzem.updatedAt)) return "offline";
+    return "normal";
+  };
+
+  const getBedroomStatus = (): SensorStatus => {
+    if (deviceStatus === "offline") return "offline";
+    if (!bedroomData || isSensorStale(bedroomData.updatedAt)) return "offline";
+    return "normal";
+  };
+
+  const getLivingRoomStatus = (): SensorStatus => {
+    if (deviceStatus === "offline") return "offline";
+    if (!livingRoomData || isSensorStale(livingRoomData.updatedAt))
+      return "offline";
+    return "normal";
+  };
 
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
@@ -61,13 +122,19 @@ export default function Home() {
           </h1>
           <p className="text-gray-600">
             Real-time energy monitoring and home automation
+            {deviceStatus === "offline" && (
+              <span className="block text-yellow-600 font-semibold mt-1">
+                ⚠️ Device is currently offline
+              </span>
+            )}
           </p>
         </div>
 
         {/* Error State */}
         {error && (
           <div className="mb-6 p-4 bg-red-50 border border-red-200 rounded-lg">
-            <p className="text-sm text-red-700">{error}</p>
+            <p className="text-sm font-semibold text-red-700">Error</p>
+            <p className="text-sm text-red-600">{error}</p>
           </div>
         )}
 
@@ -97,19 +164,19 @@ export default function Home() {
               <>
                 <MetricCard
                   title="Current Power"
-                  value={pzem.power.toFixed(1)}
+                  value={pzem.power?.toFixed(1) ?? "N/A"}
                   unit="W"
                   icon={<Zap className="w-6 h-6" />}
                 />
                 <MetricCard
                   title="Total Energy"
-                  value={pzem.energy.toFixed(2)}
+                  value={pzem.energy?.toFixed(2) ?? "N/A"}
                   unit="kWh"
                   icon={<Flame className="w-6 h-6" />}
                 />
                 <MetricCard
                   title="Voltage"
-                  value={pzem.voltage.toFixed(1)}
+                  value={pzem.voltage?.toFixed(1) ?? "N/A"}
                   unit="V"
                   icon={<Gauge className="w-6 h-6" />}
                 />
@@ -142,23 +209,39 @@ export default function Home() {
               </>
             ) : (
               <>
-                {bedroomData && (
+                {bedroomData ? (
                   <RoomStatusCard
                     roomName="Bedroom"
-                    temperature={bedroomData.temperature}
-                    humidity={bedroomData.humidity}
-                    light={bedroomData.light}
-                    motion={bedroomData.motion}
+                    temperature={bedroomData.temperature ?? 0}
+                    humidity={bedroomData.humidity ?? 0}
+                    light={bedroomData.light ?? 0}
+                    motion={bedroomData.motion ?? false}
                   />
+                ) : (
+                  <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <p className="text-gray-500 text-sm">
+                      {deviceStatus === "offline"
+                        ? "Device is offline - no data available"
+                        : "Waiting for bedroom data..."}
+                    </p>
+                  </div>
                 )}
-                {livingRoomData && (
+                {livingRoomData ? (
                   <RoomStatusCard
                     roomName="Living Room"
-                    temperature={livingRoomData.temperature}
-                    humidity={livingRoomData.humidity}
-                    light={livingRoomData.light}
-                    motion={livingRoomData.motion}
+                    temperature={livingRoomData.temperature ?? 0}
+                    humidity={livingRoomData.humidity ?? 0}
+                    light={livingRoomData.light ?? 0}
+                    motion={livingRoomData.motion ?? false}
                   />
+                ) : (
+                  <div className="bg-white rounded-lg border border-gray-200 p-6">
+                    <p className="text-gray-500 text-sm">
+                      {deviceStatus === "offline"
+                        ? "Device is offline - no data available"
+                        : "Waiting for living room data..."}
+                    </p>
+                  </div>
                 )}
               </>
             )}
@@ -190,35 +273,54 @@ export default function Home() {
                   <>
                     <LiveSensorCard
                       sensorName="Temperature"
-                      currentValue={bedroomData.temperature.toFixed(1)}
+                      currentValue={
+                        bedroomData.temperature?.toFixed(1) ?? "N/A"
+                      }
                       unit="°C"
                       status={
-                        bedroomData.temperature > 28 ? "warning" : "normal"
+                        getBedroomStatus() === "offline"
+                          ? "offline"
+                          : bedroomData.temperature &&
+                              bedroomData.temperature > 28
+                            ? "warning"
+                            : "normal"
                       }
                       description="Bedroom temperature"
                       lastUpdate={bedroomData.updatedAt}
                     />
                     <LiveSensorCard
                       sensorName="Humidity"
-                      currentValue={bedroomData.humidity.toFixed(0)}
+                      currentValue={bedroomData.humidity?.toFixed(0) ?? "N/A"}
                       unit="%"
-                      status="normal"
+                      status={getBedroomStatus()}
                       description="Bedroom humidity"
                       lastUpdate={bedroomData.updatedAt}
                     />
                     <LiveSensorCard
                       sensorName="Light"
-                      currentValue={bedroomData.light.toFixed(0)}
+                      currentValue={bedroomData.light?.toFixed(0) ?? "N/A"}
                       unit="lux"
-                      status="normal"
+                      status={getBedroomStatus()}
                       description="Bedroom light"
                       lastUpdate={bedroomData.updatedAt}
                     />
                     <LiveSensorCard
                       sensorName="Motion"
-                      currentValue={bedroomData.motion ? "Detected" : "None"}
+                      currentValue={
+                        bedroomData.motion !== undefined
+                          ? bedroomData.motion
+                            ? "Detected"
+                            : "None"
+                          : "N/A"
+                      }
                       unit=""
-                      status={bedroomData.motion ? "warning" : "normal"}
+                      status={
+                        getBedroomStatus() === "offline"
+                          ? "offline"
+                          : bedroomData.motion
+                            ? "warning"
+                            : "normal"
+                      }
                       description="Bedroom motion"
                       lastUpdate={bedroomData.updatedAt}
                     />
@@ -228,20 +330,57 @@ export default function Home() {
                   <>
                     <LiveSensorCard
                       sensorName="Temperature"
-                      currentValue={livingRoomData.temperature.toFixed(1)}
+                      currentValue={
+                        livingRoomData.temperature?.toFixed(1) ?? "N/A"
+                      }
                       unit="°C"
                       status={
-                        livingRoomData.temperature > 28 ? "warning" : "normal"
+                        getLivingRoomStatus() === "offline"
+                          ? "offline"
+                          : livingRoomData.temperature &&
+                              livingRoomData.temperature > 28
+                            ? "warning"
+                            : "normal"
                       }
                       description="Living room temperature"
                       lastUpdate={livingRoomData.updatedAt}
                     />
                     <LiveSensorCard
                       sensorName="Humidity"
-                      currentValue={livingRoomData.humidity.toFixed(0)}
+                      currentValue={
+                        livingRoomData.humidity?.toFixed(0) ?? "N/A"
+                      }
                       unit="%"
-                      status="normal"
+                      status={getLivingRoomStatus()}
                       description="Living room humidity"
+                      lastUpdate={livingRoomData.updatedAt}
+                    />
+                    <LiveSensorCard
+                      sensorName="Light"
+                      currentValue={livingRoomData.light?.toFixed(0) ?? "N/A"}
+                      unit="lux"
+                      status={getLivingRoomStatus()}
+                      description="Living room light"
+                      lastUpdate={livingRoomData.updatedAt}
+                    />
+                    <LiveSensorCard
+                      sensorName="Motion"
+                      currentValue={
+                        livingRoomData.motion !== undefined
+                          ? livingRoomData.motion
+                            ? "Detected"
+                            : "None"
+                          : "N/A"
+                      }
+                      unit=""
+                      status={
+                        getLivingRoomStatus() === "offline"
+                          ? "offline"
+                          : livingRoomData.motion
+                            ? "warning"
+                            : "normal"
+                      }
+                      description="Living room motion"
                       lastUpdate={livingRoomData.updatedAt}
                     />
                   </>
