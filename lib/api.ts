@@ -14,8 +14,8 @@ async function apiRequest<T>(
       });
 
       if (!response.ok) {
-        const errorText = await response.text();
-        console.error(`API error (${response.status}):`, errorText);
+        // eslint-disable-next-line @typescript-eslint/no-unused-vars
+        const _errorText = await response.text();
 
         // Don't retry on client errors (4xx), only on server errors (5xx)
         if (response.status < 500) {
@@ -40,10 +40,6 @@ async function apiRequest<T>(
     } catch (error) {
       // Network errors or parsing errors
       if (attempt < maxRetries - 1) {
-        console.warn(
-          `API request failed (attempt ${attempt + 1}/${maxRetries}):`,
-          error,
-        );
         await new Promise((resolve) =>
           setTimeout(resolve, retryDelay * (attempt + 1)),
         );

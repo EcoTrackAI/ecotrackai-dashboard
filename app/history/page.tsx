@@ -54,7 +54,6 @@ export default function HistoryPage() {
       });
   }, []);
 
-  // Fetch data from database with auto-refresh every 10s
   useEffect(() => {
     if (!selectedRooms.length) {
       setLoading(false);
@@ -65,21 +64,15 @@ export default function HistoryPage() {
       try {
         setError(null);
         const params = new URLSearchParams({
-          _t: Date.now().toString(), // Cache buster
+          _t: Date.now().toString(),
         });
 
-        console.log(
-          "[History] Fetching from database:",
-          `/api/historical-data?${params}`,
-        );
         const response = await fetch(`/api/historical-data?${params}`, {
           cache: "no-store",
           headers: { "Cache-Control": "no-cache" },
         });
-        console.log("[History] Response status:", response.status);
 
         const result = await response.json();
-        console.log("[History] Result count:", result.data?.length || 0);
 
         if (!response.ok) {
           setError(result.error || "Failed to fetch data from database");
@@ -88,33 +81,18 @@ export default function HistoryPage() {
         }
 
         if (result.data && Array.isArray(result.data)) {
-          console.log("[History] Total records from API:", result.data.length);
-          console.log("[History] Sample data:", result.data.slice(0, 2));
-          console.log("[History] Selected rooms:", selectedRooms);
-
-          // If rooms are selected, filter by room. Otherwise show all data.
           let filteredByRoom = result.data;
 
           if (selectedRooms.length > 0) {
             filteredByRoom = result.data.filter(
-              (item: any) =>
+              (item: { roomId?: string }) =>
                 item.roomId && selectedRooms.includes(item.roomId),
-            );
-            console.log(
-              "[History] Filtered by rooms:",
-              selectedRooms,
-              "->",
-              filteredByRoom.length,
-              "records",
             );
           }
 
-          // Validate timestamps
           const validData = filteredByRoom
-            .filter((item: any) => {
-              // Ensure timestamp is valid - handle IST format
+            .filter((item: { timestamp: string }) => {
               if (!isValidTimestamp(item.timestamp)) {
-                console.log("[History] Invalid timestamp:", item.timestamp);
                 return false;
               }
               return true;
@@ -124,14 +102,11 @@ export default function HistoryPage() {
               timestamp: parseISTTimestamp(item.timestamp),
             }));
 
-          console.log("[History] Loaded", validData.length, "valid records");
           setHistoricalData(validData);
         } else {
           setHistoricalData([]);
-          console.log("[History] No data available from database");
         }
       } catch (err) {
-        console.error("[History] Fetch error:", err);
         setError(
           err instanceof Error
             ? err.message
@@ -144,19 +119,12 @@ export default function HistoryPage() {
     };
 
     fetchData();
-    // Refresh every 10 seconds
     const interval = setInterval(fetchData, 10000);
     return () => clearInterval(interval);
   }, [selectedRooms]);
 
-  // Apply date range filter when dateRange changes
   useEffect(() => {
     if (historicalData.length === 0) return;
-
-    console.log("[History] Applying date range filter:", {
-      start: dateRange.start.toISOString(),
-      end: dateRange.end.toISOString(),
-    });
 
     const startMs = dateRange.start.getTime();
     const endMs = dateRange.end.getTime();
@@ -166,13 +134,8 @@ export default function HistoryPage() {
       return ts >= startMs && ts <= endMs;
     });
 
-    console.log(
-      "[History] Filtered by date range:",
-      filteredByDate.length,
-      "records",
-    );
-
     setHistoricalData(filteredByDate);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [dateRange]);
 
   return (
@@ -190,9 +153,6 @@ export default function HistoryPage() {
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
             <p className="text-sm font-medium text-red-800">Error: {error}</p>
-            <p className="text-xs text-red-600 mt-1">
-              Check console for details
-            </p>
           </div>
         )}
 
@@ -276,7 +236,8 @@ export default function HistoryPage() {
                   Make sure your external cron job is calling POST
                   /api/sync-firebase
                   <br />
-                  Check that Firebase has data and device status is "online"
+                  Check that Firebase has data and device status is
+                  &quot;online&quot;
                 </p>
               </div>
             )}

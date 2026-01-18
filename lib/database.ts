@@ -3,9 +3,6 @@ import { Pool } from "pg";
 let pool: Pool | null = null;
 let isInitialized = false;
 
-/**
- * Get or create database connection pool
- */
 export function getPool(): Pool {
   if (!pool) {
     const connectionString =
@@ -14,32 +11,26 @@ export function getPool(): Pool {
       throw new Error("DATABASE_URL or POSTGRES_URL must be set");
     }
 
-    // Configure SSL for production environments
     const isProduction = process.env.NODE_ENV === "production";
     const isVercel = process.env.VERCEL === "1";
 
-    // Always enable SSL in production/Vercel with proper configuration
     const sslConfig =
       isProduction || isVercel ? { rejectUnauthorized: false } : false;
 
     pool = new Pool({
       connectionString,
       ssl: sslConfig,
-      max: isProduction ? 10 : 20, // Reduce connections in production
+      max: isProduction ? 10 : 20,
       idleTimeoutMillis: 30000,
       connectionTimeoutMillis: 10000,
-      statement_timeout: 60000, // Increase timeout for production queries
+      statement_timeout: 60000,
     });
 
     pool.on("error", (err) => {
-      console.error("Unexpected database pool error:", err);
-      // Don't set pool to null on every error - let it recover
-      // Only reset on critical errors
       if (
         err.message?.includes("Connection terminated") ||
         err.message?.includes("ECONNREFUSED")
       ) {
-        console.warn("Resetting database pool due to critical error");
         pool = null;
       }
     });
@@ -48,16 +39,12 @@ export function getPool(): Pool {
   return pool;
 }
 
-/**
- * Initialize database tables and indexes
- */
 export async function initializeDatabase(): Promise<void> {
   if (isInitialized) return;
 
   const client = getPool();
 
   try {
-    // Create rooms table
     await client.query(`
       CREATE TABLE IF NOT EXISTS rooms (
         id VARCHAR(50) PRIMARY KEY,
@@ -68,7 +55,6 @@ export async function initializeDatabase(): Promise<void> {
       )
     `);
 
-    // Create room_sensors table
     await client.query(`
       CREATE TABLE IF NOT EXISTS room_sensors (
         id SERIAL PRIMARY KEY,
@@ -81,7 +67,6 @@ export async function initializeDatabase(): Promise<void> {
       )
     `);
 
-    // Create pzem_data table
     await client.query(`
       CREATE TABLE IF NOT EXISTS pzem_data (
         id SERIAL PRIMARY KEY,
@@ -95,7 +80,6 @@ export async function initializeDatabase(): Promise<void> {
       )
     `);
 
-    // Create relay_states table
     await client.query(`
       CREATE TABLE IF NOT EXISTS relay_states (
         id VARCHAR(100) PRIMARY KEY,
@@ -106,7 +90,6 @@ export async function initializeDatabase(): Promise<void> {
       )
     `);
 
-    // Create indexes for performance
     await client.query(`
       CREATE INDEX IF NOT EXISTS idx_room_sensors_timestamp
       ON room_sensors(timestamp DESC)
@@ -127,7 +110,6 @@ export async function initializeDatabase(): Promise<void> {
       ON relay_states(room_id)
     `);
 
-    // Insert default rooms
     await client.query(`
       INSERT INTO rooms (id, name, floor, type) VALUES
         ('unknown', 'Unknown', 0, 'utility'),
@@ -138,29 +120,21 @@ export async function initializeDatabase(): Promise<void> {
 
     isInitialized = true;
   } catch (error) {
-    console.error("Database initialization error:", error);
     throw error;
   }
 }
 
-/**
- * Test database connection
- */
 export async function testConnection(): Promise<boolean> {
   try {
     const client = await getPool().connect();
     await client.query("SELECT 1");
     client.release();
     return true;
-  } catch (error) {
-    console.error("Database connection test failed:", error);
+  } catch {
     return false;
   }
 }
 
-/**
- * Get all rooms
- */
 export async function getRooms(): Promise<DBRoom[]> {
   await initializeDatabase();
   const result = await getPool().query(
@@ -169,9 +143,6 @@ export async function getRooms(): Promise<DBRoom[]> {
   return result.rows;
 }
 
-/**
- * Get total count of room sensor records
- */
 export async function getRoomSensorCount(): Promise<number> {
   await initializeDatabase();
   const result = await getPool().query(
@@ -180,9 +151,6 @@ export async function getRoomSensorCount(): Promise<number> {
   return parseInt(result.rows[0].count, 10);
 }
 
-/**
- * Get total count of PZEM records
- */
 export async function getPZEMDataCount(): Promise<number> {
   await initializeDatabase();
   const result = await getPool().query(
@@ -357,17 +325,7 @@ export async function getHistoricalRoomSensorData(
 
   query += ` ORDER BY timestamp ASC LIMIT 10000`;
 
-  console.log("[DB] Fetching room sensor data:", {
-    requestedStartDate: startDate.toISOString(),
-    effectiveStartDate: effectiveStartDate.toISOString(),
-    endDate: endDate.toISOString(),
-    roomIds,
-    aggregation,
-  });
-
   const result = await getPool().query(query, params);
-
-  console.log(`[DB] Retrieved ${result.rows.length} room sensor records`);
 
   return result.rows;
 }
@@ -383,11 +341,9 @@ export async function getHistoricalPZEMData(
 ): Promise<HistoricalPZEMData[]> {
   await initializeDatabase();
 
-  // Calculate 90-day threshold to filter stale data
   const ninetyDaysAgo = new Date();
   ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
 
-  // Use the later of: requested startDate or 90 days ago
   const effectiveStartDate = startDate > ninetyDaysAgo ? startDate : ninetyDaysAgo;
 
   const isAggregated = aggregation === "hourly";
@@ -421,24 +377,13 @@ export async function getHistoricalPZEMData(
     WHERE pz.timestamp >= $1 AND pz.timestamp <= $2
   `;
 
-  const params: Date[] = [effectiveStartDate, endDate];
-
   if (isAggregated) {
     query += ` GROUP BY ${timeField}`;
   }
 
   query += ` ORDER BY timestamp ASC LIMIT 10000`;
 
-  console.log("[DB] Fetching PZEM data:", {
-    requestedStartDate: startDate.toISOString(),
-    effectiveStartDate: effectiveStartDate.toISOString(),
-    endDate: endDate.toISOString(),
-    aggregation,
-  });
-
-  const result = await getPool().query(query, [startDate, endDate]);
-
-  console.log(`[DB] Retrieved ${result.rows.length} PZEM records`);
+  const result = await getPool().query(query, [effectiveStartDate, endDate]);
 
   return result.rows;
 }

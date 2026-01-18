@@ -6,15 +6,6 @@ import {
 } from "@/lib/database";
 import { setRelayState } from "@/lib/firebase-relay";
 
-/**
- * POST /api/relay-control
- * Control a relay (send command to Firebase and store state in database)
- * Request body:
- *   - relayId: string (required)
- *   - roomId: string (required)
- *   - type: string (required) - relay type
- *   - state: boolean (required) - desired state
- */
 export async function POST(request: NextRequest) {
   try {
     // Check database connection
@@ -75,7 +66,6 @@ export async function POST(request: NextRequest) {
       { status: 200 },
     );
   } catch (error) {
-    console.error("Relay control error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       { error: "Failed to control relay", details: message },

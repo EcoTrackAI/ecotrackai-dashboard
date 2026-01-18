@@ -9,13 +9,6 @@ import {
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-/**
- * GET /api/relay-states
- * Retrieve relay states from database
- * Query parameters:
- *   - relayId: specific relay ID (optional)
- *   - roomId: filter by room (optional)
- */
 export async function GET(request: NextRequest) {
   try {
     // Check database connection
@@ -69,7 +62,6 @@ export async function GET(request: NextRequest) {
       },
     );
   } catch (error) {
-    console.error("Relay states fetch error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       { error: "Failed to fetch relay states", details: message },
