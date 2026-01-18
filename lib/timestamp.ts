@@ -4,17 +4,22 @@ export function parseISTTimestamp(timestamp: string | Date): Date {
   }
 
   const cleanStr = String(timestamp).trim().replace(" IST", "");
-  
+
   if (cleanStr.includes(" ") && !cleanStr.includes("T")) {
     const isoStr = cleanStr.replace(" ", "T") + "+05:30";
     return new Date(isoStr);
   }
-  
+
   return new Date(timestamp);
 }
 
-export function isValidTimestamp(timestamp: { timestamp?: string | Date } | string | Date): boolean {
-  const ts = typeof timestamp === "object" && "timestamp" in timestamp ? timestamp.timestamp : timestamp;
+export function isValidTimestamp(
+  timestamp: { timestamp?: string | Date } | string | Date,
+): boolean {
+  const ts =
+    typeof timestamp === "object" && "timestamp" in timestamp
+      ? timestamp.timestamp
+      : timestamp;
   const date = parseISTTimestamp(ts as string | Date);
   return !isNaN(date.getTime());
 }
@@ -25,7 +30,7 @@ export function getTimestampMs(timestamp: string | Date): number {
 
 export function formatTimestamp(
   timestamp: string | Date,
-  locale: string = "en-IN",
+  locale: string = "en-US",
   options?: Intl.DateTimeFormatOptions,
 ): string {
   const date = parseISTTimestamp(timestamp);
@@ -34,7 +39,7 @@ export function formatTimestamp(
     day: "numeric",
     hour: "2-digit",
     minute: "2-digit",
-    timeZone: "Asia/Kolkata",
+    timeZone: "UTC",
     ...options,
   });
 }

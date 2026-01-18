@@ -121,12 +121,12 @@ export const HistoricalChart: React.FC<HistoricalChartProps> = ({
             existing[metric] = currentValue + newValue;
           } else {
             acc.push({
-              timestamp: new Date(point.timestamp).toLocaleString("en-IN", {
+              timestamp: new Date(point.timestamp).toLocaleString("en-US", {
                 month: "short",
                 day: "numeric",
                 hour: "2-digit",
                 minute: "2-digit",
-                timeZone: "Asia/Kolkata",
+                timeZone: "UTC",
               }),
               [metric]: (point[key] as number) || 0,
             });
@@ -142,12 +142,12 @@ export const HistoricalChart: React.FC<HistoricalChartProps> = ({
       const key = metric as keyof HistoricalDataPoint;
 
       data.forEach((point) => {
-        const timeKey = new Date(point.timestamp).toLocaleString("en-IN", {
+        const timeKey = new Date(point.timestamp).toLocaleString("en-US", {
           month: "short",
           day: "numeric",
           hour: "2-digit",
           minute: "2-digit",
-          timeZone: "Asia/Kolkata",
+          timeZone: "UTC",
         });
 
         if (!grouped[timeKey]) {
