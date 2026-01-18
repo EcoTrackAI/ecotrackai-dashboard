@@ -5,6 +5,7 @@
 /**
  * Parse IST timestamp string to Date object
  * Handles formats like:
+ * - "2026-01-18 17:58:56" (Neon database format - treated as IST)
  * - "2026-01-18 14:30:00 IST"
  * - "2026-01-18T14:30:00+05:30"
  * - ISO format strings
@@ -16,10 +17,31 @@ export function parseISTTimestamp(timestamp: string | Date): Date {
 
   // If it's a string, try to parse it
   if (typeof timestamp === "string") {
-    // Remove " IST" suffix if present
-    const cleanTimestamp = timestamp.replace(" IST", "");
+    // Handle Neon database format: "2026-01-18 17:58:56"
+    // This is stored as IST time, so we need to append timezone info
+    const neonFormatRegex = /^\d{4}-\d{2}-\d{2} \d{2}:\d{2}:\d{2}$/;
+    if (neonFormatRegex.test(timestamp)) {
+      // Replace space with 'T' to make it ISO-like, then append IST offset
+      const isoFormat = timestamp.replace(" ", "T") + "+05:30";
+      const date = new Date(isoFormat);
+      if (!isNaN(date.getTime())) {
+        return date;
+      }
+    }
 
-    // Try parsing as ISO string first (most reliable)
+    // Remove " IST" suffix if present and try parsing
+    const cleanTimestamp = timestamp.replace(" IST", "").trim();
+
+    // If it looks like SQL format with space, convert to ISO
+    if (cleanTimestamp.includes(" ") && !cleanTimestamp.includes("T")) {
+      const isoFormat = cleanTimestamp.replace(" ", "T") + "+05:30";
+      const date = new Date(isoFormat);
+      if (!isNaN(date.getTime())) {
+        return date;
+      }
+    }
+
+    // Try parsing as ISO string
     const date = new Date(cleanTimestamp);
     if (!isNaN(date.getTime())) {
       return date;
