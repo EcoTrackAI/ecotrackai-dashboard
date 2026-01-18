@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from "next/server";
 import {
-  getHistoricalPZEMData,
+  getAllRecentPZEMData,
   getLatestPZEMReading,
   testConnection,
 } from "@/lib/database";
@@ -10,11 +10,8 @@ export const revalidate = 0;
 
 /**
  * GET /api/pzem-data
- * Retrieve PZEM data from database
- * Query parameters:
- *   - startDate: ISO string (required)
- *   - endDate: ISO string (required)
- *   - aggregation: "raw" or "hourly" (optional, default: "raw")
+ * Retrieve all recent PZEM data from database (last 90 days)
+ * Frontend handles date filtering based on user selection
  */
 export async function GET(request: NextRequest) {
   const startTime = Date.now();
@@ -30,57 +27,16 @@ export async function GET(request: NextRequest) {
       );
     }
 
-    const { searchParams } = request.nextUrl;
-    const startDateStr = searchParams.get("startDate");
-    const endDateStr = searchParams.get("endDate");
-    const aggregation = (searchParams.get("aggregation") || "raw") as
-      | "raw"
-      | "hourly";
+    console.log("[API PZEM] Fetching all recent PZEM data...");
 
-    console.log("[API PZEM] Request params:", {
-      startDate: startDateStr,
-      endDate: endDateStr,
-      aggregation,
-    });
-
-    // Validate required parameters
-    if (!startDateStr || !endDateStr) {
-      return NextResponse.json(
-        {
-          error: "Missing required parameters: startDate and endDate",
-          success: false,
-          data: [],
-        },
-        { status: 400 },
-      );
-    }
-
-    // Parse dates
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
-
-    // Validate date format
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-      return NextResponse.json(
-        {
-          error: "Invalid date format. Use ISO 8601 format.",
-          success: false,
-          data: [],
-        },
-        { status: 400 },
-      );
-    }
-
-    console.log("[API PZEM] Fetching PZEM data...");
-
-    // Fetch historical data
-    const data = await getHistoricalPZEMData(startDate, endDate, aggregation);
+    // Fetch all recent data - let frontend handle date filtering
+    const data = await getAllRecentPZEMData();
 
     console.log(
       `[API PZEM] Retrieved ${data.length} records in ${Date.now() - startTime}ms`,
     );
 
-    // Format response - database already filters stale data (>90 days old)
+    // Format response - database already filters to last 90 days
     const formattedData = data.map((row: HistoricalPZEMData) => ({
       timestamp: row.timestamp,
       current: Number(row.current) || 0,

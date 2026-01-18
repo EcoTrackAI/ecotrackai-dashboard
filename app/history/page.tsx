@@ -60,13 +60,8 @@ export default function HistoryPage() {
       try {
         setError(null);
         const params = new URLSearchParams({
-          startDate: dateRange.start.toISOString(),
-          endDate: dateRange.end.toISOString(),
-          aggregation: "raw",
+          _t: Date.now().toString(), // Cache buster
         });
-
-        params.append("roomIds", selectedRooms.join(","));
-        params.append("_t", Date.now().toString()); // Cache buster
 
         console.log(
           "[History] Fetching from database:",
@@ -88,12 +83,27 @@ export default function HistoryPage() {
         }
 
         if (result.data && Array.isArray(result.data)) {
-          // Validate and transform data
+          // Filter data to selected date range and rooms
           const validData = result.data
             .filter((item: any) => {
               // Ensure timestamp is valid
               const ts = new Date(item.timestamp).getTime();
-              return !isNaN(ts) && item.roomId;
+              if (isNaN(ts)) return false;
+
+              // Check if in selected date range
+              if (
+                ts < dateRange.start.getTime() ||
+                ts > dateRange.end.getTime()
+              ) {
+                return false;
+              }
+
+              // Check if room is selected
+              if (!item.roomId || !selectedRooms.includes(item.roomId)) {
+                return false;
+              }
+
+              return true;
             })
             .map((item: HistoricalDataPoint) => ({
               ...item,

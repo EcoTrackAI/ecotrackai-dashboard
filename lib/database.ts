@@ -444,6 +444,65 @@ export async function getHistoricalPZEMData(
 }
 
 /**
+ * Get all recent room sensor readings (last 90 days)
+ * No date filtering - returns all available data for frontend filtering
+ */
+export async function getAllRecentRoomSensorData(): Promise<HistoricalRoomSensorData[]> {
+  await initializeDatabase();
+
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+  const query = `
+    SELECT
+      rs.timestamp,
+      rs.room_id as "roomId",
+      r.name as "roomName",
+      rs.temperature,
+      rs.humidity,
+      rs.light,
+      rs.motion
+    FROM room_sensors rs
+    JOIN rooms r ON rs.room_id = r.id
+    WHERE rs.timestamp >= $1
+    ORDER BY rs.timestamp DESC
+    LIMIT 50000
+  `;
+
+  const result = await getPool().query(query, [ninetyDaysAgo]);
+  return result.rows;
+}
+
+/**
+ * Get all recent PZEM data (last 90 days)
+ * No date filtering - returns all available data for frontend filtering
+ */
+export async function getAllRecentPZEMData(): Promise<HistoricalPZEMData[]> {
+  await initializeDatabase();
+
+  const ninetyDaysAgo = new Date();
+  ninetyDaysAgo.setDate(ninetyDaysAgo.getDate() - 90);
+
+  const query = `
+    SELECT
+      timestamp,
+      current,
+      voltage,
+      power,
+      energy,
+      frequency,
+      pf
+    FROM pzem_data
+    WHERE timestamp >= $1
+    ORDER BY timestamp DESC
+    LIMIT 50000
+  `;
+
+  const result = await getPool().query(query, [ninetyDaysAgo]);
+  return result.rows;
+}
+
+/**
  * Get latest room sensor readings
  */
 export async function getLatestRoomSensorReadings(
