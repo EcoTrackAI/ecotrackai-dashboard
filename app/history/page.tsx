@@ -83,18 +83,21 @@ export default function HistoryPage() {
         }
 
         if (result.data && Array.isArray(result.data)) {
+          console.log("[History] Total records from API:", result.data.length);
+          console.log("[History] Sample data:", result.data.slice(0, 2));
+          console.log("[History] Date range:", {
+            start: dateRange.start.toISOString(),
+            end: dateRange.end.toISOString(),
+          });
+          console.log("[History] Selected rooms:", selectedRooms);
+
           // Filter data to selected date range and rooms
           const validData = result.data
             .filter((item: any) => {
-              // Ensure timestamp is valid
+              // Ensure timestamp is valid - handle IST format
               const ts = new Date(item.timestamp).getTime();
-              if (isNaN(ts)) return false;
-
-              // Check if in selected date range
-              if (
-                ts < dateRange.start.getTime() ||
-                ts > dateRange.end.getTime()
-              ) {
+              if (isNaN(ts)) {
+                console.log("[History] Invalid timestamp:", item.timestamp);
                 return false;
               }
 
@@ -103,13 +106,30 @@ export default function HistoryPage() {
                 return false;
               }
 
-              return true;
+              // Check if in selected date range
+              const inRange =
+                ts >= dateRange.start.getTime() &&
+                ts <= dateRange.end.getTime();
+              
+              if (!inRange) {
+                console.log(
+                  "[History] Out of range - ts:",
+                  ts,
+                  "start:",
+                  dateRange.start.getTime(),
+                  "end:",
+                  dateRange.end.getTime(),
+                );
+              }
+
+              return inRange;
             })
             .map((item: HistoricalDataPoint) => ({
               ...item,
               timestamp: new Date(item.timestamp),
             }));
 
+          console.log("[History] Filtered to", validData.length, "records");
           setHistoricalData(validData);
           console.log("[History] Loaded", validData.length, "valid records");
         } else {
