@@ -1,6 +1,6 @@
-import { NextRequest, NextResponse } from "next/server";
+import { NextResponse } from "next/server";
 import {
-  getHistoricalPZEMData,
+  getAllRecentPZEMData,
   getLatestPZEMReading,
   testConnection,
 } from "@/lib/database";
@@ -8,81 +8,19 @@ import {
 export const dynamic = "force-dynamic";
 export const revalidate = 0;
 
-/**
- * GET /api/pzem-data
- * Retrieve PZEM data from database
- * Query parameters:
- *   - startDate: ISO string (required)
- *   - endDate: ISO string (required)
- *   - aggregation: "raw" or "hourly" (optional, default: "raw")
- */
-export async function GET(request: NextRequest) {
-  const startTime = Date.now();
-
+export async function GET() {
   try {
-    // Check database connection
-    console.log("[API PZEM] Checking database connection...");
     if (!(await testConnection())) {
-      console.error("[API PZEM] Database connection failed");
       return NextResponse.json(
         { error: "Database unavailable", success: false, data: [] },
         { status: 503 },
       );
     }
 
-    const { searchParams } = request.nextUrl;
-    const startDateStr = searchParams.get("startDate");
-    const endDateStr = searchParams.get("endDate");
-    const aggregation = (searchParams.get("aggregation") || "raw") as
-      | "raw"
-      | "hourly";
+    const data = await getAllRecentPZEMData();
 
-    console.log("[API PZEM] Request params:", {
-      startDate: startDateStr,
-      endDate: endDateStr,
-      aggregation,
-    });
-
-    // Validate required parameters
-    if (!startDateStr || !endDateStr) {
-      return NextResponse.json(
-        {
-          error: "Missing required parameters: startDate and endDate",
-          success: false,
-          data: [],
-        },
-        { status: 400 },
-      );
-    }
-
-    // Parse dates
-    const startDate = new Date(startDateStr);
-    const endDate = new Date(endDateStr);
-
-    // Validate date format
-    if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
-      return NextResponse.json(
-        {
-          error: "Invalid date format. Use ISO 8601 format.",
-          success: false,
-          data: [],
-        },
-        { status: 400 },
-      );
-    }
-
-    console.log("[API PZEM] Fetching PZEM data...");
-
-    // Fetch historical data
-    const data = await getHistoricalPZEMData(startDate, endDate, aggregation);
-
-    console.log(
-      `[API PZEM] Retrieved ${data.length} records in ${Date.now() - startTime}ms`,
-    );
-
-    // Format response
     const formattedData = data.map((row: HistoricalPZEMData) => ({
-      timestamp: row.timestamp,
+      timestamp: String(row.timestamp),
       current: Number(row.current) || 0,
       voltage: Number(row.voltage) || 0,
       power: Number(row.power) || 0,
@@ -104,11 +42,6 @@ export async function GET(request: NextRequest) {
       },
     );
   } catch (error) {
-    console.error("[API PZEM] PZEM data fetch error:", error);
-    console.error(
-      "[API PZEM] Error stack:",
-      error instanceof Error ? error.stack : "N/A",
-    );
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       {
@@ -145,10 +78,7 @@ export async function POST() {
     }
 
     const formatted = {
-      timestamp:
-        typeof latest.timestamp === "string"
-          ? latest.timestamp
-          : latest.timestamp.toISOString(),
+      timestamp: String(latest.timestamp),
       current: Number(latest.current) || 0,
       voltage: Number(latest.voltage) || 0,
       power: Number(latest.power) || 0,
@@ -170,7 +100,6 @@ export async function POST() {
       },
     );
   } catch (error) {
-    console.error("Latest PZEM fetch error:", error);
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
       { error: "Failed to fetch data", details: message },

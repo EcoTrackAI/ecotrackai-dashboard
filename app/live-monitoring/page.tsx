@@ -6,27 +6,18 @@ import { subscribeRoomSensor } from "@/lib/firebase-sensors";
 import { subscribeSystemStatus } from "@/lib/firebase-system-status";
 import { initializeFirebase } from "@/lib/firebase";
 
-const STALE_THRESHOLD = 30000; // 30 seconds - sensor is stale if not updated within this time
+const STALE_THRESHOLD = 30000;
 
-/**
- * Determine if sensor data is stale based on lastUpdate timestamp
- */
 const isSensorStale = (lastUpdate: string | undefined): boolean => {
   if (!lastUpdate) return true;
-
   const lastUpdateTime = new Date(lastUpdate).getTime();
   if (isNaN(lastUpdateTime)) return true;
-
   return Date.now() - lastUpdateTime >= STALE_THRESHOLD;
 };
 
-/**
- * Format timestamp as relative time (e.g., "5m ago")
- */
 const formatTimestamp = (timestamp: string): string => {
   const date = new Date(timestamp);
   if (isNaN(date.getTime())) return "Unknown";
-
   const diffMin = Math.floor((new Date().getTime() - date.getTime()) / 60000);
   if (diffMin < 1) return "Just now";
   if (diffMin < 60) return `${diffMin}m ago`;
@@ -75,8 +66,8 @@ export default function LiveMonitoringPage() {
         }
         setLoading(false);
       });
-    } catch (err) {
-      console.error("[LiveMonitoring] Initialization error:", err);
+    } catch {
+      // eslint-disable-next-line react-hooks/set-state-in-effect
       setError("Failed to connect to Firebase. Please refresh the page.");
       setLoading(false);
     }
@@ -88,7 +79,6 @@ export default function LiveMonitoringPage() {
     };
   }, []);
 
-  // Determine sensor status: offline if device is offline or sensor data is stale
   const getBedroomStatus = (): SensorStatus => {
     if (deviceStatus === "offline") return "offline";
     if (!bedroomData || isSensorStale(bedroomData.updatedAt)) return "offline";

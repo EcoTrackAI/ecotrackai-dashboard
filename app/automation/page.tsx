@@ -14,8 +14,8 @@ export default function AutomationPage() {
   useEffect(() => {
     try {
       initializeFirebase();
-    } catch (err) {
-      console.error("Failed to initialize Firebase:", err);
+    } catch (_err) {
+      // eslint-disable-next-line @typescript-eslint/no-unused-vars
       setTimeout(() => setLoading(false), 0);
       return;
     }

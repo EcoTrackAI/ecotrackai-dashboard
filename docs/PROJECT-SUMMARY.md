@@ -65,92 +65,107 @@ EcoTrack AI Dashboard addresses the growing need for intelligent energy manageme
 ```
 ecotrackai-dashboard/
 ├── app/                    # Next.js 16 App Router
-│   ├── page.tsx           # Dashboard home
-│   ├── layout.tsx         # Root layout
-│   ├── live-monitoring/   # Real-time sensors
-│   ├── history/           # Historical data
-│   ├── analytics/         # Analytics & charts
-│   ├── automation/        # Device control
+│   ├── page.tsx           # Dashboard home page
+│   ├── layout.tsx         # Root layout with providers
+│   ├── live-monitoring/   # Real-time sensor monitoring
+│   ├── history/           # Historical data viewer
+│   ├── analytics/         # Charts & analytics
+│   ├── automation/        # Device control interface
 │   ├── insights/          # AI recommendations
-│   ├── profile/           # User profile
-│   ├── settings/          # App settings
-│   └── api/               # API endpoints
-│       ├── rooms/
-│       ├── historical-data/
-│       └── sync-firebase/
+│   ├── profile/           # User profile page
+│   ├── settings/          # System settings page
+│   └── api/               # API endpoints (serverless)
+│       ├── rooms/         # GET room list
+│       ├── historical-data/ # GET sensor history
+│       ├── pzem-data/     # GET power data
+│       ├── relay-states/  # GET device states
+│       ├── relay-control/ # POST device control
+│       ├── relay-sync/    # POST relay sync
+│       ├── sync-firebase/ # POST Firebase sync
+│       └── cleanup/       # POST data cleanup
 │
-├── components/            # Reusable components
-│   ├── automation/       # Control panels
-│   ├── charts/           # Data visualization
-│   ├── history/          # History views
-│   ├── metrics/          # Metric cards
-│   ├── navigation/       # Nav, sidebar
-│   ├── providers/        # Context providers
-│   ├── recommendations/  # Insight cards
-│   ├── rooms/            # Room cards
-│   └── sensors/          # Sensor displays
+├── components/            # Reusable React components
+│   ├── automation/       # Control cards (Light, Fan, AC)
+│   ├── charts/           # Chart visualizations
+│   ├── history/          # History tools (picker, selector, table)
+│   ├── metrics/          # Metric display cards
+│   ├── navigation/       # Navigation & layout
+│   ├── profile/          # Profile components
+│   ├── recommendations/  # ML recommendation cards
+│   ├── rooms/            # Room status cards
+│   └── sensors/          # Sensor display cards
 │
-├── lib/                  # Utilities & helpers
-│   ├── database.ts      # PostgreSQL queries
-│   ├── db.ts            # Simplified DB module
-│   ├── firebase.ts      # Firebase init
-│   ├── firebase-sensors.ts    # Sensor subscriptions
-│   ├── firebase-system-status.ts
-│   ├── api.ts           # API helpers
-│   ├── constants.ts     # App constants
-│   └── env.ts           # Environment config
+├── lib/                  # Core utilities & helpers
+│   ├── database.ts      # PostgreSQL queries (30+ functions)
+│   ├── firebase.ts      # Firebase initialization
+│   ├── firebase-sensors.ts    # Real-time subscriptions
+│   ├── firebase-relay.ts      # Relay state management
+│   ├── firebase-system-status.ts # System monitoring
+│   ├── api.ts           # API request wrapper with retry
+│   ├── constants.ts     # App configuration
+│   ├── env.ts           # Environment validation
+│   ├── weather.ts       # Weather API integration
+│   ├── timestamp.ts     # Timestamp utilities
+│   └── hooks/           # Custom React hooks
 │
 ├── types/               # TypeScript definitions
-│   └── globals.d.ts    # Global types
+│   └── globals.d.ts    # 600+ lines of type definitions
 │
 ├── database/            # Database assets
 │   └── schema.sql      # PostgreSQL schema
 │
-├── docs/                # Documentation (NEW)
-│   ├── ARCHITECTURE.md  # System design
-│   ├── API.md          # API reference
+├── docs/                # Comprehensive documentation
+│   ├── API.md          # API reference guide
+│   ├── ARCHITECTURE.md  # System architecture
 │   ├── COMPONENTS.md   # Component library
 │   ├── DEPLOYMENT.md   # Deployment guide
-│   ├── DEVELOPMENT.md  # Dev workflow
-│   └── FEATURES.md     # Feature docs
+│   ├── DEVELOPMENT.md  # Development workflow
+│   ├── FEATURES.md     # Feature documentation
+│   ├── FIREBASE-STRUCTURE.md # Database structure
+│   ├── GETTING-STARTED.md # Setup guide
+│   └── README.md        # Docs overview
 │
 ├── public/              # Static assets
-├── .env.local.example   # Environment template (NEW)
+├── .env.example         # Environment template
+├── .env.production.example # Production template
 ├── package.json         # Dependencies
 ├── tsconfig.json        # TypeScript config
-├── tailwind.config.ts   # Tailwind config
+├── tailwind.config.ts   # Tailwind CSS config
 ├── next.config.ts       # Next.js config
-└── README.md            # Project overview (UPDATED)
+└── README.md            # Project overview
 ```
 
 ## 🎨 Key Features
 
 ### 1. Real-Time Monitoring (`/live-monitoring`)
 
-- Live sensor data from Firebase RTDB
-- WebSocket connections for instant updates
-- Support for 7 sensor categories
+- Live sensor data from Firebase Realtime Database
+- Real-time WebSocket connections
+- Support for multiple sensor types
 - Automatic offline detection (30s threshold)
 - Connection status indicators
-- Category filtering
+- Sensor category filtering
+- Last update timestamps
 
 ### 2. Historical Analytics (`/history`)
 
-- PostgreSQL time-series storage
+- PostgreSQL time-series storage (90-day retention)
 - Date range queries
 - Room-based filtering
 - Data table with sorting
-- Interactive charts
-- Export capabilities (planned)
+- Interactive Recharts visualizations
+- Export capabilities
+- Hourly/daily aggregations via materialized views
 
 ### 3. Smart Automation (`/automation`)
 
-- Device control (on/off, settings)
+- Device control (lights, fans, AC units)
 - Auto/manual mode switching
-- Rule-based automation
-- Power consumption tracking
+- Real-time relay state synchronization
+- Power consumption tracking per device
+- Rule-based automation support
+- Online/offline device status
 - Activity feed
-- Online/offline status
 
 ### 4. Energy Insights (`/insights`)
 
@@ -158,23 +173,25 @@ ecotrackai-dashboard/
 - Cost savings estimates
 - Efficiency scoring
 - Anomaly detection
-- Trend predictions
+- Trend analysis
+- Confidence scoring system
 
 ### 5. Dashboard Overview (`/`)
 
-- Key metrics (power, energy, cost, savings)
+- Key metrics display (power, energy, cost)
 - Live sensor cards
 - Room status overview
-- Recent activity feed
-- Responsive layout
+- System health monitoring
+- Responsive mobile layout
 
 ### 6. Analytics (`/analytics`)
 
 - Power usage trends
-- Energy by appliance
-- Automation impact
+- Energy consumption by appliance
+- Automation impact analysis
 - Cost analysis
-- Interactive charts
+- Interactive charts with Recharts
+- Real-time updates
 
 ## 💾 Database Schema
 
