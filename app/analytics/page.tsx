@@ -80,14 +80,37 @@ export default function AnalyticsPage() {
           const start = new Date();
           start.setDate(start.getDate() - 7);
 
+          console.log("[Analytics] Total records from API:", result.data.length);
+          console.log("[Analytics] Sample data:", result.data.slice(0, 2));
+          console.log("[Analytics] Date range:", {
+            start: start.toISOString(),
+            end: end.toISOString(),
+          });
+
           const formatted = result.data
             .filter((item: any) => {
-              // Ensure timestamp is valid
+              // Ensure timestamp is valid - handle IST format
               const ts = new Date(item.timestamp).getTime();
-              if (isNaN(ts)) return false;
+              if (isNaN(ts)) {
+                console.log("[Analytics] Invalid timestamp:", item.timestamp);
+                return false;
+              }
 
               // Filter to last 7 days
-              return ts >= start.getTime() && ts <= end.getTime();
+              const inRange = ts >= start.getTime() && ts <= end.getTime();
+
+              if (!inRange) {
+                console.log(
+                  "[Analytics] Out of range - ts:",
+                  ts,
+                  "start:",
+                  start.getTime(),
+                  "end:",
+                  end.getTime(),
+                );
+              }
+
+              return inRange;
             })
             .map((item: HistoricalPZEMData) => ({
               time: new Date(item.timestamp).toLocaleString("en-IN", {
@@ -101,10 +124,11 @@ export default function AnalyticsPage() {
               voltage: Number(item.voltage) || 0,
             }));
 
+          console.log("[Analytics] Formatted to', formatted.length, 'records");
           setPowerHistory(formatted);
           console.log("[Analytics] Loaded", formatted.length, "valid records");
 
-          // Set latest metrics from most recent data point (from all data)
+          // Set latest metrics from most recent valid data point
           const latestData = result.data.find(
             (item: any) =>
               !isNaN(new Date(item.timestamp).getTime()) &&
