@@ -5,6 +5,9 @@ import {
   testConnection,
 } from "@/lib/database";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 /**
  * GET /api/pzem-data
  * Retrieve PZEM data from database
@@ -14,11 +17,15 @@ import {
  *   - aggregation: "raw" or "hourly" (optional, default: "raw")
  */
 export async function GET(request: NextRequest) {
+  const startTime = Date.now();
+
   try {
     // Check database connection
+    console.log("[API PZEM] Checking database connection...");
     if (!(await testConnection())) {
+      console.error("[API PZEM] Database connection failed");
       return NextResponse.json(
-        { error: "Database unavailable" },
+        { error: "Database unavailable", success: false, data: [] },
         { status: 503 },
       );
     }
@@ -30,10 +37,20 @@ export async function GET(request: NextRequest) {
       | "raw"
       | "hourly";
 
+    console.log("[API PZEM] Request params:", {
+      startDate: startDateStr,
+      endDate: endDateStr,
+      aggregation,
+    });
+
     // Validate required parameters
     if (!startDateStr || !endDateStr) {
       return NextResponse.json(
-        { error: "Missing required parameters: startDate and endDate" },
+        {
+          error: "Missing required parameters: startDate and endDate",
+          success: false,
+          data: [],
+        },
         { status: 400 },
       );
     }
@@ -45,13 +62,23 @@ export async function GET(request: NextRequest) {
     // Validate date format
     if (isNaN(startDate.getTime()) || isNaN(endDate.getTime())) {
       return NextResponse.json(
-        { error: "Invalid date format. Use ISO 8601 format." },
+        {
+          error: "Invalid date format. Use ISO 8601 format.",
+          success: false,
+          data: [],
+        },
         { status: 400 },
       );
     }
 
+    console.log("[API PZEM] Fetching PZEM data...");
+
     // Fetch historical data
     const data = await getHistoricalPZEMData(startDate, endDate, aggregation);
+
+    console.log(
+      `[API PZEM] Retrieved ${data.length} records in ${Date.now() - startTime}ms`,
+    );
 
     // Format response
     const formattedData = data.map((row: HistoricalPZEMData) => ({
@@ -69,17 +96,27 @@ export async function GET(request: NextRequest) {
       {
         status: 200,
         headers: {
-          "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+          "Cache-Control":
+            "no-store, no-cache, must-revalidate, proxy-revalidate",
           Pragma: "no-cache",
           Expires: "0",
         },
       },
     );
   } catch (error) {
-    console.error("PZEM data fetch error:", error);
+    console.error("[API PZEM] PZEM data fetch error:", error);
+    console.error(
+      "[API PZEM] Error stack:",
+      error instanceof Error ? error.stack : "N/A",
+    );
     const message = error instanceof Error ? error.message : "Unknown error";
     return NextResponse.json(
-      { error: "Failed to fetch data", details: message },
+      {
+        error: "Failed to fetch data",
+        details: message,
+        success: false,
+        data: [],
+      },
       { status: 500 },
     );
   }
@@ -125,7 +162,8 @@ export async function POST() {
       {
         status: 200,
         headers: {
-          "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+          "Cache-Control":
+            "no-store, no-cache, must-revalidate, proxy-revalidate",
           Pragma: "no-cache",
           Expires: "0",
         },

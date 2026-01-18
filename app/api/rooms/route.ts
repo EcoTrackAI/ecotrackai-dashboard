@@ -1,6 +1,9 @@
 import { NextResponse } from "next/server";
 import { getRooms, testConnection } from "@/lib/database";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 /**
  * GET /api/rooms
  * Retrieve all rooms from database
@@ -34,7 +37,8 @@ export async function GET() {
       {
         status: 200,
         headers: {
-          "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+          "Cache-Control":
+            "no-store, no-cache, must-revalidate, proxy-revalidate",
           Pragma: "no-cache",
           Expires: "0",
         },

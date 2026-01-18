@@ -37,7 +37,10 @@ export default function DebugUIPage() {
       // Test 1: Debug endpoint
       try {
         addLog("Fetching /api/debug...");
-        const res = await fetch("/api/debug", { cache: "no-store" });
+        const res = await fetch("/api/debug", {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        });
         const data = await res.json();
         setDbgDebug(data);
         addLog(
@@ -51,7 +54,10 @@ export default function DebugUIPage() {
       // Test 2: Rooms endpoint
       try {
         addLog("Fetching /api/rooms...");
-        const res = await fetch("/api/rooms", { cache: "no-store" });
+        const res = await fetch("/api/rooms", {
+          cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
+        });
         const data = await res.json();
         setDbgRooms(data);
         addLog(`✓ Rooms: Found ${data.count} rooms`);
@@ -75,6 +81,7 @@ export default function DebugUIPage() {
 
         const res = await fetch(`/api/pzem-data?${params}`, {
           cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
         });
         const data = await res.json();
         setDbgPzem(data);
@@ -100,6 +107,7 @@ export default function DebugUIPage() {
 
         const res = await fetch(`/api/historical-data?${params}`, {
           cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
         });
         const data = await res.json();
         setDbgHistorical(data);

@@ -6,6 +6,9 @@ import {
   testConnection,
 } from "@/lib/database";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 /**
  * GET /api/relay-states
  * Retrieve relay states from database
@@ -58,7 +61,8 @@ export async function GET(request: NextRequest) {
       {
         status: 200,
         headers: {
-          "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+          "Cache-Control":
+            "no-store, no-cache, must-revalidate, proxy-revalidate",
           Pragma: "no-cache",
           Expires: "0",
         },

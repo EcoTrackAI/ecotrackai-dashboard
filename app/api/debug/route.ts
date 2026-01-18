@@ -8,6 +8,9 @@ import {
   getPZEMDataCount,
 } from "@/lib/database";
 
+export const dynamic = "force-dynamic";
+export const revalidate = 0;
+
 /**
  * GET /api/debug
  * Debug endpoint to check database content and environment configuration
@@ -90,7 +93,8 @@ export async function GET() {
       {
         status: 200,
         headers: {
-          "Cache-Control": "no-store, no-cache, must-revalidate, max-age=0",
+          "Cache-Control":
+            "no-store, no-cache, must-revalidate, proxy-revalidate",
           Pragma: "no-cache",
           Expires: "0",
         },

@@ -12,28 +12,21 @@ import {
 } from "recharts";
 import { TrendingUp, Zap, Gauge } from "lucide-react";
 import { COLORS } from "@/lib/constants";
-import { subscribePZEMData } from "@/lib/firebase-sensors";
-import { initializeFirebase } from "@/lib/firebase";
 import { MetricCard } from "@/components/metrics";
 
-interface TooltipPayload {
-  color: string;
-  name: string;
-  value: number | string;
+interface ChartData {
+  time: string;
+  power: number;
+  energy: number;
+  voltage: number;
 }
 
-interface CustomTooltipProps {
-  active?: boolean;
-  payload?: TooltipPayload[];
-  label?: string;
-}
-
-const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
-  if (!active || !payload || !payload.length) return null;
+const CustomTooltip = ({ active, payload, label }: any) => {
+  if (!active || !payload?.length) return null;
   return (
     <div className="bg-white p-3 border border-gray-200 rounded-lg shadow-sm">
       <p className="text-sm font-medium text-gray-900 mb-1">{label}</p>
-      {payload.map((entry, index: number) => (
+      {payload.map((entry: any, index: number) => (
         <p key={index} className="text-sm" style={{ color: entry.color }}>
           {entry.name}:{" "}
           {typeof entry.value === "number"
@@ -46,157 +39,118 @@ const CustomTooltip = ({ active, payload, label }: CustomTooltipProps) => {
 };
 
 export default function AnalyticsPage() {
-  const [pzem, setPzem] = useState<PZEMData | null>(null);
-  const [loadingHistorical, setLoadingHistorical] = useState(true);
-  const [loadingFirebase, setLoadingFirebase] = useState(true);
+  const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
-  const [powerHistory, setPowerHistory] = useState<
-    Array<{ time: string; power: number; energy: number; voltage: number }>
-  >([]);
+  const [powerHistory, setPowerHistory] = useState<ChartData[]>([]);
+  const [latestMetrics, setLatestMetrics] = useState<PZEMData | null>(null);
 
-  // Fetch historical PZEM data from database
+  // Fetch PZEM data from database with auto-refresh every 10s
   useEffect(() => {
-    console.log(
-      "[Analytics] Component mounted, starting historical data fetch",
-    );
-    const fetchHistoricalData = async () => {
+    const fetchData = async () => {
       try {
+        setError(null);
         const end = new Date();
-        // Use a date far in the past to fetch all available history
-        const start = new Date("2000-01-01T00:00:00Z");
-        console.log("[Analytics] Fetching PZEM data from", start, "to", end);
+        const start = new Date();
+        start.setDate(start.getDate() - 7);
 
         const params = new URLSearchParams({
           startDate: start.toISOString(),
           endDate: end.toISOString(),
           aggregation: "raw",
+          _t: Date.now().toString(), // Cache buster
         });
 
+        console.log(
+          "[Analytics] Fetching from database:",
+          `/api/pzem-data?${params}`,
+        );
         const response = await fetch(`/api/pzem-data?${params}`, {
           cache: "no-store",
+          headers: { "Cache-Control": "no-cache" },
         });
-
-        if (!response.ok) {
-          const errorData = await response.json().catch(() => ({}));
-          console.error("API Error:", errorData.error || response.status);
-          setPowerHistory([]);
-          return;
-        }
+        console.log("[Analytics] Response status:", response.status);
 
         const result = await response.json();
-        console.log("PZEM API Response:", result);
+        console.log("[Analytics] Result count:", result.data?.length || 0);
 
-        if (!result.data || !Array.isArray(result.data)) {
-          console.warn("Invalid data format from API:", result);
+        if (!response.ok) {
+          setError(result.error || "Failed to fetch data from database");
           setPowerHistory([]);
+          setLatestMetrics(null);
           return;
         }
 
-        if (result.data.length === 0) {
-          console.log("No PZEM data available in database");
-          setPowerHistory([]);
-          return;
-        }
+        if (result.data?.length > 0) {
+          // Validate and transform data
+          const formatted = result.data
+            .filter((item: any) => {
+              // Ensure timestamp is valid
+              const ts = new Date(item.timestamp).getTime();
+              return !isNaN(ts);
+            })
+            .map((item: HistoricalPZEMData) => ({
+              time: new Date(item.timestamp).toLocaleString("en-IN", {
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+              power: Number(item.power) || 0,
+              energy: Number(item.energy) || 0,
+              voltage: Number(item.voltage) || 0,
+            }));
 
-        const formattedData = result.data.map((item: HistoricalPZEMData) => ({
-          time: new Date(item.timestamp).toLocaleString("en-IN", {
-            month: "short",
-            day: "numeric",
-            hour: "2-digit",
-            minute: "2-digit",
-            timeZone: "Asia/Kolkata",
-          }),
-          power: Number(item.power) || 0,
-          energy: Number(item.energy) || 0,
-          voltage: Number(item.voltage) || 0,
-        }));
-        console.log("Formatted PZEM data:", formattedData);
-        setPowerHistory(formattedData);
-        console.log(
-          "[Analytics] powerHistory state updated with",
-          formattedData.length,
-          "points",
-        );
+          setPowerHistory(formatted);
+          console.log("[Analytics] Loaded", formatted.length, "valid records");
+
+          // Set latest metrics from most recent data point
+          const latest = result.data[result.data.length - 1];
+          if (latest && latest.timestamp) {
+            setLatestMetrics({
+              current: Number(latest.current) || 0,
+              voltage: Number(latest.voltage) || 0,
+              power: Number(latest.power) || 0,
+              energy: Number(latest.energy) || 0,
+              frequency: Number(latest.frequency) || 0,
+              pf: Number(latest.pf) || 0,
+              updatedAt: latest.timestamp,
+            });
+            console.log(
+              "[Analytics] Latest metrics timestamp:",
+              latest.timestamp,
+            );
+          } else {
+            setLatestMetrics(null);
+          }
+        } else {
+          console.log("[Analytics] No data available from database");
+          setPowerHistory([]);
+          setLatestMetrics(null);
+        }
       } catch (err) {
-        console.error("Error fetching historical PZEM data:", err);
+        console.error("[Analytics] Fetch error:", err);
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unknown error while fetching data",
+        );
         setPowerHistory([]);
+        setLatestMetrics(null);
       } finally {
-        console.log("[Analytics] Setting loadingHistorical = false");
-        setLoadingHistorical(false);
+        setLoading(false);
       }
     };
 
-    fetchHistoricalData();
+    fetchData();
+    // Refresh every 10 seconds
+    const interval = setInterval(fetchData, 10000);
+    return () => clearInterval(interval);
   }, []);
-
-  // Subscribe to real-time PZEM data from Firebase
-  useEffect(() => {
-    console.log("[Analytics] Starting Firebase subscription");
-
-    try {
-      initializeFirebase();
-      console.log("[Analytics] Firebase initialized successfully");
-    } catch (err) {
-      console.error("Failed to initialize Firebase:", err);
-      setError("Firebase not available - showing database data");
-      console.log("[Analytics] Setting loadingFirebase = false (init failed)");
-      setLoadingFirebase(false);
-      return;
-    }
-
-    // Set a timeout to stop waiting for Firebase after 3 seconds
-    const firebaseTimeout = setTimeout(() => {
-      console.log(
-        "Firebase subscription timeout - proceeding with database data",
-      );
-      setLoadingFirebase(false);
-    }, 3000);
-
-    const unsubscribe = subscribePZEMData((data) => {
-      clearTimeout(firebaseTimeout);
-      if (data) {
-        console.log("Received Firebase data:", data);
-        setPzem(data);
-      }
-      setLoadingFirebase(false);
-      setError(null);
-    });
-
-    return () => {
-      clearTimeout(firebaseTimeout);
-      unsubscribe();
-    };
-  }, []);
-
-  const loading = loadingHistorical || loadingFirebase;
-  console.log(
-    "[Analytics] Render - loadingHistorical:",
-    loadingHistorical,
-    "loadingFirebase:",
-    loadingFirebase,
-    "loading:",
-    loading,
-    "powerHistory.length:",
-    powerHistory.length,
-  );
 
   if (loading) {
-    console.log("[Analytics] Showing loading screen");
     return (
       <div className="min-h-screen bg-[#F8FAFC] flex items-center justify-center">
-        <p className="text-gray-500">Loading analytics data...</p>
-      </div>
-    );
-  }
-
-  if (error) {
-    return (
-      <div className="min-h-screen bg-[#F8FAFC]">
-        <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-          <div className="bg-red-50 border border-red-200 rounded-lg p-4">
-            <p className="text-red-700">{error}</p>
-          </div>
-        </div>
+        <p className="text-gray-500">Loading...</p>
       </div>
     );
   }
@@ -204,158 +158,147 @@ export default function AnalyticsPage() {
   return (
     <div className="min-h-screen bg-[#F8FAFC]">
       <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8">
-        {/* Page Header */}
         <div className="mb-8">
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Power Analytics
           </h1>
           <p className="text-gray-600">
-            Real-time power metrics and 24-hour historical trends
+            Real-time data from database (updates every 10s)
           </p>
         </div>
 
-        {/* Key Metrics */}
-        {pzem && (
+        {error && (
+          <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
+            <p className="text-sm font-medium text-red-800">Error: {error}</p>
+            <p className="text-xs text-red-600 mt-1">
+              Check console for details
+            </p>
+          </div>
+        )}
+
+        {latestMetrics && (
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
             <MetricCard
               title="Current Power"
-              value={pzem.power.toFixed(1)}
+              value={latestMetrics.power.toFixed(1)}
               unit="W"
               icon={<Zap className="w-6 h-6" />}
             />
             <MetricCard
               title="Voltage"
-              value={pzem.voltage.toFixed(1)}
+              value={latestMetrics.voltage.toFixed(1)}
               unit="V"
               icon={<Gauge className="w-6 h-6" />}
             />
             <MetricCard
               title="Total Energy"
-              value={pzem.energy.toFixed(2)}
+              value={latestMetrics.energy.toFixed(2)}
               unit="kWh"
               icon={<TrendingUp className="w-6 h-6" />}
             />
           </div>
         )}
 
-        {/* Charts */}
-        <div className="space-y-6">
-          {/* Power Usage History */}
-          {powerHistory.length > 0 ? (
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Power Usage History
-              </h2>
-              <ResponsiveContainer width="100%" height={300}>
-                <LineChart
-                  data={powerHistory}
-                  margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
-                >
-                  <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
-                  <XAxis
-                    dataKey="time"
-                    stroke={COLORS.textMuted}
-                    style={{ fontSize: "12px" }}
-                    tick={{ fill: COLORS.textMuted }}
-                  />
-                  <YAxis
-                    stroke={COLORS.textMuted}
-                    style={{ fontSize: "12px" }}
-                    tick={{ fill: COLORS.textMuted }}
-                    label={{
-                      value: "Power (W)",
-                      angle: -90,
-                      position: "insideLeft",
-                      style: { fill: COLORS.textMuted, fontSize: "12px" },
-                    }}
-                  />
-                  <Tooltip content={<CustomTooltip />} />
-                  <Line
-                    type="monotone"
-                    dataKey="power"
-                    name="Power"
-                    stroke={COLORS.primary}
-                    strokeWidth={2}
-                    dot={false}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
+        {powerHistory.length > 0 ? (
+          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              Power Usage History
+            </h2>
+            <ResponsiveContainer width="100%" height={300}>
+              <LineChart
+                data={powerHistory}
+                margin={{ top: 5, right: 20, left: 0, bottom: 5 }}
+              >
+                <CartesianGrid strokeDasharray="3 3" stroke="#E5E7EB" />
+                <XAxis
+                  dataKey="time"
+                  stroke={COLORS.textMuted}
+                  style={{ fontSize: "12px" }}
+                />
+                <YAxis stroke={COLORS.textMuted} style={{ fontSize: "12px" }} />
+                <Tooltip content={<CustomTooltip />} />
+                <Line
+                  type="monotone"
+                  dataKey="power"
+                  name="Power"
+                  stroke={COLORS.primary}
+                  strokeWidth={2}
+                  dot={false}
+                />
+              </LineChart>
+            </ResponsiveContainer>
+          </div>
+        ) : (
+          <div className="bg-white rounded-lg border border-gray-200 p-6 mb-6">
+            <h2 className="text-lg font-semibold text-gray-900 mb-4">
+              Power Usage History
+            </h2>
+            <div className="text-center py-12">
+              <p className="text-gray-500 mb-2">No PZEM data available</p>
+              <p className="text-sm text-gray-400">
+                Make sure your external cron job is calling POST
+                /api/sync-firebase
+                <br />
+                Check that Firebase has PZEM data and device status is "online"
+              </p>
             </div>
-          ) : (
-            <div className="bg-white rounded-lg border border-gray-200 p-6">
-              <h2 className="text-lg font-semibold text-gray-900 mb-4">
-                Power Usage History
-              </h2>
-              <div className="h-75 flex items-center justify-center bg-gray-50 rounded">
-                <div className="text-center">
-                  <p className="text-gray-500 mb-2">No PZEM data available.</p>
-                  <p className="text-sm text-gray-400">
-                    Make sure data has been synced from Firebase to the
-                    database.
-                    <br />
-                    You can sync data by calling the POST /api/sync-firebase
-                    endpoint.
-                  </p>
-                </div>
-              </div>
-            </div>
-          )}
+          </div>
+        )}
 
-          {/* Power Stats */}
-          {pzem && (
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h3 className="text-sm font-medium text-gray-600 mb-4">
-                  Power Metrics
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Current</span>
-                    <span className="font-semibold">
-                      {pzem.current.toFixed(2)} A
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Power Factor</span>
-                    <span className="font-semibold">{pzem.pf.toFixed(3)}</span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Frequency</span>
-                    <span className="font-semibold">
-                      {pzem.frequency.toFixed(2)} Hz
-                    </span>
-                  </div>
+        {latestMetrics && (
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 className="text-sm font-medium text-gray-600 mb-4">
+                Power Metrics
+              </h3>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Current</span>
+                  <span className="font-semibold">
+                    {latestMetrics.current.toFixed(2)} A
+                  </span>
                 </div>
-              </div>
-
-              <div className="bg-white rounded-lg border border-gray-200 p-6">
-                <h3 className="text-sm font-medium text-gray-600 mb-4">
-                  Energy Summary
-                </h3>
-                <div className="space-y-3">
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Total Energy</span>
-                    <span className="font-semibold">
-                      {pzem.energy.toFixed(2)} kWh
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Current Power</span>
-                    <span className="font-semibold">
-                      {pzem.power.toFixed(1)} W
-                    </span>
-                  </div>
-                  <div className="flex justify-between">
-                    <span className="text-gray-600">Voltage</span>
-                    <span className="font-semibold">
-                      {pzem.voltage.toFixed(1)} V
-                    </span>
-                  </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Power Factor</span>
+                  <span className="font-semibold">
+                    {latestMetrics.pf.toFixed(3)}
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Frequency</span>
+                  <span className="font-semibold">
+                    {latestMetrics.frequency.toFixed(2)} Hz
+                  </span>
                 </div>
               </div>
             </div>
-          )}
-        </div>
+            <div className="bg-white rounded-lg border border-gray-200 p-6">
+              <h3 className="text-sm font-medium text-gray-600 mb-4">
+                Energy Summary
+              </h3>
+              <div className="space-y-3">
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Total Energy</span>
+                  <span className="font-semibold">
+                    {latestMetrics.energy.toFixed(2)} kWh
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Current Power</span>
+                  <span className="font-semibold">
+                    {latestMetrics.power.toFixed(1)} W
+                  </span>
+                </div>
+                <div className="flex justify-between">
+                  <span className="text-gray-600">Voltage</span>
+                  <span className="font-semibold">
+                    {latestMetrics.voltage.toFixed(1)} V
+                  </span>
+                </div>
+              </div>
+            </div>
+          </div>
+        )}
       </div>
     </div>
   );
