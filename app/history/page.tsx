@@ -102,7 +102,7 @@ export default function HistoryPage() {
               timestamp: parseISTTimestamp(item.timestamp),
             }));
 
-          setHistoricalData(validData);
+          setHistoricalData(validData.reverse());
         } else {
           setHistoricalData([]);
         }
@@ -145,9 +145,7 @@ export default function HistoryPage() {
           <h1 className="text-3xl font-bold text-[#111827] mb-2">
             Sensor History
           </h1>
-          <p className="text-[#6B7280]">
-            Real-time data from database (updates every 10s)
-          </p>
+          <p className="text-[#6B7280]">Real-time data from database</p>
         </div>
 
         {error && (

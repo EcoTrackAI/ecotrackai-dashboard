@@ -10,18 +10,31 @@ const STALE_THRESHOLD = 30000;
 
 const isSensorStale = (lastUpdate: string | undefined): boolean => {
   if (!lastUpdate) return true;
-  const lastUpdateTime = new Date(lastUpdate).getTime();
+
+  const timestampStr = lastUpdate.includes("Z")
+    ? lastUpdate
+    : lastUpdate.replace(" ", "T") + "Z";
+  const lastUpdateTime = new Date(timestampStr).getTime();
   if (isNaN(lastUpdateTime)) return true;
-  return Date.now() - lastUpdateTime >= STALE_THRESHOLD;
+
+  const currentTime = Date.now();
+  return currentTime - lastUpdateTime >= STALE_THRESHOLD;
 };
 
 const formatTimestamp = (timestamp: string): string => {
-  const date = new Date(timestamp);
+  const timestampStr = timestamp.includes("Z")
+    ? timestamp
+    : timestamp.replace(" ", "T") + "Z";
+  const date = new Date(timestampStr);
   if (isNaN(date.getTime())) return "Unknown";
-  const diffMin = Math.floor((new Date().getTime() - date.getTime()) / 60000);
+
+  const currentTime = Date.now();
+  const diffMin = Math.floor((currentTime - date.getTime()) / 60000);
+
   if (diffMin < 1) return "Just now";
   if (diffMin < 60) return `${diffMin}m ago`;
   if (diffMin < 1440) return `${Math.floor(diffMin / 60)}h ago`;
+
   return date.toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",
