@@ -13,6 +13,12 @@ import {
 import { TrendingUp, Zap, Gauge } from "lucide-react";
 import { COLORS } from "@/lib/constants";
 import { MetricCard } from "@/components/metrics";
+import {
+  parseISTTimestamp,
+  isValidTimestamp,
+  getTimestampMs,
+  formatTimestamp,
+} from "@/lib/timestamp";
 
 interface ChartData {
   time: string;
@@ -75,45 +81,21 @@ export default function AnalyticsPage() {
         }
 
         if (result.data?.length > 0) {
-          // Filter data to last 7 days and validate
-          const end = new Date();
-          const start = new Date();
-          start.setDate(start.getDate() - 7);
-
           console.log("[Analytics] Total records from API:", result.data.length);
           console.log("[Analytics] Sample data:", result.data.slice(0, 2));
-          console.log("[Analytics] Date range:", {
-            start: start.toISOString(),
-            end: end.toISOString(),
-          });
 
+          // Validate timestamps and format
           const formatted = result.data
             .filter((item: any) => {
               // Ensure timestamp is valid - handle IST format
-              const ts = new Date(item.timestamp).getTime();
-              if (isNaN(ts)) {
+              if (!isValidTimestamp(item.timestamp)) {
                 console.log("[Analytics] Invalid timestamp:", item.timestamp);
                 return false;
               }
-
-              // Filter to last 7 days
-              const inRange = ts >= start.getTime() && ts <= end.getTime();
-
-              if (!inRange) {
-                console.log(
-                  "[Analytics] Out of range - ts:",
-                  ts,
-                  "start:",
-                  start.getTime(),
-                  "end:",
-                  end.getTime(),
-                );
-              }
-
-              return inRange;
+              return true;
             })
             .map((item: HistoricalPZEMData) => ({
-              time: new Date(item.timestamp).toLocaleString("en-IN", {
+              time: formatTimestamp(item.timestamp, "en-IN", {
                 month: "short",
                 day: "numeric",
                 hour: "2-digit",
@@ -122,17 +104,16 @@ export default function AnalyticsPage() {
               power: Number(item.power) || 0,
               energy: Number(item.energy) || 0,
               voltage: Number(item.voltage) || 0,
+              timestamp: item.timestamp, // Keep original for filtering
             }));
 
-          console.log("[Analytics] Formatted to', formatted.length, 'records");
+          console.log("[Analytics] Formatted to", formatted.length, "records");
           setPowerHistory(formatted);
           console.log("[Analytics] Loaded", formatted.length, "valid records");
 
           // Set latest metrics from most recent valid data point
           const latestData = result.data.find(
-            (item: any) =>
-              !isNaN(new Date(item.timestamp).getTime()) &&
-              new Date(item.timestamp).getTime() <= end.getTime(),
+            (item: any) => !isNaN(new Date(item.timestamp).getTime()),
           );
 
           if (latestData && latestData.timestamp) {
@@ -176,6 +157,40 @@ export default function AnalyticsPage() {
     const interval = setInterval(fetchData, 10000);
     return () => clearInterval(interval);
   }, []);
+
+  // Apply 7-day filter to analytics data
+  // Note: This effect is optional - set to comment out if you want to show all data
+  useEffect(() => {
+    if (powerHistory.length === 0) return;
+
+    const end = new Date();
+    const start = new Date();
+    start.setDate(start.getDate() - 7);
+
+    const startMs = start.getTime();
+    const endMs = end.getTime();
+
+    console.log("[Analytics] Applying 7-day filter:", {
+      start: start.toISOString(),
+      end: end.toISOString(),
+    });
+
+    const filteredBy7Days = powerHistory.filter((item: any) => {
+      const ts = getTimestampMs(item.timestamp);
+      return ts >= startMs && ts <= endMs;
+    });
+
+    console.log(
+      "[Analytics] Filtered to 7 days:",
+      filteredBy7Days.length,
+      "records",
+    );
+
+    // Only update if significant change
+    if (filteredBy7Days.length !== powerHistory.length) {
+      setPowerHistory(filteredBy7Days);
+    }
+  }, []); // Empty dependency - runs once to apply 7-day filter
 
   if (loading) {
     return (
