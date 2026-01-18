@@ -29,13 +29,24 @@ const STATUS_CONFIG: Record<
 };
 
 const formatTimestamp = (timestamp: Date | string): string => {
-  const date = typeof timestamp === "string" ? new Date(timestamp) : timestamp;
+  let date: Date;
+  if (typeof timestamp === "string") {
+    const timestampStr = timestamp.includes("Z")
+      ? timestamp
+      : timestamp.replace(" ", "T") + "Z";
+    date = new Date(timestampStr);
+  } else {
+    date = timestamp;
+  }
   if (isNaN(date.getTime())) return "Invalid date";
 
-  const diffMin = Math.floor((new Date().getTime() - date.getTime()) / 60000);
+  const currentTime = Date.now();
+  const diffMin = Math.floor((currentTime - date.getTime()) / 60000);
+
   if (diffMin < 1) return "Just now";
   if (diffMin < 60) return `${diffMin}m ago`;
   if (diffMin < 1440) return `${Math.floor(diffMin / 60)}h ago`;
+
   return date.toLocaleTimeString("en-US", {
     hour: "2-digit",
     minute: "2-digit",

@@ -13,9 +13,15 @@ const STALE_THRESHOLD = 30000;
 
 const isSensorStale = (lastUpdate: string | undefined): boolean => {
   if (!lastUpdate) return true;
-  const lastUpdateTime = new Date(lastUpdate).getTime();
+
+  const timestampStr = lastUpdate.includes("Z")
+    ? lastUpdate
+    : lastUpdate.replace(" ", "T") + "Z";
+  const lastUpdateTime = new Date(timestampStr).getTime();
   if (isNaN(lastUpdateTime)) return true;
-  return Date.now() - lastUpdateTime >= STALE_THRESHOLD;
+
+  const currentTime = Date.now();
+  return currentTime - lastUpdateTime >= STALE_THRESHOLD;
 };
 
 export default function Home() {
