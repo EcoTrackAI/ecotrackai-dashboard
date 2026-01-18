@@ -49,14 +49,8 @@ export default function AnalyticsPage() {
     const fetchData = async () => {
       try {
         setError(null);
-        const end = new Date();
-        const start = new Date();
-        start.setDate(start.getDate() - 7);
 
         const params = new URLSearchParams({
-          startDate: start.toISOString(),
-          endDate: end.toISOString(),
-          aggregation: "raw",
           _t: Date.now().toString(), // Cache buster
         });
 
@@ -81,12 +75,19 @@ export default function AnalyticsPage() {
         }
 
         if (result.data?.length > 0) {
-          // Validate and transform data
+          // Filter data to last 7 days and validate
+          const end = new Date();
+          const start = new Date();
+          start.setDate(start.getDate() - 7);
+
           const formatted = result.data
             .filter((item: any) => {
               // Ensure timestamp is valid
               const ts = new Date(item.timestamp).getTime();
-              return !isNaN(ts);
+              if (isNaN(ts)) return false;
+
+              // Filter to last 7 days
+              return ts >= start.getTime() && ts <= end.getTime();
             })
             .map((item: HistoricalPZEMData) => ({
               time: new Date(item.timestamp).toLocaleString("en-IN", {
@@ -103,21 +104,26 @@ export default function AnalyticsPage() {
           setPowerHistory(formatted);
           console.log("[Analytics] Loaded", formatted.length, "valid records");
 
-          // Set latest metrics from most recent data point
-          const latest = result.data[result.data.length - 1];
-          if (latest && latest.timestamp) {
+          // Set latest metrics from most recent data point (from all data)
+          const latestData = result.data.find(
+            (item: any) =>
+              !isNaN(new Date(item.timestamp).getTime()) &&
+              new Date(item.timestamp).getTime() <= end.getTime(),
+          );
+
+          if (latestData && latestData.timestamp) {
             setLatestMetrics({
-              current: Number(latest.current) || 0,
-              voltage: Number(latest.voltage) || 0,
-              power: Number(latest.power) || 0,
-              energy: Number(latest.energy) || 0,
-              frequency: Number(latest.frequency) || 0,
-              pf: Number(latest.pf) || 0,
-              updatedAt: latest.timestamp,
+              current: Number(latestData.current) || 0,
+              voltage: Number(latestData.voltage) || 0,
+              power: Number(latestData.power) || 0,
+              energy: Number(latestData.energy) || 0,
+              frequency: Number(latestData.frequency) || 0,
+              pf: Number(latestData.pf) || 0,
+              updatedAt: latestData.timestamp,
             });
             console.log(
               "[Analytics] Latest metrics timestamp:",
-              latest.timestamp,
+              latestData.timestamp,
             );
           } else {
             setLatestMetrics(null);
