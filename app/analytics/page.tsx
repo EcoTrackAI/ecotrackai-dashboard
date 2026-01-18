@@ -60,62 +60,89 @@ export default function AnalyticsPage() {
           _t: Date.now().toString(), // Cache buster
         });
 
-        console.log("[Analytics] Fetching:", `/api/pzem-data?${params}`);
+        console.log(
+          "[Analytics] Fetching from database:",
+          `/api/pzem-data?${params}`,
+        );
         const response = await fetch(`/api/pzem-data?${params}`, {
           cache: "no-store",
           headers: { "Cache-Control": "no-cache" },
         });
         console.log("[Analytics] Response status:", response.status);
-        
+
         const result = await response.json();
-        console.log("[Analytics] Result:", result);
+        console.log("[Analytics] Result count:", result.data?.length || 0);
 
         if (!response.ok) {
-          setError(result.error || "Failed to fetch data");
+          setError(result.error || "Failed to fetch data from database");
           setPowerHistory([]);
+          setLatestMetrics(null);
           return;
         }
 
-        if (result.data?.length) {
-          const formatted = result.data.map((item: HistoricalPZEMData) => ({
-            time: new Date(item.timestamp).toLocaleString("en-IN", {
-              month: "short",
-              day: "numeric",
-              hour: "2-digit",
-              minute: "2-digit",
-            }),
-            power: Number(item.power) || 0,
-            energy: Number(item.energy) || 0,
-            voltage: Number(item.voltage) || 0,
-          }));
+        if (result.data?.length > 0) {
+          // Validate and transform data
+          const formatted = result.data
+            .filter((item: any) => {
+              // Ensure timestamp is valid
+              const ts = new Date(item.timestamp).getTime();
+              return !isNaN(ts);
+            })
+            .map((item: HistoricalPZEMData) => ({
+              time: new Date(item.timestamp).toLocaleString("en-IN", {
+                month: "short",
+                day: "numeric",
+                hour: "2-digit",
+                minute: "2-digit",
+              }),
+              power: Number(item.power) || 0,
+              energy: Number(item.energy) || 0,
+              voltage: Number(item.voltage) || 0,
+            }));
+
           setPowerHistory(formatted);
-          console.log("[Analytics] Loaded", formatted.length, "records");
+          console.log("[Analytics] Loaded", formatted.length, "valid records");
 
           // Set latest metrics from most recent data point
           const latest = result.data[result.data.length - 1];
-          setLatestMetrics({
-            current: Number(latest.current) || 0,
-            voltage: Number(latest.voltage) || 0,
-            power: Number(latest.power) || 0,
-            energy: Number(latest.energy) || 0,
-            frequency: Number(latest.frequency) || 0,
-            pf: Number(latest.pf) || 0,
-            updatedAt: latest.timestamp,
-          });
-          console.log("[Analytics] Latest metrics:", latestMetrics);
+          if (latest && latest.timestamp) {
+            setLatestMetrics({
+              current: Number(latest.current) || 0,
+              voltage: Number(latest.voltage) || 0,
+              power: Number(latest.power) || 0,
+              energy: Number(latest.energy) || 0,
+              frequency: Number(latest.frequency) || 0,
+              pf: Number(latest.pf) || 0,
+              updatedAt: latest.timestamp,
+            });
+            console.log(
+              "[Analytics] Latest metrics timestamp:",
+              latest.timestamp,
+            );
+          } else {
+            setLatestMetrics(null);
+          }
         } else {
+          console.log("[Analytics] No data available from database");
           setPowerHistory([]);
           setLatestMetrics(null);
         }
       } catch (err) {
         console.error("[Analytics] Fetch error:", err);
-        setError(err instanceof Error ? err.message : "Unknown error");
+        setError(
+          err instanceof Error
+            ? err.message
+            : "Unknown error while fetching data",
+        );
+        setPowerHistory([]);
+        setLatestMetrics(null);
       } finally {
         setLoading(false);
       }
     };
 
     fetchData();
+    // Refresh every 10 seconds
     const interval = setInterval(fetchData, 10000);
     return () => clearInterval(interval);
   }, []);
@@ -143,7 +170,9 @@ export default function AnalyticsPage() {
         {error && (
           <div className="mb-6 bg-red-50 border border-red-200 rounded-lg p-4">
             <p className="text-sm font-medium text-red-800">Error: {error}</p>
-            <p className="text-xs text-red-600 mt-1">Check console for details</p>
+            <p className="text-xs text-red-600 mt-1">
+              Check console for details
+            </p>
           </div>
         )}
 
@@ -207,7 +236,8 @@ export default function AnalyticsPage() {
             <div className="text-center py-12">
               <p className="text-gray-500 mb-2">No PZEM data available</p>
               <p className="text-sm text-gray-400">
-                Make sure your external cron job is calling POST /api/sync-firebase
+                Make sure your external cron job is calling POST
+                /api/sync-firebase
                 <br />
                 Check that Firebase has PZEM data and device status is "online"
               </p>
