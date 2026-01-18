@@ -18,6 +18,8 @@ import {
   getTimestampMs,
   formatTimestamp,
 } from "@/lib/timestamp";
+import { subscribePZEMData } from "@/lib/firebase-sensors";
+import { initializeFirebase } from "@/lib/firebase";
 
 interface ChartData {
   time: string;
@@ -58,9 +60,26 @@ export default function AnalyticsPage() {
   const [powerHistory, setPowerHistory] = useState<ChartData[]>([]);
   const [latestMetrics, setLatestMetrics] = useState<PZEMData | null>(null);
 
-  // Fetch PZEM data from database with auto-refresh every 10s
   useEffect(() => {
-    const fetchData = async () => {
+    try {
+      initializeFirebase();
+    } catch (_err) {
+      setTimeout(() => setLoading(false), 0);
+      return;
+    }
+
+    const unsubscribe = subscribePZEMData((data) => {
+      if (data) {
+        setLatestMetrics(data);
+      }
+      setLoading(false);
+    });
+
+    return () => unsubscribe();
+  }, []);
+
+  useEffect(() => {
+    const fetchHistoricalData = async () => {
       try {
         setError(null);
 
@@ -76,9 +95,8 @@ export default function AnalyticsPage() {
         const result = await response.json();
 
         if (!response.ok) {
-          setError(result.error || "Failed to fetch data from database");
+          setError(result.error || "Failed to fetch historical data");
           setPowerHistory([]);
-          setLatestMetrics(null);
           return;
         }
 
@@ -103,46 +121,22 @@ export default function AnalyticsPage() {
               timestamp: item.timestamp,
             }));
 
-          setPowerHistory(formatted);
-
-          const latestData = result.data.find(
-            (item: { timestamp: string }) =>
-              !isNaN(new Date(item.timestamp).getTime()),
-          );
-
-          if (latestData && latestData.timestamp) {
-            setLatestMetrics({
-              current: Number(latestData.current) || 0,
-              voltage: Number(latestData.voltage) || 0,
-              power: Number(latestData.power) || 0,
-              energy: Number(latestData.energy) || 0,
-              frequency: Number(latestData.frequency) || 0,
-              pf: Number(latestData.pf) || 0,
-              updatedAt: latestData.timestamp,
-            });
-          } else {
-            setLatestMetrics(null);
-          }
+          setPowerHistory(formatted.reverse());
         } else {
           setPowerHistory([]);
-          setLatestMetrics(null);
         }
       } catch (err) {
         setError(
           err instanceof Error
             ? err.message
-            : "Unknown error while fetching data",
+            : "Unknown error while fetching historical data",
         );
         setPowerHistory([]);
-        setLatestMetrics(null);
-      } finally {
-        setLoading(false);
       }
     };
 
-    fetchData();
-    // Refresh every 10 seconds
-    const interval = setInterval(fetchData, 10000);
+    fetchHistoricalData();
+    const interval = setInterval(fetchHistoricalData, 10000);
     return () => clearInterval(interval);
   }, []);
 
@@ -182,9 +176,7 @@ export default function AnalyticsPage() {
           <h1 className="text-3xl font-bold text-gray-900 mb-2">
             Power Analytics
           </h1>
-          <p className="text-gray-600">
-            Real-time data from database (updates every 10s)
-          </p>
+          <p className="text-gray-600">Real-time data from Firebase</p>
         </div>
 
         {error && (
