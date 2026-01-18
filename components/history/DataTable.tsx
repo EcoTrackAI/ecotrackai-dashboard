@@ -144,8 +144,8 @@ export const DataTable: React.FC<DataTableProps> = ({
       (point) => {
         const date = new Date(point.timestamp);
         return {
-          Date: date.toLocaleDateString("en-US", { timeZone: "UTC" }),
-          Time: date.toLocaleTimeString("en-US", { timeZone: "UTC" }),
+          Date: date.toLocaleDateString("en-IN", { timeZone: "Asia/Kolkata" }),
+          Time: date.toLocaleTimeString("en-IN", { timeZone: "Asia/Kolkata" }),
           Room: point.roomName,
           ...(point.temperature !== undefined && {
             "Temperature (°C)": point.temperature,
@@ -334,13 +334,13 @@ export const DataTable: React.FC<DataTableProps> = ({
                 className="hover:bg-gray-50 transition-colors"
               >
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900">
-                  {new Date(row.timestamp).toLocaleString("en-US", {
+                  {new Date(row.timestamp).toLocaleString("en-IN", {
                     month: "short",
                     day: "numeric",
                     year: "numeric",
                     hour: "2-digit",
                     minute: "2-digit",
-                    timeZone: "UTC",
+                    timeZone: "Asia/Kolkata",
                   })}
                 </td>
                 <td className="px-4 py-3 whitespace-nowrap text-sm text-gray-900 font-medium">
