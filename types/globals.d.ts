@@ -403,7 +403,6 @@ declare global {
     id: string;
     title: string;
     description: string;
-    confidenceScore: number;
     inputs: RecommendationInputs;
     action: RecommendationAction;
     timestamp: Date;
@@ -441,7 +440,8 @@ declare global {
     | "comfort-optimization"
     | "predictive-maintenance"
     | "cost-reduction"
-    | "peak-demand";
+    | "peak-demand"
+    | "ac-optimization";
 
   type ConfidenceLevel = "low" | "medium" | "high" | "very-high";
 
@@ -450,6 +450,15 @@ declare global {
     onApply?: (id: string) => void;
     onIgnore?: (id: string) => void;
     className?: string;
+  }
+
+  interface MLModelRecommendation {
+    room: string;
+    recommended_setpoint: number;
+    reasoning: string;
+    current_temp: number;
+    outdoor_temp: number;
+    energy_saving_mode: boolean;
   }
 
   interface DBRoom {

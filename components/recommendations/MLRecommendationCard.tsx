@@ -11,33 +11,6 @@ export const MLRecommendationCard: React.FC<MLRecommendationCardProps> = ({
   const [isProcessing, setIsProcessing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
-  const getConfidenceLevel = (score: number): ConfidenceLevel => {
-    if (score >= 0.9) return "very-high";
-    if (score >= 0.75) return "high";
-    if (score >= 0.5) return "medium";
-    return "low";
-  };
-
-  const getConfidenceColor = (level: ConfidenceLevel): string => {
-    const colors = {
-      "very-high": "text-[#16A34A]",
-      high: "text-[#16A34A]",
-      medium: "text-[#FB923C]",
-      low: "text-[#DC2626]",
-    };
-    return colors[level];
-  };
-
-  const getConfidenceBackground = (level: ConfidenceLevel): string => {
-    const backgrounds = {
-      "very-high": "bg-green-50",
-      high: "bg-green-50",
-      medium: "bg-orange-50",
-      low: "bg-red-50",
-    };
-    return backgrounds[level];
-  };
-
   const getCategoryIcon = (category: string): string => {
     const icons = {
       "energy-savings": "⚡",
@@ -71,9 +44,6 @@ export const MLRecommendationCard: React.FC<MLRecommendationCardProps> = ({
     }
   };
 
-  const confidenceLevel = getConfidenceLevel(recommendation.confidenceScore);
-  const confidencePercentage = Math.round(recommendation.confidenceScore * 100);
-
   return (
     <article
       className={`bg-white rounded-lg border border-gray-200 p-5 hover:shadow-md transition-shadow duration-200 ${className}`}
@@ -96,24 +66,6 @@ export const MLRecommendationCard: React.FC<MLRecommendationCardProps> = ({
               {recommendation.action.target}
             </p>
           </div>
-        </div>
-
-        {/* Confidence Badge */}
-        <div
-          className={`${getConfidenceBackground(
-            confidenceLevel,
-          )} px-3 py-1 rounded-full flex items-center gap-1.5`}
-          role="status"
-          aria-label={`Confidence score: ${confidencePercentage}%`}
-        >
-          <span
-            className={`text-sm font-semibold ${getConfidenceColor(
-              confidenceLevel,
-            )}`}
-          >
-            {confidencePercentage}%
-          </span>
-          <span className="text-xs text-gray-600">confidence</span>
         </div>
       </div>
 
