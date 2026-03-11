@@ -530,55 +530,6 @@ declare global {
     body?: string;
   }
 
-  interface AutoControlLiveData {
-    room: string;
-    sensor: {
-      temp: number;
-      humidity: number;
-      light: number;
-      motion: boolean;
-    };
-    timestamp: string;
-  }
-
-  interface AutoControlRelayData {
-    room: string;
-    motion: number;
-    relay_state: boolean;
-    timestamp: string;
-  }
-
-  interface AutoControlRecommendation {
-    sensor_data: {
-      temp: number;
-      humidity: number;
-      light: number;
-      motion: boolean;
-    };
-    forecast_data: {
-      timestamp: string;
-      room: string;
-      current_indoor_temp: number;
-      predicted_indoor_temp: number;
-      outdoor_temp: number;
-      temp_difference: number;
-      current_humidity: number;
-      predicted_humidity: number;
-      outdoor_humidity: number;
-      humidity_difference: number;
-      motion: boolean;
-      light: number;
-      hour: number;
-    };
-    recommendation: string;
-  }
-
-  interface AutoControlForceRelay {
-    room: string;
-    forced_state: boolean;
-    timestamp: string;
-  }
-
   interface HistoricalDataApiResponse {
     success: boolean;
     data: HistoricalDataPoint[];
