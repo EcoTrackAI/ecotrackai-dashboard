@@ -2,31 +2,218 @@
 
 import ApplianceControlCard from "@/components/automation/ApplianceControlCard";
 import { MetricCard } from "@/components/metrics";
-import { subscribePZEMData } from "@/lib/firebase-sensors";
 import { initializeFirebase } from "@/lib/firebase";
+import { setRelayState } from "@/lib/firebase-relay";
+import { subscribePZEMData, subscribeRoomSensor } from "@/lib/firebase-sensors";
 import { useEffect, useState } from "react";
 import { Zap, Flame, Gauge } from "lucide-react";
+
+type RelayRoom = "bedroom" | "living_room";
+
+const ROOMS: RelayRoom[] = ["bedroom", "living_room"];
+const ROOM_RELAY_TYPES = ["light", "fan", "ac"] as const;
+
+const ROOM_LABELS: Record<RelayRoom, string> = {
+  bedroom: "Bedroom",
+  living_room: "Living Room",
+};
+
+type RelaySyncState = {
+  motion: number | null;
+  relayState: boolean | null;
+  timestamp: string | null;
+  loading: boolean;
+  error: string | null;
+};
+
+const INITIAL_ROOM_SENSORS: Record<RelayRoom, RoomSensorData | null> = {
+  bedroom: null,
+  living_room: null,
+};
+
+const INITIAL_ROOM_CONTROL_MODE: Record<RelayRoom, ControlMode> = {
+  bedroom: "manual",
+  living_room: "manual",
+};
+
+const INITIAL_RELAY_SYNC: Record<RelayRoom, RelaySyncState> = {
+  bedroom: {
+    motion: null,
+    relayState: null,
+    timestamp: null,
+    loading: false,
+    error: null,
+  },
+  living_room: {
+    motion: null,
+    relayState: null,
+    timestamp: null,
+    loading: false,
+    error: null,
+  },
+};
+
+const formatBackendTimestamp = (timestamp: string | null): string => {
+  if (!timestamp) return "Waiting for update";
+  const parsed = new Date(timestamp);
+  if (Number.isNaN(parsed.getTime())) return timestamp;
+  return parsed.toLocaleString();
+};
 
 export default function AutomationPage() {
   const [pzem, setPzem] = useState<PZEMData | null>(null);
   const [loading, setLoading] = useState(true);
+  const [roomSensors, setRoomSensors] = useState<
+    Record<RelayRoom, RoomSensorData | null>
+  >(INITIAL_ROOM_SENSORS);
+  const [roomControlMode, setRoomControlMode] = useState<
+    Record<RelayRoom, ControlMode>
+  >(INITIAL_ROOM_CONTROL_MODE);
+  const [relaySync, setRelaySync] = useState<Record<RelayRoom, RelaySyncState>>(
+    INITIAL_RELAY_SYNC,
+  );
+  const bedroomMotion = roomSensors.bedroom?.motion;
+  const livingRoomMotion = roomSensors.living_room?.motion;
+  const bedroomControlMode = roomControlMode.bedroom;
+  const livingRoomControlMode = roomControlMode.living_room;
 
   useEffect(() => {
     try {
       initializeFirebase();
-    } catch (_err) {
-      // eslint-disable-next-line @typescript-eslint/no-unused-vars
+    } catch {
       setTimeout(() => setLoading(false), 0);
       return;
     }
 
-    const unsubscribe = subscribePZEMData((data) => {
+    const unsubscribePzem = subscribePZEMData((data) => {
       setPzem(data);
       setLoading(false);
     });
 
-    return () => unsubscribe();
+    const unsubscribeBedroom = subscribeRoomSensor("bedroom", (data) => {
+      setRoomSensors((prev) => ({ ...prev, bedroom: data }));
+    });
+
+    const unsubscribeLivingRoom = subscribeRoomSensor("living_room", (data) => {
+      setRoomSensors((prev) => ({ ...prev, living_room: data }));
+    });
+
+    return () => {
+      unsubscribePzem?.();
+      unsubscribeBedroom?.();
+      unsubscribeLivingRoom?.();
+    };
   }, []);
+
+  useEffect(() => {
+    let cancelled = false;
+    const motionByRoom: Record<RelayRoom, boolean | undefined> = {
+      bedroom: bedroomMotion,
+      living_room: livingRoomMotion,
+    };
+    const modeByRoom: Record<RelayRoom, ControlMode> = {
+      bedroom: bedroomControlMode,
+      living_room: livingRoomControlMode,
+    };
+
+    const applyMotionPolicy = async (room: RelayRoom, motion: boolean) => {
+      const controlMode = modeByRoom[room];
+      const motionValue = motion ? 1 : 0;
+
+      if (controlMode !== "auto") {
+        setRelaySync((prev) => ({
+          ...prev,
+          [room]: {
+            ...prev[room],
+            motion: motionValue,
+            loading: false,
+            error: null,
+          },
+        }));
+
+        return;
+      }
+
+      if (!motion) {
+        setRelaySync((prev) => ({
+          ...prev,
+          [room]: {
+            ...prev[room],
+            motion: 0,
+            loading: true,
+            error: null,
+          },
+        }));
+
+        try {
+          await Promise.all(
+            ROOM_RELAY_TYPES.map((relayType) =>
+              setRelayState(`${room}_${relayType}`, false),
+            ),
+          );
+
+          if (cancelled) return;
+
+          setRelaySync((prev) => ({
+            ...prev,
+            [room]: {
+              ...prev[room],
+              motion: 0,
+              relayState: false,
+              timestamp: new Date().toISOString(),
+              loading: false,
+              error: null,
+            },
+          }));
+        } catch (error: unknown) {
+          if (cancelled) return;
+
+          setRelaySync((prev) => ({
+            ...prev,
+            [room]: {
+              ...prev[room],
+              loading: false,
+              error:
+                error instanceof Error
+                  ? error.message
+                  : "Failed to turn off relays",
+            },
+          }));
+        }
+
+        return;
+      }
+
+      if (cancelled) return;
+
+      // Motion detected: keep existing relay state unchanged.
+      setRelaySync((prev) => ({
+        ...prev,
+        [room]: {
+          ...prev[room],
+          motion: 1,
+          loading: false,
+          error: null,
+        },
+      }));
+    };
+
+    ROOMS.forEach((room) => {
+      const motion = motionByRoom[room];
+      if (typeof motion !== "boolean") return;
+
+      void applyMotionPolicy(room, motion);
+    });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [
+    bedroomMotion,
+    livingRoomMotion,
+    bedroomControlMode,
+    livingRoomControlMode,
+  ]);
 
   return (
     <div className="min-h-screen bg-[#F8FAFC] px-4 sm:px-6 lg:px-8 py-8">
@@ -70,6 +257,88 @@ export default function AutomationPage() {
           </section>
         )}
 
+        <section className="mb-8">
+          <h2 className="text-lg font-semibold text-[#111827] mb-2">
+            Motion Relay Policy
+          </h2>
+          <p className="text-sm text-[#6B7280] mb-4">
+            Automation applies only in Auto mode. In Auto mode, no motion turns all
+            room relays OFF, while detected motion keeps current relay states.
+          </p>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {ROOMS.map((room) => {
+              const sensor = roomSensors[room];
+              const syncState = relaySync[room];
+              const isAutoMode = roomControlMode[room] === "auto";
+
+              return (
+                <div
+                  key={room}
+                  className="bg-white rounded-lg border border-gray-200 p-4"
+                >
+                  <div className="flex items-center justify-between mb-2">
+                    <h3 className="text-base font-semibold text-[#111827]">
+                      {ROOM_LABELS[room]}
+                    </h3>
+                    <span
+                      className={`text-xs font-semibold ${
+                        syncState.loading ? "text-amber-600" : "text-[#16A34A]"
+                      }`}
+                    >
+                      {syncState.loading ? "Syncing..." : "Synced"}
+                    </span>
+                  </div>
+
+                  <p className="text-sm text-[#6B7280]">
+                    Motion from Firebase:{" "}
+                    {typeof sensor?.motion === "boolean"
+                      ? sensor.motion
+                        ? "Detected (1)"
+                        : "No Motion (0)"
+                      : "Waiting for sensor data"}
+                  </p>
+
+                  <p className="text-sm text-[#6B7280] mt-1">
+                    Control mode: {isAutoMode ? "Auto" : "Manual"}
+                  </p>
+
+                  <p className="text-sm text-[#374151] mt-2">
+                    Relay action:{" "}
+                    <span className="font-semibold">
+                      {!isAutoMode
+                        ? "Manual mode: automation skipped"
+                        : syncState.motion === null
+                          ? "--"
+                          : syncState.motion === 0
+                            ? "Auto + no motion: forced OFF"
+                            : "Auto + motion: kept previous state"}
+                    </span>
+                  </p>
+
+                  <p className="text-sm text-[#374151] mt-2">
+                    Relay state snapshot:{" "}
+                    <span className="font-semibold">
+                      {syncState.relayState === null
+                        ? "--"
+                        : syncState.relayState
+                          ? "ON"
+                          : "OFF"}
+                    </span>
+                  </p>
+
+                  <p className="text-xs text-[#6B7280] mt-2">
+                    Last policy update: {formatBackendTimestamp(syncState.timestamp)}
+                  </p>
+
+                  {syncState.error && (
+                    <p className="text-xs text-red-600 mt-2">{syncState.error}</p>
+                  )}
+                </div>
+              );
+            })}
+          </div>
+        </section>
+
         {/* Appliance Controls */}
         <section className="mt-8">
           <h2 className="text-lg font-semibold text-[#111827] mb-4">
@@ -80,11 +349,19 @@ export default function AutomationPage() {
               name="Bedroom Light"
               type="light"
               room="bedroom"
+              controlMode={roomControlMode.bedroom}
+              onControlModeChange={(room, mode) => {
+                setRoomControlMode((prev) => ({ ...prev, [room]: mode }));
+              }}
             />
             <ApplianceControlCard
               name="Living Room Light"
               type="light"
               room="living_room"
+              controlMode={roomControlMode.living_room}
+              onControlModeChange={(room, mode) => {
+                setRoomControlMode((prev) => ({ ...prev, [room]: mode }));
+              }}
             />
           </div>
         </section>

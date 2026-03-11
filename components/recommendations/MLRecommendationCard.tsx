@@ -162,11 +162,56 @@ const InputsDisplay: React.FC<{ inputs: RecommendationInputs }> = ({
 }) => {
   return (
     <dl className="grid grid-cols-1 gap-2">
+      {inputs.sensorData && (
+        <div className="bg-indigo-50 rounded px-3 py-2">
+          <dt className="text-xs font-medium text-gray-600 mb-1">Live Sensor Readings</dt>
+          <dd className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-[#111827]">
+            <span>🌡️ Temp: <strong>{inputs.sensorData.temp.toFixed(1)}°C</strong></span>
+            <span>💧 Humidity: <strong>{inputs.sensorData.humidity.toFixed(1)}%</strong></span>
+            <span>💡 Light: <strong>{inputs.sensorData.light.toFixed(0)} lux</strong></span>
+            <span>🚶 Motion: <strong>{inputs.sensorData.motion === 1 ? "Detected" : "None"}</strong></span>
+          </dd>
+        </div>
+      )}
+
+      {inputs.forecastData && (
+        <div className="bg-cyan-50 rounded px-3 py-2">
+          <dt className="text-xs font-medium text-gray-600 mb-1">Temperature Forecast</dt>
+          <dd className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-[#111827]">
+            <span>Indoor now: <strong>{inputs.forecastData.currentIndoorTemp.toFixed(1)}°C</strong></span>
+            <span>Predicted: <strong>{inputs.forecastData.predictedIndoorTemp.toFixed(1)}°C</strong></span>
+            <span>Outdoor: <strong>{inputs.forecastData.outdoorTemp.toFixed(1)}°C</strong></span>
+            <span>Δ Temp: <strong>{inputs.forecastData.tempDifference > 0 ? "+" : ""}{inputs.forecastData.tempDifference.toFixed(2)}°C</strong></span>
+          </dd>
+        </div>
+      )}
+
+      {inputs.forecastData && (
+        <div className="bg-teal-50 rounded px-3 py-2">
+          <dt className="text-xs font-medium text-gray-600 mb-1">Humidity Forecast</dt>
+          <dd className="grid grid-cols-2 gap-x-4 gap-y-1 text-sm text-[#111827]">
+            <span>Indoor now: <strong>{inputs.forecastData.currentHumidity.toFixed(1)}%</strong></span>
+            <span>Predicted: <strong>{inputs.forecastData.predictedHumidity.toFixed(1)}%</strong></span>
+            <span>Outdoor: <strong>{inputs.forecastData.outdoorHumidity.toFixed(1)}%</strong></span>
+            <span>Δ Humidity: <strong>{inputs.forecastData.humidityDifference > 0 ? "+" : ""}{inputs.forecastData.humidityDifference.toFixed(2)}%</strong></span>
+          </dd>
+        </div>
+      )}
+
       {inputs.weather && (
         <div className="bg-blue-50 rounded px-3 py-2">
-          <dt className="text-xs font-medium text-gray-600 mb-0.5">Weather</dt>
+          <dt className="text-xs font-medium text-gray-600 mb-0.5">Outdoor Conditions</dt>
           <dd className="text-sm text-[#111827]">
-            {inputs.weather.temperature}°C, {inputs.weather.condition}
+            {inputs.weather.temperature}°C — {inputs.weather.condition}
+          </dd>
+        </div>
+      )}
+
+      {inputs.timeOfDay && (
+        <div className="bg-amber-50 rounded px-3 py-2">
+          <dt className="text-xs font-medium text-gray-600 mb-0.5">Time</dt>
+          <dd className="text-sm text-[#111827] capitalize">
+            {inputs.timeOfDay.hour}:00 ({inputs.timeOfDay.period})
           </dd>
         </div>
       )}
@@ -179,15 +224,6 @@ const InputsDisplay: React.FC<{ inputs: RecommendationInputs }> = ({
           <dd className="text-sm text-[#111827]">
             Current: {inputs.occupancy.current} | Predicted:{" "}
             {inputs.occupancy.predicted}
-          </dd>
-        </div>
-      )}
-
-      {inputs.timeOfDay && (
-        <div className="bg-amber-50 rounded px-3 py-2">
-          <dt className="text-xs font-medium text-gray-600 mb-0.5">Time</dt>
-          <dd className="text-sm text-[#111827] capitalize">
-            {inputs.timeOfDay.hour}:00 ({inputs.timeOfDay.period})
           </dd>
         </div>
       )}

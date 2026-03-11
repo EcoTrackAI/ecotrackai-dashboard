@@ -258,6 +258,11 @@ declare global {
     name: string;
     type: "light" | "fan" | "ac" | "other";
     room: "bedroom" | "living_room";
+    controlMode?: ControlMode;
+    onControlModeChange?: (
+      room: "bedroom" | "living_room",
+      mode: ControlMode,
+    ) => void;
   }
 
   interface LightControlCardProps {
@@ -427,6 +432,23 @@ declare global {
       period: "morning" | "afternoon" | "evening" | "night";
     };
     historicalPattern?: string;
+    sensorData?: {
+      temp: number;
+      humidity: number;
+      light: number;
+      motion: number;
+    };
+    forecastData?: {
+      currentIndoorTemp: number;
+      predictedIndoorTemp: number;
+      outdoorTemp: number;
+      tempDifference: number;
+      currentHumidity: number;
+      predictedHumidity: number;
+      outdoorHumidity: number;
+      humidityDifference: number;
+      hour: number;
+    };
   }
 
   interface RecommendationAction {
@@ -452,13 +474,33 @@ declare global {
     className?: string;
   }
 
-  interface MLModelRecommendation {
+  interface MLModelSensorData {
+    temp: number;
+    humidity: number;
+    light: number;
+    motion: number;
+  }
+
+  interface MLModelForecastData {
+    timestamp: string;
     room: string;
-    recommended_setpoint: number;
-    reasoning: string;
-    current_temp: number;
+    current_indoor_temp: number;
+    predicted_indoor_temp: number;
     outdoor_temp: number;
-    energy_saving_mode: boolean;
+    temp_difference: number;
+    current_humidity: number;
+    predicted_humidity: number;
+    outdoor_humidity: number;
+    humidity_difference: number;
+    motion: number;
+    light: number;
+    hour: number;
+  }
+
+  interface MLModelRecommendation {
+    sensor_data: MLModelSensorData;
+    forecast_data: MLModelForecastData;
+    recommendation: string;
   }
 
   interface DBRoom {
