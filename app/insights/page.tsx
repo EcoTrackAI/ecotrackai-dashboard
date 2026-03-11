@@ -13,6 +13,15 @@ const formatRoomName = (room: string): string => {
     .join(" ");
 };
 
+const getTimePeriod = (
+  hour: number,
+): "morning" | "afternoon" | "evening" | "night" => {
+  if (hour >= 5 && hour < 12) return "morning";
+  if (hour >= 12 && hour < 17) return "afternoon";
+  if (hour >= 17 && hour < 21) return "evening";
+  return "night";
+};
+
 export default function InsightsPage() {
   const [recommendations, setRecommendations] = useState<MLRecommendation[]>(
     [],
@@ -58,7 +67,7 @@ export default function InsightsPage() {
 
         for (const room of onlineRooms) {
           const response = await fetch(
-            `${process.env.NEXT_PUBLIC_ML_API_BASE_URL}/recommend/${room}`,
+            `${process.env.NEXT_PUBLIC_ML_API_BASE_URL}/recommend?room=${room}`,
           );
           if (!response.ok) continue;
 
@@ -66,25 +75,42 @@ export default function InsightsPage() {
 
           const recommendation: MLRecommendation = {
             id: `${room}-${Date.now()}`,
-            title: `Optimize ${formatRoomName(room)} Recommendation`,
-            description: mlRec.reasoning,
+            title: `${formatRoomName(room)} AI Recommendation`,
+            description: mlRec.recommendation,
             inputs: {
               weather: {
-                temperature: mlRec.outdoor_temp,
-                condition: "Based on ML analysis",
+                temperature: mlRec.forecast_data.outdoor_temp,
+                condition: "Outdoor conditions",
+              },
+              timeOfDay: {
+                hour: mlRec.forecast_data.hour,
+                period: getTimePeriod(mlRec.forecast_data.hour),
+              },
+              sensorData: {
+                temp: mlRec.sensor_data.temp,
+                humidity: mlRec.sensor_data.humidity,
+                light: mlRec.sensor_data.light,
+                motion: mlRec.sensor_data.motion,
+              },
+              forecastData: {
+                currentIndoorTemp: mlRec.forecast_data.current_indoor_temp,
+                predictedIndoorTemp: mlRec.forecast_data.predicted_indoor_temp,
+                outdoorTemp: mlRec.forecast_data.outdoor_temp,
+                tempDifference: mlRec.forecast_data.temp_difference,
+                currentHumidity: mlRec.forecast_data.current_humidity,
+                predictedHumidity: mlRec.forecast_data.predicted_humidity,
+                outdoorHumidity: mlRec.forecast_data.outdoor_humidity,
+                humidityDifference: mlRec.forecast_data.humidity_difference,
+                hour: mlRec.forecast_data.hour,
               },
             },
             action: {
               type: "adjust",
-              target: `${formatRoomName(room)}`,
-              parameters: { temperature: mlRec.recommended_setpoint },
+              target: formatRoomName(room),
+              parameters: { room: mlRec.forecast_data.room },
             },
-            timestamp: new Date(),
+            timestamp: new Date(mlRec.forecast_data.timestamp),
             category: "energy-savings",
-            potentialSavings: {
-              amount: mlRec.energy_saving_mode ? 15 : 8,
-              unit: "percentage",
-            },
           };
 
           recs.push(recommendation);

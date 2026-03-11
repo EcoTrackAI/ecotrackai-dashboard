@@ -9,12 +9,15 @@ export default function ApplianceControlCard({
   name,
   type,
   room,
+  controlMode: externalControlMode,
+  onControlModeChange,
 }: ApplianceControlCardProps) {
   const [status, setStatus] = useState<ApplianceStatus>("off");
-  const [controlMode, setControlMode] = useState<ControlMode>("manual");
+  const [localControlMode, setLocalControlMode] = useState<ControlMode>("manual");
   const [fanSpeed, setFanSpeed] = useState(3);
   const [acTemp, setAcTemp] = useState(22);
   const [acMode] = useState<"cool" | "heat" | "fan" | "dry">("cool");
+  const controlMode = externalControlMode ?? localControlMode;
 
   const appliance: Appliance = {
     id: `${room}_${type}`,
@@ -37,8 +40,15 @@ export default function ApplianceControlCard({
     [],
   );
   const handleModeChange = useCallback(
-    (id: string, newMode: ControlMode) => setControlMode(newMode),
-    [],
+    (id: string, newMode: ControlMode) => {
+      if (onControlModeChange) {
+        onControlModeChange(room, newMode);
+        return;
+      }
+
+      setLocalControlMode(newMode);
+    },
+    [onControlModeChange, room],
   );
   const handleFanSpeedChange = useCallback(
     (id: string, speed: number) => setFanSpeed(speed),
