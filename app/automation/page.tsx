@@ -18,6 +18,8 @@ const ROOM_LABELS: Record<RelayRoom, string> = {
   living_room: "Living Room",
 };
 
+const ROOM_CONTROL_MODE_STORAGE_KEY = "automation_room_control_mode";
+
 type RelaySyncState = {
   motion: number | null;
   relayState: boolean | null;
@@ -60,22 +62,87 @@ const formatBackendTimestamp = (timestamp: string | null): string => {
   return parsed.toLocaleString();
 };
 
+const isControlMode = (value: unknown): value is ControlMode =>
+  value === "auto" || value === "manual";
+
+const getPersistedRoomControlMode = (): Record<RelayRoom, ControlMode> => {
+  if (typeof window === "undefined") return INITIAL_ROOM_CONTROL_MODE;
+
+  try {
+    const raw = window.localStorage.getItem(ROOM_CONTROL_MODE_STORAGE_KEY);
+    if (!raw) return INITIAL_ROOM_CONTROL_MODE;
+
+    const parsed = JSON.parse(raw) as Partial<Record<RelayRoom, unknown>>;
+    const nextMode: Record<RelayRoom, ControlMode> = {
+      ...INITIAL_ROOM_CONTROL_MODE,
+    };
+
+    ROOMS.forEach((room) => {
+      const candidate = parsed[room];
+      if (isControlMode(candidate)) {
+        nextMode[room] = candidate;
+      }
+    });
+
+    return nextMode;
+  } catch {
+    return INITIAL_ROOM_CONTROL_MODE;
+  }
+};
+
 export default function AutomationPage() {
   const [pzem, setPzem] = useState<PZEMData | null>(null);
   const [loading, setLoading] = useState(true);
-  const [roomSensors, setRoomSensors] = useState<
-    Record<RelayRoom, RoomSensorData | null>
-  >(INITIAL_ROOM_SENSORS);
+  const [roomSensors, setRoomSensors] =
+    useState<Record<RelayRoom, RoomSensorData | null>>(INITIAL_ROOM_SENSORS);
   const [roomControlMode, setRoomControlMode] = useState<
     Record<RelayRoom, ControlMode>
   >(INITIAL_ROOM_CONTROL_MODE);
-  const [relaySync, setRelaySync] = useState<Record<RelayRoom, RelaySyncState>>(
-    INITIAL_RELAY_SYNC,
-  );
+  const [hasLoadedPersistedMode, setHasLoadedPersistedMode] = useState(false);
+  const [relaySync, setRelaySync] =
+    useState<Record<RelayRoom, RelaySyncState>>(INITIAL_RELAY_SYNC);
   const bedroomMotion = roomSensors.bedroom?.motion;
   const livingRoomMotion = roomSensors.living_room?.motion;
   const bedroomControlMode = roomControlMode.bedroom;
   const livingRoomControlMode = roomControlMode.living_room;
+
+  const getRoomPolicyDetails = (room: RelayRoom): ApplianceAutomationInfo => {
+    const sensor = roomSensors[room];
+    const syncState = relaySync[room];
+    const isAutoMode = roomControlMode[room] === "auto";
+
+    const motionFromFirebase =
+      typeof sensor?.motion === "boolean"
+        ? sensor.motion
+          ? "Detected (1)"
+          : "No Motion (0)"
+        : "Waiting for sensor data";
+
+    const relayAction = !isAutoMode
+      ? "Manual mode: automation skipped"
+      : syncState.motion === null
+        ? "--"
+        : syncState.motion === 0
+          ? "Auto + no motion: forced OFF"
+          : "Auto + motion: kept previous state";
+
+    const relayStateSnapshot =
+      syncState.relayState === null
+        ? "--"
+        : syncState.relayState
+          ? "ON"
+          : "OFF";
+
+    return {
+      motionFromFirebase,
+      controlMode: isAutoMode ? "Auto" : "Manual",
+      relayAction,
+      relayStateSnapshot,
+      syncStatus: syncState.loading ? "Syncing..." : "Synced",
+      lastPolicyUpdate: formatBackendTimestamp(syncState.timestamp),
+      error: syncState.error,
+    };
+  };
 
   useEffect(() => {
     try {
@@ -104,6 +171,24 @@ export default function AutomationPage() {
       unsubscribeLivingRoom?.();
     };
   }, []);
+
+  useEffect(() => {
+    setRoomControlMode(getPersistedRoomControlMode());
+    setHasLoadedPersistedMode(true);
+  }, []);
+
+  useEffect(() => {
+    if (!hasLoadedPersistedMode) return;
+
+    try {
+      window.localStorage.setItem(
+        ROOM_CONTROL_MODE_STORAGE_KEY,
+        JSON.stringify(roomControlMode),
+      );
+    } catch {
+      // Ignore storage write failures.
+    }
+  }, [roomControlMode, hasLoadedPersistedMode]);
 
   useEffect(() => {
     let cancelled = false;
@@ -257,88 +342,6 @@ export default function AutomationPage() {
           </section>
         )}
 
-        <section className="mb-8">
-          <h2 className="text-lg font-semibold text-[#111827] mb-2">
-            Motion Relay Policy
-          </h2>
-          <p className="text-sm text-[#6B7280] mb-4">
-            Automation applies only in Auto mode. In Auto mode, no motion turns all
-            room relays OFF, while detected motion keeps current relay states.
-          </p>
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-            {ROOMS.map((room) => {
-              const sensor = roomSensors[room];
-              const syncState = relaySync[room];
-              const isAutoMode = roomControlMode[room] === "auto";
-
-              return (
-                <div
-                  key={room}
-                  className="bg-white rounded-lg border border-gray-200 p-4"
-                >
-                  <div className="flex items-center justify-between mb-2">
-                    <h3 className="text-base font-semibold text-[#111827]">
-                      {ROOM_LABELS[room]}
-                    </h3>
-                    <span
-                      className={`text-xs font-semibold ${
-                        syncState.loading ? "text-amber-600" : "text-[#16A34A]"
-                      }`}
-                    >
-                      {syncState.loading ? "Syncing..." : "Synced"}
-                    </span>
-                  </div>
-
-                  <p className="text-sm text-[#6B7280]">
-                    Motion from Firebase:{" "}
-                    {typeof sensor?.motion === "boolean"
-                      ? sensor.motion
-                        ? "Detected (1)"
-                        : "No Motion (0)"
-                      : "Waiting for sensor data"}
-                  </p>
-
-                  <p className="text-sm text-[#6B7280] mt-1">
-                    Control mode: {isAutoMode ? "Auto" : "Manual"}
-                  </p>
-
-                  <p className="text-sm text-[#374151] mt-2">
-                    Relay action:{" "}
-                    <span className="font-semibold">
-                      {!isAutoMode
-                        ? "Manual mode: automation skipped"
-                        : syncState.motion === null
-                          ? "--"
-                          : syncState.motion === 0
-                            ? "Auto + no motion: forced OFF"
-                            : "Auto + motion: kept previous state"}
-                    </span>
-                  </p>
-
-                  <p className="text-sm text-[#374151] mt-2">
-                    Relay state snapshot:{" "}
-                    <span className="font-semibold">
-                      {syncState.relayState === null
-                        ? "--"
-                        : syncState.relayState
-                          ? "ON"
-                          : "OFF"}
-                    </span>
-                  </p>
-
-                  <p className="text-xs text-[#6B7280] mt-2">
-                    Last policy update: {formatBackendTimestamp(syncState.timestamp)}
-                  </p>
-
-                  {syncState.error && (
-                    <p className="text-xs text-red-600 mt-2">{syncState.error}</p>
-                  )}
-                </div>
-              );
-            })}
-          </div>
-        </section>
-
         {/* Appliance Controls */}
         <section className="mt-8">
           <h2 className="text-lg font-semibold text-[#111827] mb-4">
@@ -350,6 +353,7 @@ export default function AutomationPage() {
               type="light"
               room="bedroom"
               controlMode={roomControlMode.bedroom}
+              automationInfo={getRoomPolicyDetails("bedroom")}
               onControlModeChange={(room, mode) => {
                 setRoomControlMode((prev) => ({ ...prev, [room]: mode }));
               }}
@@ -359,6 +363,7 @@ export default function AutomationPage() {
               type="light"
               room="living_room"
               controlMode={roomControlMode.living_room}
+              automationInfo={getRoomPolicyDetails("living_room")}
               onControlModeChange={(room, mode) => {
                 setRoomControlMode((prev) => ({ ...prev, [room]: mode }));
               }}

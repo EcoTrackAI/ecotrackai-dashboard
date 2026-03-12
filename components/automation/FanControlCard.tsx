@@ -2,12 +2,14 @@
 
 import { useState, useEffect } from "react";
 import { useRelayControl } from "@/lib/hooks/useRelayControl";
+import AutomationInfoTooltip from "./AutomationInfoTooltip";
 
 export default function FanControlCard({
   appliance,
   onStatusChange,
   onFanSpeedChange,
   onModeChange,
+  automationInfo,
 }: FanControlCardProps) {
   const { state: firebaseRelayState, setRelayState } = useRelayControl(
     appliance.roomId || "unknown",
@@ -56,13 +58,19 @@ export default function FanControlCard({
             <p className="text-sm text-gray-500">{appliance.room}</p>
           </div>
         </div>
-        <div className="flex items-center gap-2">
-          <div
-            className={`w-2.5 h-2.5 rounded-full ${appliance.isOnline ? "bg-green-500" : "bg-gray-400"}`}
+        <div className="flex items-center gap-3">
+          <AutomationInfoTooltip
+            applianceName={appliance.name}
+            info={automationInfo}
           />
-          <span className="text-xs text-gray-500">
-            {appliance.isOnline ? "Online" : "Offline"}
-          </span>
+          <div className="flex items-center gap-2">
+            <div
+              className={`w-2.5 h-2.5 rounded-full ${appliance.isOnline ? "bg-green-500" : "bg-gray-400"}`}
+            />
+            <span className="text-xs text-gray-500">
+              {appliance.isOnline ? "Online" : "Offline"}
+            </span>
+          </div>
         </div>
       </div>
 

@@ -10,6 +10,7 @@ export default function ApplianceControlCard({
   type,
   room,
   controlMode: externalControlMode,
+  automationInfo,
   onControlModeChange,
 }: ApplianceControlCardProps) {
   const [status, setStatus] = useState<ApplianceStatus>("off");
@@ -66,6 +67,7 @@ export default function ApplianceControlCard({
           appliance={appliance}
           onStatusChange={handleStatusChange}
           onModeChange={handleModeChange}
+          automationInfo={automationInfo}
         />
       );
     case "fan":
@@ -75,6 +77,7 @@ export default function ApplianceControlCard({
           onStatusChange={handleStatusChange}
           onFanSpeedChange={handleFanSpeedChange}
           onModeChange={handleModeChange}
+          automationInfo={automationInfo}
         />
       );
     case "ac":
@@ -84,6 +87,7 @@ export default function ApplianceControlCard({
           onStatusChange={handleStatusChange}
           onACTemperatureChange={handleACTemperatureChange}
           onModeChange={handleModeChange}
+          automationInfo={automationInfo}
         />
       );
     default:
@@ -92,6 +96,7 @@ export default function ApplianceControlCard({
           appliance={appliance}
           onStatusChange={handleStatusChange}
           onModeChange={handleModeChange}
+          automationInfo={automationInfo}
         />
       );
   }

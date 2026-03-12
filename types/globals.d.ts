@@ -254,11 +254,22 @@ declare global {
     enabled: boolean;
   }
 
+  interface ApplianceAutomationInfo {
+    motionFromFirebase: string;
+    controlMode: string;
+    relayAction: string;
+    relayStateSnapshot: string;
+    syncStatus: string;
+    lastPolicyUpdate: string;
+    error?: string | null;
+  }
+
   interface ApplianceControlCardProps {
     name: string;
     type: "light" | "fan" | "ac" | "other";
     room: "bedroom" | "living_room";
     controlMode?: ControlMode;
+    automationInfo?: ApplianceAutomationInfo;
     onControlModeChange?: (
       room: "bedroom" | "living_room",
       mode: ControlMode,
@@ -269,6 +280,7 @@ declare global {
     appliance: Appliance;
     onStatusChange: (id: string, status: ApplianceStatus) => void;
     onModeChange: (id: string, mode: ControlMode) => void;
+    automationInfo?: ApplianceAutomationInfo;
   }
 
   interface FanControlCardProps {
@@ -276,6 +288,7 @@ declare global {
     onStatusChange: (id: string, status: ApplianceStatus) => void;
     onFanSpeedChange: (id: string, speed: number) => void;
     onModeChange: (id: string, mode: ControlMode) => void;
+    automationInfo?: ApplianceAutomationInfo;
   }
 
   interface ACControlCardProps {
@@ -283,6 +296,7 @@ declare global {
     onStatusChange: (id: string, status: ApplianceStatus) => void;
     onACTemperatureChange: (id: string, temperature: number) => void;
     onModeChange: (id: string, mode: ControlMode) => void;
+    automationInfo?: ApplianceAutomationInfo;
   }
 
   interface HistoricalDataPoint {
