@@ -483,8 +483,8 @@ declare global {
 
   interface MLRecommendationCardProps {
     recommendation: MLRecommendation;
-    onApply?: (id: string) => void;
-    onIgnore?: (id: string) => void;
+    onGenerate?: (id: string) => void | Promise<void>;
+    isGenerating?: boolean;
     className?: string;
   }
 

@@ -1,12 +1,10 @@
 "use client";
 
 import ApplianceControlCard from "@/components/automation/ApplianceControlCard";
-import { MetricCard } from "@/components/metrics";
 import { initializeFirebase } from "@/lib/firebase";
 import { setRelayState } from "@/lib/firebase-relay";
-import { subscribePZEMData, subscribeRoomSensor } from "@/lib/firebase-sensors";
+import { subscribeRoomSensor } from "@/lib/firebase-sensors";
 import { useEffect, useState } from "react";
-import { Zap, Flame, Gauge } from "lucide-react";
 
 type RelayRoom = "bedroom" | "living_room";
 
@@ -91,8 +89,6 @@ const getPersistedRoomControlMode = (): Record<RelayRoom, ControlMode> => {
 };
 
 export default function AutomationPage() {
-  const [pzem, setPzem] = useState<PZEMData | null>(null);
-  const [loading, setLoading] = useState(true);
   const [roomSensors, setRoomSensors] =
     useState<Record<RelayRoom, RoomSensorData | null>>(INITIAL_ROOM_SENSORS);
   const [roomControlMode, setRoomControlMode] = useState<
@@ -148,14 +144,8 @@ export default function AutomationPage() {
     try {
       initializeFirebase();
     } catch {
-      setTimeout(() => setLoading(false), 0);
       return;
     }
-
-    const unsubscribePzem = subscribePZEMData((data) => {
-      setPzem(data);
-      setLoading(false);
-    });
 
     const unsubscribeBedroom = subscribeRoomSensor("bedroom", (data) => {
       setRoomSensors((prev) => ({ ...prev, bedroom: data }));
@@ -166,7 +156,6 @@ export default function AutomationPage() {
     });
 
     return () => {
-      unsubscribePzem?.();
       unsubscribeBedroom?.();
       unsubscribeLivingRoom?.();
     };
@@ -309,38 +298,9 @@ export default function AutomationPage() {
             Automation Control
           </h1>
           <p className="text-[#6B7280]">
-            Monitor power consumption and manually control smart devices.
+            Manage smart devices with motion-aware automation policies.
           </p>
         </div>
-
-        {/* Power Metrics */}
-        {!loading && pzem && (
-          <section className="mb-8">
-            <h2 className="text-lg font-semibold text-[#111827] mb-4">
-              Power Status
-            </h2>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-              <MetricCard
-                title="Current Power"
-                value={pzem.power.toFixed(1)}
-                unit="W"
-                icon={<Zap className="w-6 h-6" />}
-              />
-              <MetricCard
-                title="Total Energy"
-                value={pzem.energy.toFixed(2)}
-                unit="kWh"
-                icon={<Flame className="w-6 h-6" />}
-              />
-              <MetricCard
-                title="Voltage"
-                value={pzem.voltage.toFixed(1)}
-                unit="V"
-                icon={<Gauge className="w-6 h-6" />}
-              />
-            </div>
-          </section>
-        )}
 
         {/* Appliance Controls */}
         <section className="mt-8">

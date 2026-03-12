@@ -4,11 +4,10 @@ import { useState } from "react";
 
 export const MLRecommendationCard: React.FC<MLRecommendationCardProps> = ({
   recommendation,
-  onApply,
-  onIgnore,
+  onGenerate,
+  isGenerating = false,
   className = "",
 }) => {
-  const [isProcessing, setIsProcessing] = useState(false);
   const [isExpanded, setIsExpanded] = useState(false);
 
   const getCategoryIcon = (category: string): string => {
@@ -22,26 +21,17 @@ export const MLRecommendationCard: React.FC<MLRecommendationCardProps> = ({
     return icons[category as keyof typeof icons] || "💡";
   };
 
-  const handleApply = async () => {
-    if (!onApply || isProcessing) return;
+  const hasDecisionInputs =
+    Boolean(recommendation.inputs.sensorData) ||
+    Boolean(recommendation.inputs.forecastData) ||
+    Boolean(recommendation.inputs.weather) ||
+    Boolean(recommendation.inputs.timeOfDay) ||
+    Boolean(recommendation.inputs.occupancy) ||
+    Boolean(recommendation.inputs.historicalPattern);
 
-    setIsProcessing(true);
-    try {
-      await onApply(recommendation.id);
-    } finally {
-      setIsProcessing(false);
-    }
-  };
-
-  const handleIgnore = async () => {
-    if (!onIgnore || isProcessing) return;
-
-    setIsProcessing(true);
-    try {
-      await onIgnore(recommendation.id);
-    } finally {
-      setIsProcessing(false);
-    }
+  const handleGenerate = async () => {
+    if (!onGenerate || isGenerating) return;
+    await onGenerate(recommendation.id);
   };
 
   return (
@@ -92,61 +82,55 @@ export const MLRecommendationCard: React.FC<MLRecommendationCardProps> = ({
       )}
 
       {/* Expandable Inputs Section */}
-      <div className="border-t border-gray-100 pt-3 mb-4">
-        <button
-          onClick={() => setIsExpanded(!isExpanded)}
-          className="flex items-center justify-between w-full text-left group"
-          aria-expanded={isExpanded}
-          aria-controls={`recommendation-${recommendation.id}-inputs`}
-        >
-          <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
-            Decision Inputs
-          </span>
-          <svg
-            className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
-              isExpanded ? "rotate-180" : ""
-            }`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            aria-hidden="true"
+      {hasDecisionInputs && (
+        <div className="border-t border-gray-100 pt-3 mb-4">
+          <button
+            onClick={() => setIsExpanded(!isExpanded)}
+            className="flex items-center justify-between w-full text-left group"
+            aria-expanded={isExpanded}
+            aria-controls={`recommendation-${recommendation.id}-inputs`}
           >
-            <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              strokeWidth={2}
-              d="M19 9l-7 7-7-7"
-            />
-          </svg>
-        </button>
+            <span className="text-xs font-medium text-gray-600 uppercase tracking-wide">
+              Decision Inputs
+            </span>
+            <svg
+              className={`w-4 h-4 text-gray-400 transition-transform duration-200 ${
+                isExpanded ? "rotate-180" : ""
+              }`}
+              fill="none"
+              stroke="currentColor"
+              viewBox="0 0 24 24"
+              aria-hidden="true"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
+            </svg>
+          </button>
 
-        {isExpanded && (
-          <div
-            id={`recommendation-${recommendation.id}-inputs`}
-            className="mt-3 space-y-2"
-          >
-            <InputsDisplay inputs={recommendation.inputs} />
-          </div>
-        )}
-      </div>
+          {isExpanded && (
+            <div
+              id={`recommendation-${recommendation.id}-inputs`}
+              className="mt-3 space-y-2"
+            >
+              <InputsDisplay inputs={recommendation.inputs} />
+            </div>
+          )}
+        </div>
+      )}
 
-      {/* Action Buttons */}
-      <div className="flex gap-2">
+      {/* Action Button */}
+      <div className="flex">
         <button
-          onClick={handleApply}
-          disabled={isProcessing}
+          onClick={handleGenerate}
+          disabled={isGenerating || !onGenerate}
           className="flex-1 bg-[#6366F1] text-white px-4 py-2.5 rounded-md text-sm font-medium hover:bg-[#4F46E5] active:bg-[#4338CA] disabled:bg-gray-300 disabled:cursor-not-allowed transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-[#6366F1] focus:ring-offset-2"
-          aria-label={`Apply recommendation: ${recommendation.title}`}
+          aria-label={`Generate recommendation for ${recommendation.title}`}
         >
-          {isProcessing ? "Processing..." : "Apply"}
-        </button>
-        <button
-          onClick={handleIgnore}
-          disabled={isProcessing}
-          className="flex-1 bg-white text-gray-700 px-4 py-2.5 rounded-md text-sm font-medium border border-gray-300 hover:bg-gray-50 active:bg-gray-100 disabled:bg-gray-100 disabled:cursor-not-allowed transition-colors duration-150 focus:outline-none focus:ring-2 focus:ring-gray-400 focus:ring-offset-2"
-          aria-label={`Ignore recommendation: ${recommendation.title}`}
-        >
-          Ignore
+          {isGenerating ? "Generating..." : "Generate Recommendation"}
         </button>
       </div>
     </article>

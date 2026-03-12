@@ -10,7 +10,7 @@ import {
   Tooltip,
   ResponsiveContainer,
 } from "recharts";
-import { TrendingUp, Zap, Gauge } from "lucide-react";
+import { TrendingUp, Zap, Gauge, Activity } from "lucide-react";
 import { COLORS } from "@/lib/constants";
 import { MetricCard } from "@/components/metrics";
 import {
@@ -186,12 +186,18 @@ export default function AnalyticsPage() {
         )}
 
         {latestMetrics && (
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4 mb-8">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4 mb-8">
             <MetricCard
               title="Current Power"
               value={latestMetrics.power.toFixed(1)}
               unit="W"
               icon={<Zap className="w-6 h-6" />}
+            />
+            <MetricCard
+              title="Current"
+              value={latestMetrics.current.toFixed(2)}
+              unit="A"
+              icon={<Activity className="w-6 h-6" />}
             />
             <MetricCard
               title="Voltage"
